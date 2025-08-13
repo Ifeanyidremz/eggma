@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - EVGxchain</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            color: white;
+            min-height: 100vh;
+        }
+
+        .navbar {
+            background: rgba(45, 45, 45, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 15px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #f7931a 0%, #ffb84d 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: #ccc;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+            position: relative;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            color: #f7931a;
+        }
+
+        .nav-links a.active::after {
+            content: '';
+            position: absolute;
+            bottom: -20px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(135deg, #f7931a 0%, #ffb84d 100%);
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            cursor: pointer;
+            padding: 8px 15px;
+            border-radius: 12px;
+            transition: background 0.3s ease;
+        }
+
+        .user-profile:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #f7931a 0%, #ffb84d 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+
+        .welcome-section {
+            background: rgba(45, 45, 45, 0.6);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .welcome-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .welcome-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #fff 0%, #f0f0f0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .welcome-subtitle {
+            color: #999;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+
+        .quick-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: rgba(45, 45, 45, 0.8);
+            border-radius: 16px;
+            padding: 25px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(247, 147, 26, 0.2);
+        }
+
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #f7931a 0%, #ffb84d 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+            font-size: 20px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #f7931a;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #999;
+            font-size: 14px;
+        }
+
+        .level-system {
+            background: rgba(45, 45, 45, 0.6);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .level-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .level-title {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .level-badge {
+            background: linear-gradient(135deg, #f7931a 0%, #ffb84d 100%);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .xp-bar {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            height: 12px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .xp-progress {
+            background: linear-gradient(135deg, #f7931a 0%, #ffb84d 100%);
+            height: 100%;
+            width: 75%;
+            border-radius: 10px;
+            transition: width 0.3s ease;
+            box-shadow: 0 0 10px rgba(247, 147, 26, 0.5);
+        }
+
+        .xp-text {
+            color: #999;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .active-predictions {
+            background: rgba(45, 45, 45, 0.6);
+            border-radius: 20px;
+            padding: 30px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .prediction-item {
+            background: rgba(26, 26, 26, 0.8);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .prediction-item:hover {
+            transform: translateY(-2px);
+            border-color: rgba(247, 147, 26, 0.3);
+        }
+
+        .prediction-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .prediction-title {
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .prediction-status {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-active {
+            background: rgba(34, 197, 94, 0.2);
+            color: #86efac;
+        }
+
+        .status-pending {
+            background: rgba(251, 191, 36, 0.2);
+            color: #fbbf24;
+        }
+
+        .prediction-details {
+            color: #999;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .prediction-value {
+            color: #f7931a;
+            font-weight: 600;
+        }
+
+        .quick-actions {
+            background: rgba(45, 45, 45, 0.6);
+            border-radius: 20px;
+            padding: 30px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            height: fit-content;
+        }
+
+        .action-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #f7931a 0%, #ffb84d 100%);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(247, 147, 26, 0.3);
+        }
+
+        .action-btn.secondary {
+            background: rgba(26, 26, 26, 0.8);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            color: #ccc;
+        }
+
+        .action-btn.secondary:hover {
+            border-color: #f7931a;
+            color: #f7931a;
+        }
+
+        .crypto-widget {
+            background: rgba(26, 26, 26, 0.8);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .crypto-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .crypto-item:last-child {
+            border-bottom: none;
+        }
+
+        .crypto-name {
+            font-weight: 600;
+        }
+
+        .crypto-price {
+            color: #4ade80;
+            font-weight: 600;
+        }
+
+        .price-change {
+            font-size: 12px;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .price-up {
+            background: rgba(34, 197, 94, 0.2);
+            color: #86efac;
+        }
+
+        .price-down {
+            background: rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+        }
+
+        .floating-coins {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        .floating-coin {
+            position: absolute;
+            width: 25px;
+            height: 25px;
+            background: linear-gradient(135deg, #f7931a 0%, #ffb84d 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+            opacity: 0.3;
+            animation: floatAround 25s linear infinite;
+        }
+
+        @keyframes floatAround {
+            0% { transform: translateY(100vh) translateX(0) rotate(0deg); opacity: 0; }
+            10% { opacity: 0.3; }
+            90% { opacity: 0.3; }
+            100% { transform: translateY(-100px) translateX(50px) rotate(360deg); opacity: 0; }
+        }
+
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .quick-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .container {
+                padding: 20px 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-coins">
+        <div class="floating-coin" style="left: 10%; animation-delay: 0s;">₿</div>
+        <div class="floating-coin" style="left: 30%; animation-delay: 5s;">₿</div>
+        <div class="floating-coin" style="left: 50%; animation-delay: 10s;">₿</div>
+        <div class="floating-coin" style="left: 70%; animation-delay: 15s;">₿</div>
+        <div class="floating-coin" style="left: 90%; animation-delay: 20s;">₿</div>
+    </div>
+
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">EVGxchain</div>
+            <div class="nav-links">
+                <!-- <a href="dashboard.html" class="active">Dashboard</a> -->
+                <a href="market_list.html">Markets</a>
+                <a href="live_crypto.html">Live Data</a>
+                <!-- <a href="wallet.html">Wallet</a> -->
+                <a href="profile.html">Profile</a>
+            </div>
+            <div class="user-profile" onclick="toggleProfileMenu()">
+                <div class="user-avatar">JD</div>
+                <div>
+                    <div style="font-size: 14px; font-weight: 600;">John Doe</div>
+                    <div style="font-size: 12px; color: #999;">Level 5 Predictor</div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="welcome-section">
+            <div class="welcome-content">
+                <h1 class="welcome-title">Welcome back, John! 👋</h1>
+                <p class="welcome-subtitle">Ready to make some predictions and earn rewards? You're on fire with a 73% accuracy rate!</p>
+            </div>
+        </div>
+
+        <div class="quick-stats">
+            <div class="stat-card">
+                <div class="stat-icon">💰</div>
+                <div class="stat-value">$1,247.50</div>
+                <div class="stat-label">Total Earnings</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🎯</div>
+                <div class="stat-value">73%</div>
+                <div class="stat-label">Accuracy Rate</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">⚡</div>
+                <div class="stat-value">2,450</div>
+                <div class="stat-label">Total XP</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📈</div>
+                <div class="stat-value">47</div>
+                <div class="stat-label">Active Predictions</div>
+            </div>
+        </div>
+
+        <div class="level-system">
+            <div class="level-header">
+                <h2 class="level-title">Level Progress</h2>
+                <div class="level-badge">Level 5 - Expert Predictor</div>
+            </div>
+            <div class="xp-bar">
+                <div class="xp-progress"></div>
+            </div>
+            <div class="xp-text">2,450 / 3,000 XP to Level 6</div>
+        </div>
+
+        <div class="main-content">
+            <div class="active-predictions">
+                <h2 class="section-title">🔥 Active Predictions</h2>
+                
+                <div class="prediction-item">
+                    <div class="prediction-header">
+                        <div class="prediction-title">Bitcoin Price Prediction</div>
+                        <div class="prediction-status status-active">Active</div>
+                    </div>
+                    <div class="prediction-details">
+                        Will BTC reach $100,000 by end of 2025?
+                    </div>
+                    <div class="prediction-details">
+                        Your bet: <span class="prediction-value">$50 on YES</span> • Potential win: <span class="prediction-value">$85</span>
+                    </div>
+                </div>
+
+                <div class="prediction-item">
+                    <div class="prediction-header">
+                        <div class="prediction-title">Ethereum Market Cap</div>
+                        <div class="prediction-status status-pending">Pending</div>
+                    </div>
+                    <div class="prediction-details">
+                        Will ETH overtake BTC in market cap by 2026?
+                    </div>
+                    <div class="prediction-details">
+                        Your bet: <span class="prediction-value">$25 on NO</span> • Potential win: <span class="prediction-value">$75</span>
+                    </div>
+                </div>
+
+                <div class="prediction-item">
+                    <div class="prediction-header">
+                        <div class="prediction-title">Solana Performance</div>
+                        <div class="prediction-status status-active">Active</div>
+                    </div>
+                    <div class="prediction-details">
+                        Will SOL reach $500 this year?
+                    </div>
+                    <div class="prediction-details">
+                        Your bet: <span class="prediction-value">$30 on YES</span> • Potential win: <span class="prediction-value">$90</span>
+                    </div>
+                </div>
+
+                <button class="action-btn secondary" onclick="viewAllPredictions()">
+                    View All Predictions →
+                </button>
+            </div>
+
+            <div class="quick-actions">
+                <h2 class="section-title">🚀 Quick Actions</h2>
+                
+                <button class="action-btn" onclick="goToMarkets()">
+                    🎯 Browse Markets
+                </button>
+                
+                <button class="action-btn secondary" onclick="viewWallet()">
+                    💳 View Wallet
+                </button>
+                
+                <button class="action-btn secondary" onclick="viewProfile()">
+                    👤 My Profile
+                </button>
+
+                <div class="crypto-widget">
+                    <h3 style="margin-bottom: 15px; color: #ccc;">Live Crypto Prices</h3>
+                    <div class="crypto-item">
+                        <div>
+                            <div class="crypto-name">Bitcoin</div>
+                            <div style="font-size: 12px; color: #999;">BTC</div>
+                        </div>
+                        <div>
+                            <div class="crypto-price">$67,432</div>
+                            <div class="price-change price-up">+2.4%</div>
+                        </div>
+                    </div>
+                    <div class="crypto-item">
+                        <div>
+                            <div class="crypto-name">Ethereum</div>
+                            <div style="font-size: 12px; color: #999;">ETH</div>
+                        </div>
+                        <div>
+                            <div class="crypto-price">$3,421</div>
+                            <div class="price-change price-up">+1.8%</div>
+                        </div>
+                    </div>
+                    <div class="crypto-item">
+                        <div>
+                            <div class="crypto-name">Solana</div>
+                            <div style="font-size: 12px; color: #999;">SOL</div>
+                        </div>
+                        <div>
+                            <div class="crypto-price">$187.65</div>
+                            <div class="price-change price-down">-0.5%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="action-btn secondary" onclick="viewLiveCrypto()">
+                    📊 View All Prices
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Navigation functions
+        function goToMarkets() {
+            window.location.href = 'market_list.html';
+        }
+
+        function viewWallet() {
+            window.location.href = 'wallet.html';
+        }
+
+        function viewProfile() {
+            window.location.href = 'profile.html';
+        }
+
+        function viewLiveCrypto() {
+            window.location.href = 'live_crypto.html';
+        }
+
+        function viewAllPredictions() {
+            window.location.href = 'profile.html#predictions';
+        }
+
+        function toggleProfileMenu() {
+            // Profile dropdown functionality
+            alert('Profile menu - would show logout, settings, etc.');
+        }
+
+        // Simulate real-time updates
+        function updateCryptoPrices() {
+            const cryptoItems = document.querySelectorAll('.crypto-price');
+            cryptoItems.forEach(item => {
+                const currentPrice = parseFloat(item.textContent.replace('$', '').replace(',', ''));
+                const change = (Math.random() - 0.5) * 100;
+                const newPrice = Math.max(0, currentPrice + change);
+                item.textContent = '$' + newPrice.toLocaleString();
+            });
+        }
+
+        // Update XP progress animation
+        function animateXPBar() {
+            const xpBar = document.querySelector('.xp-progress');
+            let width = 0;
+            const targetWidth = 75;
+            const interval = setInterval(() => {
+                if (width >= targetWidth) {
+                    clearInterval(interval);
+                } else {
+                    width += 2;
+                    xpBar.style.width = width + '%';
+                }
+            }, 50);
+        }
+
+        // Add floating coins periodically
+        setInterval(() => {
+            if (Math.random() < 0.3) {
+                const container = document.querySelector('.floating-coins');
+                const coin = document.createElement('div');
+                coin.className = 'floating-coin';
+                coin.textContent = '₿';
+                coin.style.left = Math.random() * 100 + '%';
+                coin.style.animationDelay = '0s';
+                coin.style.animationDuration = (20 + Math.random() * 10) + 's';
+                container.appendChild(coin);
+                
+                setTimeout(() => {
+                    coin.remove();
+                }, 30000);
+            }
+        }, 4000);
+
+        // Initialize animations on page load
+        window.addEventListener('load', () => {
+            setTimeout(animateXPBar, 500);
+            // Simulate periodic price updates
+            setInterval(updateCryptoPrices, 5000);
+        });
+
+        // Add some interactive stats updates
+        setInterval(() => {
+            const accuracyElement = document.querySelector('.stat-value:nth-of-type(2)');
+            if (accuracyElement) {
+                const currentAccuracy = parseInt(accuracyElement.textContent);
+                const newAccuracy = Math.max(65, Math.min(85, currentAccuracy + (Math.random() - 0.5) * 2));
+                accuracyElement.textContent = Math.round(newAccuracy) + '%';
+            }
+        }, 10000);
+    </script>
+</body>
+</html>

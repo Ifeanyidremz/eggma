@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prediction Markets - EVGxchain</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            color: white;
+            min-height: 100vh;
+        }
+
+        .navbar {
+            background: rgba(45, 45, 45, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 15px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #f7931a 0%, #ffb84d 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: #ccc;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+            position: relative;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            color: #f7931a;
+        }
+
+        .nav-links a.active::after {
+            content: '';
+            position: absolute;
+            bottom: -20px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(135deg, #f7931a 0%, #ffb84d 100%);
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            cursor: pointer;
+            padding: 8px 15px;
+            border-radius: 12px;
+            transition: background 0.3s ease;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #f7931a 0%, #ffb84d 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .page-title {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            background: linear-gradient(135deg, #fff 0%, #f0f0f0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .page-subtitle {
+            color: #999;
+            font-size: 18px;
+            margin-bottom: 30px;
+        }
+
+        .filters-section {
+            background: rgba(45, 45, 45, 0.6);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .filter-controls {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 300px;
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 15px 50px 15px 20px;
+            background: rgba(26, 26, 26, 0.8);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: white;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #f7931a;
+            box-shadow: 0 0 20px rgba(247, 147, 26, 0.2);
+        }
+
+        .search-input::placeholder {
+            color: #666;
+        }
+
+        .search-icon {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #666;
+            font-size: 18px;
+        }
+
+        .category-filters {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .category-btn {
+            padding: 10px 20px;
+            background: rgba(26, 26, 26, 0.8);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 25px;
+            color: #ccc;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .category-btn:hover, .category-btn.active {
+            border-color: #f7931a;
+            color: #f7931a;
+            background: rgba(247, 147, 26, 0.1);
+        }
+
+        .sort-dropdown {
+            padding: 12px 20px;
+            background: rgba(26, 26, 26, 0.8);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .sort-dropdown:focus {
+            outline: none;
+            border-color: #f7931a;
+        }
+
+        .markets-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .market-card {
+            background: rgba(45, 45, 45, 0.8);
+            border-radius: 20px;
+            padding: 25px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .market-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(247, 147, 26, 0.2);
+            border-color: rgba(247, 147, 26, 0.3);
+        }
+
+        .market-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .market-category {
+            background: linear-gradient(135deg, #f7931a 0%, #ffb84d 100%);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .market-hot {
+            background: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .market-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #fff;
+            line-height: 1.4;
+        }
+
+        .market-description {
+            color: #999;
+            font-size: 14px;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .market-outcomes {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .outcome-option {
+            flex: 1;
+            background: rgba(26, 26, 26, 0.8);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .outcome-option:hover {
+            border-color: #f7931a;
+            background: rgba(247, 147, 26, 0.1);
+        }
+
+        .outcome-label {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #fff;
+        }
+
+        .outcome-odds {
+            font-size: 18px;
+            font-weight: 700;
+            color: #f7931a;
+            margin-bottom: 4px;
+        }
+
+        .outcome-percentage {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .market-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 13px;
+            color: #999;
+        }
+
+        .market-volume {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .market-ends {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .trending-section {
+            background: rgba(45, 45, 45, 0.6);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .trending-markets {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .trending-item {
+            background: rgba(26, 26, 26, 0.8);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .trending-item:hover {
+            border-color: rgba(247, 147, 26, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .trending-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #fff;
+        }
+
+        .trending-stats {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #999;
+        }
+
+        .load-more-btn {
+            display: block;
+            width: 200px;
+            margin: 30px auto;
+            background: linear-gradient(135deg, #f7931a 0%, #ffb84d 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .load-more-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(247, 147, 26, 0.3);
+        }
+
+        .floating-coins {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        .floating-coin {
+            position: absolute;
+            width: 25px;
+            height: 25px;
+            background: linear-gradient(135deg, #f7931a 0%, #ffb84d 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+            opacity: 0.3;
+            animation: floatAround 25s linear infinite;
+        }
+
+        @keyframes floatAround {
+            0% { transform: translateY(100vh) translateX(0) rotate(0deg); opacity: 0; }
+            10% { opacity: 0.3; }
+            90% { opacity: 0.3; }
+            100% { transform: translateY(-100px) translateX(50px) rotate(360deg); opacity: 0; }
+        }
+
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+
+            .markets-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .filter-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-box {
+                min-width: auto;
+            }
+
+            .category-filters {
+                justify-content: center;
+            }
+
+            .market-outcomes {
+                flex-direction: column;
+            }
+
+            .container {
+                padding: 20px 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-coins">
+        <div class="floating-coin" style="left: 5%; animation-delay: 0s;">₿</div>
+        <div class="floating-coin" style="left: 25%; animation-delay: 8s;">₿</div>
+        <div class="floating-coin" style="left: 45%; animation-delay: 16s;">₿</div>
+        <div class="floating-coin" style="left: 65%; animation-delay: 24s;">₿</div>
+        <div class="floating-coin" style="left: 85%; animation-delay: 4s;">₿</div>
+    </div>
+
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">EVGxchain</div>
+            <div class="nav-links">
+                <!-- <a href="dashboard.html">Dashboard</a> -->
+                <a href="market_list.html" class="active">Markets</a>
+                <a href="live_crypto.html">Live Data</a>
+                <!-- <a href="wallet.html">Wallet</a> -->
+                <a href="profile.html">Profile</a>
+            </div>
+            <div class="user-profile">
+                <div class="user-avatar">JD</div>
+                <div>
+                    <div style="font-size: 14px; font-weight: 600;">John Doe</div>
+                    <div style="font-size: 12px; color: #999;">Level 5 Predictor</div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h1 class="page-title">🎯 Prediction Markets</h1>
+            <p class="page-subtitle">Predict the future and earn rewards with multiple outcome betting</p>
+        </div>
+
+        <div class="filters-section">
+            <div class="filter-controls">
+                <div class="search-box">
+                    <input type="text" class="search-input" placeholder="Search markets..." id="searchInput">
+                    <div class="search-icon">🔍</div>
+                </div>
+                
+                <div class="category-filters">
+                    <button class="category-btn active" data-category="all">All</button>
+                    <button class="category-btn" data-category="crypto">Crypto</button>
+                    <button class="category-btn" data-category="sports">Sports</button>
+                    <button class="category-btn" data-category="politics">Politics</button>
+                    <button class="category-btn" data-category="tech">Tech</button>
+                </div>
+                
+                <select class="sort-dropdown" id="sortSelect">
+                    <option value="popular">Most Popular</option>
+                    <option value="newest">Newest</option>
+                    <option value="ending-soon">Ending Soon</option>
+                    <option value="highest-volume">Highest Volume</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="trending-section">
+            <h2 class="section-title">🔥 Trending Markets</h2>
+            <div class="trending-markets">
+                <div class="trending-item" onclick="openMarket('btc-100k')">
+                    <div class="trending-title">Bitcoin $100K Prediction</div>
+                    <div class="trending-stats">
+                        <span>🔥 Hot</span>
+                        <span>$50K Volume</span>
+                        <span>2,847 Participants</span>
+                    </div>
+                </div>
+                <div class="trending-item" onclick="openMarket('eth-flip')">
+                    <div class="trending-title">Ethereum Market Cap Flip</div>
+                    <div class="trending-stats">
+                        <span>💎 Premium</span>
+                        <span>$32K Volume</span>
+                        <span>1,205 Participants</span>
+                    </div>
+                </div>
+                <div class="trending-item" onclick="openMarket('ai-breakthrough')">
+                    <div class="trending-title">Next AI Breakthrough</div>
+                    <div class="trending-stats">
+                        <span>🚀 New</span>
+                        <span>$18K Volume</span>
+                        <span>892 Participants</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="markets-grid" id="marketsGrid">
+            <!-- Crypto Markets -->
+            <div class="market-card" data-category="crypto" onclick="openMarket('btc-100k')">
+                <div class="market-header">
+                    <div class="market-category">Crypto</div>
+                    <div class="market-hot">Hot</div>
+                </div>
+                <h3 class="market-title">Will Bitcoin reach $100,000 by December 2025?</h3>
+                <p class="market-description">Predict if Bitcoin will hit the historic $100K milestone before the end of 2025.</p>
+                <div class="market-outcomes">
+                    <div class="outcome-option">
+                        <div class="outcome-label">YES</div>
+                        <div class="outcome-odds">1.85x</div>
+                        <div class="outcome-percentage">54% chance</div>
+                    </div>
+                    <div class="outcome-option">
+                        <div class="outcome-label">NO</div>
+                        <div class="outcome-odds">2.17x</div>
+                        <div class="outcome-percentage">46% chance</div>
+                    </div>
+                </div>
+                <div class="market-stats">
+                    <div class="market-volume">💰 $50,247 Volume</div>
+                    <div class="market-ends">⏰ Ends Dec 31, 2025</div>
+                </div>
+            </div>
+
+            <div class="market-card" data-category="crypto" onclick="openMarket('eth-flip')">
+                <div class="market-header">
+                    <div class="market-category">Crypto</div>
+                </div>
+                <h3 class="market-title">Will Ethereum overtake Bitcoin in market cap by 2026?</h3>
+                <p class="market-description">The ultimate "flippening" question - will ETH surpass BTC in total market capitalization?</p>
+                <div class="market-outcomes">
+                    <div class="outcome-option">
+                        <div class="outcome-label">YES</div>
+                        <div class="outcome-odds">3.20x</div>
+                        <div class="outcome-percentage">31% chance</div>
+                    </div>
+                    <div class="outcome-option">
+                        <div class="outcome-label">NO</div>
+                        <div class="outcome-odds">1.45x</div>
+                        <div class="outcome-percentage">69% chance</div>
+                    </div>
+                </div>
+                <div class="market-stats">
+                    <div class="market-volume">💰 $32,156 Volume</div>
+                    <div class="market-ends">⏰ Ends Dec 31, 2026</div>
+                </div>
+            </div>
+
+            <div class="market-card" data-category="crypto" onclick="openMarket('sol-500')">
+                <div class="market-header">
+                    <div class="market-category">Crypto</div>
+                </div>
+                <h3 class="market-title">Solana Price Prediction: Will SOL reach $500?</h3>
+                <p class="market-description">Can Solana continue its impressive run and reach the $500 milestone this year?</p>
+                <div class="market-outcomes">
+                    <div class="outcome-option">
+                        <div class="outcome-label">YES</div>
+                        <div class="outcome-odds">2.75x</div>
+                        <div class="outcome-percentage">36% chance</div>
+                    </div>
+                    <div class="outcome-option">
+                        <div class="outcome-label">NO</div>
+                        <div class="outcome-odds">1.56x</div>
+                        <div class="outcome-percentage">64% chance</div>
+                    </div>
+                </div>
+                <div class="market-stats">
+                    <div class="market-volume">💰 $28,943 Volume</div>
+                    <div class="market-ends">⏰ Ends Dec 31, 2025</div>
+                </div>
+            </div>
+
+            <!-- Sports Markets -->
+            <div class="market-card" data-category="sports" onclick="openMarket('world-cup')">
+                <div class="market-header">
+                    <div class="market-category">Sports</div>
+                    <div class="market-hot">Hot</div>
+                </div>
+                <h3 class="market-title">2026 FIFA World Cup Winner</h3>
+                <p class="market-description">Which country will lift the World Cup trophy in 2026?</p>
+                <div class="market-outcomes">
+                    <div class="outcome-option">
+                        <div class="outcome-label">BRAZIL</div>
+                        <div class="outcome-odds">4.20x</div>
+                        <div class="outcome-percentage">24% chance</div>
+                    </div>
+                    <div class="outcome-option">
+                        <div class="outcome-label">OTHER</div>
+                        <div class="outcome-odds">1.32x</div>
+                        <div class="outcome-percentage">76% chance</div>
+                    </div>
+                </div>
+                <div class="market-stats">
+                    <div class="market-volume">💰 $45,821 Volume</div>
+                    <div class="market-ends">⏰ Ends Jul 19, 2026</div>
+                </div>
+            </div>
+
+            <!-- Tech Markets -->
+            <div class="market-card" data-category="tech" onclick="openMarket('ai-breakthrough')">
+                <div class="market-header">
+                    <div class="market-category">Tech</div>
+                    <div class="market-hot">New</div>
+                </div>
+                <h3 class="market-title">Next Major AI Breakthrough</h3>
+                <p class="market-description">What will be the next significant milestone in artificial intelligence?</p>
+                <div class="market-outcomes">
+                    <div class="outcome-option">
+                        <div class="outcome-label">AGI</div>
+                        <div class="outcome-odds">5.50x</div>
+                        <div class="outcome-percentage">18% chance</div>
+                    </div>
+                    <div class="outcome-option">
+                        <div class="outcome-label">OTHER</div>
+                        <div class="outcome-odds">1.22x</div>
+                        <div class="outcome-percentage">82% chance</div>
+                    </div>
+                </div>
+                <div class="market-stats">
+                    <div class="market-volume">💰 $18,532 Volume</div>
+                    <div class="market-ends">⏰ Ends Dec 31, 2025</div>
+                </div>
+            </div>
+
+            <!-- Politics Markets -->
+            <div class="market-card" data-category="politics" onclick="openMarket('us-election')">
+                <div class="market-header">
+                    <div class="market-category">Politics</div>
+                </div>
+                <h3 class="market-title">2028 US Presidential Election</h3>
+                <p class="market-description">Early predictions for the next US Presidential election.</p>
+                <div class="market-outcomes">
+                    <div class="outcome-option">
+                        <div class="outcome-label">DEM</div>
+                        <div class="outcome-odds">1.95x</div>
+                        <div class="outcome-percentage">51% chance</div>
+                    </div>
+                    <div class="outcome-option">
+                        <div class="outcome-label">REP</div>
+                        <div class="outcome-odds">2.04x</div>
+                        <div class="outcome-percentage">49% chance</div>
+                    </div>
+                </div>
+                <div class="market-stats">
+                    <div class="market-volume">💰 $67,891 Volume</div>
+                    <div class="market-ends">⏰ Ends Nov 5, 2028</div>
+                </div>
+            </div>
+        </div>
+
+        <button class="load-more-btn" onclick="loadMoreMarkets()">Load More Markets</button>
+    </div>
+
+    <script>
+        // Market filtering and search functionality
+        const searchInput = document.getElementById('searchInput');
+        const categoryBtns = document.querySelectorAll('.category-btn');
+        const sortSelect = document.getElementById('sortSelect');
+        const marketsGrid = document.getElementById('marketsGrid');
+
+        let currentCategory = 'all';
+        let currentSort = 'popular';
+
+        // Search functionality
+        searchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            filterMarkets();
+        });
+
+        // Category filtering
+        categoryBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                categoryBtns.forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                currentCategory = e.target.dataset.category;
+                filterMarkets();
+            });
+        });
+
+        // Sort functionality
+        sortSelect.addEventListener('change', (e) => {
+            currentSort = e.target.value;
+            sortMarkets();
+        });
+
+        function filterMarkets() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const marketCards = document.querySelectorAll('.market-card');
+
+            marketCards.forEach(card => {
+                const category = card.dataset.category;
+                const title = card.querySelector('.market-title').textContent.toLowerCase();
+                const description = card.querySelector('.market-description').textContent.toLowerCase();
+
+                const matchesCategory = currentCategory === 'all' || category === currentCategory;
+                const matchesSearch = searchTerm === '' || 
+                    title.includes(searchTerm) || 
+                    description.includes(searchTerm);
+
+                if (matchesCategory && matchesSearch) {
+                    card.style.display = 'block';
+                    card.style.animation = 'fadeIn 0.3s ease-in';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        function sortMarkets() {
+            const marketCards = Array.from(document.querySelectorAll('.market-card'));
+            
+            marketCards.sort((a, b) => {
+                switch(currentSort) {
+                    case 'newest':
+                        return Math.random() - 0.5; // Random for demo
+                    case 'ending-soon':
+                        return Math.random() - 0.5; // Random for demo
+                    case 'highest-volume':
+                        const volumeA = parseInt(a.querySelector('.market-volume').textContent.replace(/[^0-9]/g, ''));
+                        const volumeB = parseInt(b.querySelector('.market-volume').textContent.replace(/[^0-9]/g, ''));
+                        return volumeB - volumeA;
+                    default:
+                        return Math.random() - 0.5; // Random for demo
+                }
+            });
+
+            // Re-append sorted cards
+            marketCards.forEach(card => {
+                marketsGrid.appendChild(card);
+            });
+        }
+
+        // Navigation functions
+        function openMarket(marketId) {
+            window.location.href = `market_detail.html?id=${marketId}`;
+        }
+
+        function loadMoreMarkets() {
+            // Simulate loading more markets
+            const button = document.querySelector('.load-more-btn');
+            const originalText = button.textContent;
+            button.textContent = 'Loading...';
+            button.disabled = true;
+
+            setTimeout(() => {
+                button.textContent = originalText;
+                button.disabled = false;
+                alert('More markets loaded! (Demo functionality)');
+            }, 1500);
+        }
+
+        // Add floating coins periodically
+        setInterval(() => {
+            if (Math.random() < 0.4) {
+                const container = document.querySelector('.floating-coins');
+                const coin = document.createElement('div');
+                coin.className = 'floating-coin';
+                coin.textContent = '₿';
+                coin.style.left = Math.random() * 100 + '%';
+                coin.style.animationDelay = '0s';
+                coin.style.animationDuration = (20 + Math.random() * 10) + 's';
+                container.appendChild(coin);
+                
+                setTimeout(() => {
+                    coin.remove();
+                }, 30000);
+            }
+        }, 3000);
+
+        // Add some CSS animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(10px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', () => {
+            // Add some interactive hover effects
+            document.querySelectorAll('.outcome-option').forEach(option => {
+                option.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const marketCard = e.target.closest('.market-card');
+                    const marketTitle = marketCard.querySelector('.market-title').textContent;
+                    const outcome = e.target.querySelector('.outcome-label').textContent;
+                    alert(`Quick bet on "${outcome}" for: ${marketTitle}\n\nClick "View Market" for full betting interface.`);
+                });
+            });
+        });
+    </script>
+</body>
+</html>

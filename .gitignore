@@ -1,0 +1,13 @@
+genv/
+.env
+work/*
+/email-verify.html
+/forgot-password.html
+/index.html
+/legal.html
+/login.html
+/register.html
+/terms.html
+/privacy.html
+/main.html
+work.zip
