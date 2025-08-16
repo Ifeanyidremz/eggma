@@ -87,7 +87,7 @@
             background-clip: text;
             text-shadow: 0 0 30px rgba(247, 147, 26, 0.5);
             z-index: 1000;
-            pointer-events: none;
+            text-decoration: none;
         }
 
         .login-container {
@@ -310,33 +310,6 @@
             font-size: 14px;
         }
 
-        .social-login {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 32px;
-        }
-
-        .social-btn {
-            flex: 1;
-            background: rgba(26, 26, 26, 0.8);
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            color: white;
-            padding: 14px;
-            border-radius: 12px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-
-        .social-btn:hover {
-            border-color: #f7931a;
-            transform: translateY(-2px);
-        }
-
         .register-link {
             text-align: center;
             color: #999;
@@ -380,15 +353,52 @@
             font-size: 14px;
         }
 
-        .error-message {
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            color: #fca5a5;
+        /* Django Messages Styling */
+        .messages {
+            margin-bottom: 20px;
+        }
+
+        .message {
             padding: 12px 16px;
             border-radius: 8px;
             font-size: 14px;
-            margin-bottom: 20px;
-            display: none;
+            margin-bottom: 10px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .message.success {
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: #86efac;
+        }
+
+        .message.error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+        }
+
+        .message.info {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            color: #93c5fd;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
         }
 
         @media (max-width: 768px) {
@@ -405,10 +415,6 @@
             
             .login-title {
                 font-size: 28px;
-            }
-            
-            .social-login {
-                flex-direction: column;
             }
 
             .form-options {
@@ -431,7 +437,7 @@
         <div class="floating-coin" style="left: 85%; animation-delay: 2s;">₿</div>
     </div>
 
-    <a href="index.html" class="logo">EVGxchain</a>
+    <a href="{% url 'landing-page' %}" class="logo">EVGxchain</a>
 
     <div class="login-container">
         <div class="login-header">
@@ -439,26 +445,43 @@
             <p class="login-subtitle">Sign in to access your unlimited digital wallet</p>
         </div>
 
-        <div id="errorMessage" class="error-message"></div>
+        <!-- Django Messages -->
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+            <div class="message {{ message.tags }}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
 
-        <form id="loginForm">
+        <form method="post" id="loginForm">
+            {% csrf_token %}
+            
+            <!-- Next URL (for redirects after login) -->
+            {% if request.GET.next %}
+            <input type="hidden" name="next" value="{{ request.GET.next }}">
+            {% endif %}
+            
             <div class="form-group">
                 <label class="form-label" for="email">Email Address</label>
-                <input type="email" id="email" class="form-input" placeholder="Enter your email address" required>
+                <input type="email" id="email" name="email" class="form-input" placeholder="Enter your email address" required>
             </div>
 
             <div class="form-group" style="position: relative;">
                 <label class="form-label" for="password">Password</label>
-                <input type="password" id="password" class="form-input" placeholder="Enter your password" required>
+                <input type="password" id="password" name="password" class="form-input" placeholder="Enter your password" required>
                 <button type="button" class="password-toggle" onclick="togglePassword()">👁️</button>
             </div>
 
             <div class="form-options">
-                <div class="remember-me">
+                <div class="remember-me" onclick="toggleRememberMe()">
                     <div class="custom-checkbox" id="rememberCheckbox"></div>
                     <span>Remember me</span>
+                    <input type="hidden" name="remember_me" id="rememberInput" value="">
                 </div>
-                <a href="forgot-password.html" class="forgot-password" onclick="forgotPassword()">Forgot Password?</a>
+                <a href="{% url 'forgot-password' %}" class="forgot-password">Forgot Password?</a>
             </div>
 
             <button type="submit" class="login-btn" id="loginButton">
@@ -471,7 +494,7 @@
         </div>
 
         <div class="register-link">
-            Don't have an account? <a href="register.html" onclick="goToRegister()">Create Wallet</a>
+            Don't have an account? <a href="{% url 'register-page' %}">Create Wallet</a>
         </div>
 
         <div class="security-features">
@@ -491,92 +514,21 @@
     </div>
 
     <script>
-        // Form validation and interaction
-        const form = document.getElementById('loginForm');
-        const rememberCheckbox = document.getElementById('rememberCheckbox');
-        const loginButton = document.getElementById('loginButton');
-        const errorMessage = document.getElementById('errorMessage');
-
+        // Form state
         let rememberMe = false;
+        const rememberCheckbox = document.getElementById('rememberCheckbox');
+        const rememberInput = document.getElementById('rememberInput');
+        const loginButton = document.getElementById('loginButton');
+        const form = document.getElementById('loginForm');
 
-        // Remember me checkbox toggle
-        rememberCheckbox.addEventListener('click', function() {
+        // Remember me functionality
+        function toggleRememberMe() {
             rememberMe = !rememberMe;
-            this.classList.toggle('checked', rememberMe);
-        });
-
-        // Form submission
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-            handleLogin();
-        });
-
-        function handleLogin() {
-            const email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value;
-            const button = loginButton;
-            const originalText = button.textContent;
-            
-            // Hide any previous error messages
-            hideError();
-            
-            // Basic validation
-            if (!email || !password) {
-                showError('Please fill in all fields');
-                return;
-            }
-
-            if (!isValidEmail(email)) {
-                showError('Please enter a valid email address');
-                return;
-            }
-
-            // Button loading state
-            button.textContent = 'Signing In...';
-            button.disabled = true;
-            button.style.background = 'linear-gradient(135deg, #ccc 0%, #999 100%)';
-            
-            // Simulate login process
-            setTimeout(() => {
-                // Simulate different login scenarios
-                if (email === 'demo@onewallet.com' && password === 'demo123') {
-                    // Success
-                    button.textContent = 'Welcome Back! 🎉';
-                    button.style.background = 'linear-gradient(135deg, #4ade80 0%, #22c55e 100%)';
-                    
-                    createSuccessAnimation();
-                    
-                    setTimeout(() => {
-                        alert('Login successful! Welcome to your wallet dashboard!');
-                        // Here you would normally redirect to the dashboard
-                    }, 1500);
-                } else {
-                    // Error
-                    button.textContent = originalText;
-                    button.disabled = false;
-                    button.style.background = 'linear-gradient(135deg, #ffd700 0%, #ffb347 100%)';
-                    showError('Invalid email or password. Try demo@onewallet.com / demo123');
-                }
-            }, 2000);
+            rememberCheckbox.classList.toggle('checked', rememberMe);
+            rememberInput.value = rememberMe ? 'on' : '';
         }
 
-        function isValidEmail(email) {
-            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-        }
-
-        function showError(message) {
-            errorMessage.textContent = message;
-            errorMessage.style.display = 'block';
-            errorMessage.style.animation = 'none';
-            setTimeout(() => {
-                errorMessage.style.animation = 'shake 0.5s ease-in-out';
-            }, 10);
-        }
-
-        function hideError() {
-            errorMessage.style.display = 'none';
-        }
-
+        // Password visibility toggle
         function togglePassword() {
             const passwordInput = document.getElementById('password');
             const toggleBtn = document.querySelector('.password-toggle');
@@ -590,6 +542,17 @@
             }
         }
 
+        // Form submission with loading state
+        form.addEventListener('submit', function(e) {
+            const originalText = loginButton.textContent;
+            
+            // Button loading state
+            loginButton.textContent = 'Signing In...';
+            loginButton.disabled = true;
+            loginButton.style.background = 'linear-gradient(135deg, #ccc 0%, #999 100%)';
+        });
+
+        // Success animation for messages
         function createSuccessAnimation() {
             const container = document.querySelector('.login-container');
             for (let i = 0; i < 10; i++) {
@@ -632,11 +595,6 @@
                             opacity: 0; 
                         }
                     }
-                    @keyframes shake {
-                        0%, 100% { transform: translateX(0); }
-                        25% { transform: translateX(-5px); }
-                        75% { transform: translateX(5px); }
-                    }
                 `;
                 document.head.appendChild(style);
                 
@@ -649,17 +607,13 @@
             }
         }
 
-        function socialLogin(provider) {
-            alert(`${provider.charAt(0).toUpperCase() + provider.slice(1)} login coming soon!`);
-        }
-
-        function forgotPassword() {
-            alert('Password reset link will be sent to your email address.');
-        }
-
-        function goToRegister() {
-            alert('Redirecting to registration page...');
-        }
+        // Check for success messages and trigger animation
+        document.addEventListener('DOMContentLoaded', function() {
+            const successMessages = document.querySelectorAll('.message.success');
+            if (successMessages.length > 0) {
+                setTimeout(createSuccessAnimation, 500);
+            }
+        });
 
         // Add random floating coins periodically
         setInterval(() => {
@@ -690,10 +644,17 @@
             });
         });
 
-        // Clear error message when user starts typing
-        document.querySelectorAll('.form-input').forEach(input => {
-            input.addEventListener('input', function() {
-                hideError();
+        // Auto-hide messages after 5 seconds
+        document.addEventListener('DOMContentLoaded', function() {
+            const messages = document.querySelectorAll('.message');
+            messages.forEach(message => {
+                setTimeout(() => {
+                    message.style.opacity = '0';
+                    message.style.transform = 'translateY(-10px)';
+                    setTimeout(() => {
+                        message.remove();
+                    }, 300);
+                }, 5000);
             });
         });
     </script>

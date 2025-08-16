@@ -44,6 +44,7 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            text-decoration: none;
         }
 
         .nav-links {
@@ -82,6 +83,7 @@
             padding: 8px 15px;
             border-radius: 12px;
             transition: background 0.3s ease;
+            position: relative;
         }
 
         .user-profile:hover {
@@ -98,6 +100,44 @@
             justify-content: center;
             font-weight: bold;
             font-size: 16px;
+        }
+
+        .profile-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: rgba(45, 45, 45, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 10px 0;
+            min-width: 200px;
+            display: none;
+            z-index: 1000;
+        }
+
+        .profile-dropdown.show {
+            display: block;
+        }
+
+        .dropdown-item {
+            display: block;
+            padding: 12px 20px;
+            color: #ccc;
+            text-decoration: none;
+            transition: background 0.3s ease;
+            font-size: 14px;
+        }
+
+        .dropdown-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #f7931a;
+        }
+
+        .dropdown-divider {
+            height: 1px;
+            background: rgba(255, 255, 255, 0.1);
+            margin: 8px 0;
         }
 
         .container {
@@ -225,7 +265,7 @@
         .xp-progress {
             background: linear-gradient(135deg, #f7931a 0%, #ffb84d 100%);
             height: 100%;
-            width: 75%;
+            width: 0%;
             border-radius: 10px;
             transition: width 0.3s ease;
             box-shadow: 0 0 10px rgba(247, 147, 26, 0.5);
@@ -340,6 +380,7 @@
             align-items: center;
             justify-content: center;
             gap: 10px;
+            text-decoration: none;
         }
 
         .action-btn:hover {
@@ -437,6 +478,50 @@
             100% { transform: translateY(-100px) translateX(50px) rotate(360deg); opacity: 0; }
         }
 
+        /* Django Messages */
+        .messages {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+
+        .message {
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 10px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .message.success {
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: #86efac;
+        }
+
+        .message.error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+        }
+
+        .message.info {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            color: #93c5fd;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
         @media (max-width: 768px) {
             .nav-links {
                 display: none;
@@ -453,6 +538,12 @@
             .container {
                 padding: 20px 15px;
             }
+
+            .level-header {
+                flex-direction: column;
+                gap: 10px;
+                align-items: flex-start;
+            }
         }
     </style>
 </head>
@@ -465,21 +556,50 @@
         <div class="floating-coin" style="left: 90%; animation-delay: 20s;">₿</div>
     </div>
 
+    <!-- Django Messages -->
+    {% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+        <div class="message {{ message.tags }}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
     <nav class="navbar">
         <div class="nav-container">
-            <div class="logo">EVGxchain</div>
+            <a href="{% url 'landing-page' %}" class="logo">EVGxchain</a>
             <div class="nav-links">
-                <!-- <a href="dashboard.html" class="active">Dashboard</a> -->
-                <a href="market_list.html">Markets</a>
-                <a href="live_crypto.html">Live Data</a>
-                <!-- <a href="wallet.html">Wallet</a> -->
-                <a href="profile.html">Profile</a>
+                <a href="{% url 'dashboard' %}" class="active">Dashboard</a>
+                <a href="#markets">Markets</a>
+                <a href="#live-data">Live Data</a>
+                <a href="#profile">Profile</a>
             </div>
             <div class="user-profile" onclick="toggleProfileMenu()">
-                <div class="user-avatar">JD</div>
+                <div class="user-avatar">
+                    {% if user.full_name %}
+                        {{ user.full_name|slice:":2"|upper }}
+                    {% else %}
+                        {{ user.username|slice:":2"|upper }}
+                    {% endif %}
+                </div>
                 <div>
-                    <div style="font-size: 14px; font-weight: 600;">John Doe</div>
+                    <div style="font-size: 14px; font-weight: 600;">
+                        {% if user.full_name %}
+                            {{ user.full_name }}
+                        {% else %}
+                            {{ user.username }}
+                        {% endif %}
+                    </div>
                     <div style="font-size: 12px; color: #999;">Level 5 Predictor</div>
+                </div>
+                <div class="profile-dropdown" id="profileDropdown">
+                    <!-- <a href="#profile" class="dropdown-item">👤 My Profile</a>
+                    <a href="#settings" class="dropdown-item">⚙️ Settings</a> -->
+                    <a href="#wallet" class="dropdown-item">💳 Wallet</a>
+                    <div class="dropdown-divider"></div>
+                    <a href="{% url 'logout' %}" class="dropdown-item">🚪 Logout</a>
                 </div>
             </div>
         </div>
@@ -488,7 +608,14 @@
     <div class="container">
         <div class="welcome-section">
             <div class="welcome-content">
-                <h1 class="welcome-title">Welcome back, John! 👋</h1>
+                <h1 class="welcome-title">
+                    Welcome back, 
+                    {% if user.full_name %}
+                        {{ user.full_name|slice:":15" }}
+                    {% else %}
+                        {{ user.username }}
+                    {% endif %}! 👋
+                </h1>
                 <p class="welcome-subtitle">Ready to make some predictions and earn rewards? You're on fire with a 73% accuracy rate!</p>
             </div>
         </div>
@@ -522,7 +649,7 @@
                 <div class="level-badge">Level 5 - Expert Predictor</div>
             </div>
             <div class="xp-bar">
-                <div class="xp-progress"></div>
+                <div class="xp-progress" data-progress="75"></div>
             </div>
             <div class="xp-text">2,450 / 3,000 XP to Level 6</div>
         </div>
@@ -570,25 +697,25 @@
                     </div>
                 </div>
 
-                <button class="action-btn secondary" onclick="viewAllPredictions()">
+                <a href="#all-predictions" class="action-btn secondary">
                     View All Predictions →
-                </button>
+                </a>
             </div>
 
             <div class="quick-actions">
                 <h2 class="section-title">🚀 Quick Actions</h2>
                 
-                <button class="action-btn" onclick="goToMarkets()">
+                <a href="#markets" class="action-btn">
                     🎯 Browse Markets
-                </button>
+                </a>
                 
-                <button class="action-btn secondary" onclick="viewWallet()">
+                <a href="#wallet" class="action-btn secondary">
                     💳 View Wallet
-                </button>
+                </a>
                 
-                <button class="action-btn secondary" onclick="viewProfile()">
+                <a href="#profile" class="action-btn secondary">
                     👤 My Profile
-                </button>
+                </a>
 
                 <div class="crypto-widget">
                     <h3 style="margin-bottom: 15px; color: #ccc;">Live Crypto Prices</h3>
@@ -624,39 +751,29 @@
                     </div>
                 </div>
 
-                <button class="action-btn secondary" onclick="viewLiveCrypto()">
+                <a href="#live-crypto" class="action-btn secondary">
                     📊 View All Prices
-                </button>
+                </a>
             </div>
         </div>
     </div>
 
     <script>
-        // Navigation functions
-        function goToMarkets() {
-            window.location.href = 'market_list.html';
-        }
-
-        function viewWallet() {
-            window.location.href = 'wallet.html';
-        }
-
-        function viewProfile() {
-            window.location.href = 'profile.html';
-        }
-
-        function viewLiveCrypto() {
-            window.location.href = 'live_crypto.html';
-        }
-
-        function viewAllPredictions() {
-            window.location.href = 'profile.html#predictions';
-        }
-
+        // Profile dropdown functionality
         function toggleProfileMenu() {
-            // Profile dropdown functionality
-            alert('Profile menu - would show logout, settings, etc.');
+            const dropdown = document.getElementById('profileDropdown');
+            dropdown.classList.toggle('show');
         }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const profile = document.querySelector('.user-profile');
+            const dropdown = document.getElementById('profileDropdown');
+            
+            if (!profile.contains(event.target)) {
+                dropdown.classList.remove('show');
+            }
+        });
 
         // Simulate real-time updates
         function updateCryptoPrices() {
@@ -672,8 +789,8 @@
         // Update XP progress animation
         function animateXPBar() {
             const xpBar = document.querySelector('.xp-progress');
+            const targetWidth = parseInt(xpBar.getAttribute('data-progress')) || 75;
             let width = 0;
-            const targetWidth = 75;
             const interval = setInterval(() => {
                 if (width >= targetWidth) {
                     clearInterval(interval);
@@ -711,13 +828,90 @@
 
         // Add some interactive stats updates
         setInterval(() => {
-            const accuracyElement = document.querySelector('.stat-value:nth-of-type(2)');
-            if (accuracyElement) {
-                const currentAccuracy = parseInt(accuracyElement.textContent);
+            const accuracyElements = document.querySelectorAll('.stat-value');
+            if (accuracyElements[1]) { // Accuracy rate element
+                const currentAccuracy = parseInt(accuracyElements[1].textContent);
                 const newAccuracy = Math.max(65, Math.min(85, currentAccuracy + (Math.random() - 0.5) * 2));
-                accuracyElement.textContent = Math.round(newAccuracy) + '%';
+                accuracyElements[1].textContent = Math.round(newAccuracy) + '%';
             }
         }, 10000);
+
+        // Auto-hide messages after 5 seconds
+        document.addEventListener('DOMContentLoaded', function() {
+            const messages = document.querySelectorAll('.message');
+            messages.forEach(message => {
+                setTimeout(() => {
+                    message.style.opacity = '0';
+                    message.style.transform = 'translateY(-10px)';
+                    setTimeout(() => {
+                        message.remove();
+                    }, 300);
+                }, 5000);
+            });
+        });
+
+        // Success animation for login messages
+        function createSuccessAnimation() {
+            const container = document.querySelector('.container');
+            for (let i = 0; i < 10; i++) {
+                const coin = document.createElement('div');
+                coin.style.position = 'absolute';
+                coin.style.width = '25px';
+                coin.style.height = '25px';
+                coin.style.background = 'linear-gradient(135deg, #f7931a 0%, #ffb84d 100%)';
+                coin.style.borderRadius = '50%';
+                coin.style.display = 'flex';
+                coin.style.alignItems = 'center';
+                coin.style.justifyContent = 'center';
+                coin.style.color = 'white';
+                coin.style.fontWeight = 'bold';
+                coin.style.fontSize = '12px';
+                coin.textContent = '₿';
+                coin.style.left = '50%';
+                coin.style.top = '200px';
+                coin.style.transform = 'translateX(-50%)';
+                coin.style.zIndex = '1000';
+                coin.style.pointerEvents = 'none';
+                
+                const angle = (i / 10) * 360;
+                const distance = 80 + Math.random() * 40;
+                
+                coin.style.animation = `welcomeAnimation${i} 2s ease-out forwards`;
+                
+                const style = document.createElement('style');
+                style.textContent = `
+                    @keyframes welcomeAnimation${i} {
+                        0% { 
+                            transform: translateX(-50%) scale(1) rotate(0deg); 
+                            opacity: 1; 
+                        }
+                        100% { 
+                            transform: translateX(-50%) 
+                                      translateX(${Math.cos(angle * Math.PI / 180) * distance}px)
+                                      translateY(${Math.sin(angle * Math.PI / 180) * distance}px)
+                                      scale(0.2) rotate(360deg); 
+                            opacity: 0; 
+                        }
+                    }
+                `;
+                document.head.appendChild(style);
+                
+                container.appendChild(coin);
+                
+                setTimeout(() => {
+                    coin.remove();
+                    style.remove();
+                }, 2000);
+            }
+        }
+
+        // Check for success messages and trigger animation
+        document.addEventListener('DOMContentLoaded', function() {
+            const successMessages = document.querySelectorAll('.message.success');
+            if (successMessages.length > 0) {
+                setTimeout(createSuccessAnimation, 1000);
+            }
+        });
     </script>
 </body>
 </html>

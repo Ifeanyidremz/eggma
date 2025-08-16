@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to EVGxchain!</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+        
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #f7931a 0%, #ffb84d 100%);
+            color: white;
+            text-align: center;
+            padding: 40px 20px;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 32px;
+            font-weight: 700;
+        }
+        
+        .celebration {
+            font-size: 48px;
+            margin: 10px 0;
+        }
+        
+        .content {
+            padding: 40px 30px;
+        }
+        
+        .welcome {
+            font-size: 28px;
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .message {
+            color: #666;
+            font-size: 16px;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+        
+        .login-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #f7931a 0%, #ffb84d 100%);
+            color: white;
+            text-decoration: none;
+            padding: 15px 35px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 16px;
+            text-align: center;
+            margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(247, 147, 26, 0.3);
+        }
+        
+        .features {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 30px;
+            margin: 30px 0;
+        }
+        
+        .features h3 {
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .feature-list {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .feature-icon {
+            width: 32px;
+            height: 32px;
+            background: rgba(247, 147, 26, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+        
+        .footer {
+            background: #f8f9fa;
+            padding: 30px;
+            text-align: center;
+            border-top: 1px solid #e9ecef;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .next-steps {
+            background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+            border-radius: 8px;
+            padding: 25px;
+            margin: 30px 0;
+        }
+        
+        .next-steps h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .next-steps ul {
+            color: #666;
+            padding-left: 20px;
+        }
+        
+        .next-steps li {
+            margin-bottom: 8px;
+        }
+
+        @media (max-width: 600px) {
+            .feature-list {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h1>EVGxchain</h1>
+            <div class="celebration">🎉</div>
+        </div>
+        
+        <div class="content">
+            <h2 class="welcome">Welcome to the Future, {{ user.full_name }}!</h2>
+            
+            <p class="message">
+                Congratulations! Your email has been verified and your EVGxchain wallet is now active. 
+                You're now part of a revolutionary community experiencing limitless digital freedom.
+            </p>
+            
+            <div style="text-align: center;">
+                <a href="{{ login_url }}" class="login-button">
+                    Access My Wallet
+                </a>
+            </div>
+            
+            <div class="features">
+                <h3>What You Can Do Now</h3>
+                <div class="feature-list">
+                    <div class="feature-item">
+                        <div class="feature-icon">💰</div>
+                        <span>Send & Receive Crypto</span>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">📊</div>
+                        <span>Track Portfolio</span>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">🔒</div>
+                        <span>Secure Storage</span>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">⚡</div>
+                        <span>Instant Transactions</span>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">🌍</div>
+                        <span>Global Access</span>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">📱</div>
+                        <span>Mobile Support</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="next-steps">
+                <h3>Next Steps</h3>
+                <ul>
+                    <li>Complete your profile setup for enhanced security</li>
+                    <li>Enable two-factor authentication (2FA)</li>
+                    <li>Explore our educational resources</li>
+                    <li>Join our community for tips and updates</li>
+                </ul>
+            </div>
+            
+            <p class="message" style="text-align: center; margin-top: 30px;">
+                <strong>Need help getting started?</strong><br>
+                Our support team is here to help you every step of the way.
+            </p>
+        </div>
+        
+        <div class="footer">
+            <p><strong>{{ site_name }}</strong></p>
+            <p>This email was sent to {{ user.email }}</p>
+            <p>Thank you for choosing EVGxchain for your digital wallet needs!</p>
+            <p style="margin-top: 20px; color: #999;">
+                © 2025 EVGxchain. All rights reserved.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

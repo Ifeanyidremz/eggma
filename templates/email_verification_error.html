@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verification Failed - EVGxchain</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(45, 45, 45, 0.9);
+            border-radius: 24px;
+            padding: 60px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+        }
+
+        .icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #ff4757 0%, #ff6b7a 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            margin: 0 auto 30px;
+            animation: shake 0.5s ease-in-out;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .title {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, #ff4757 0%, #ff6b7a 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: #999;
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        .error-info {
+            background: rgba(255, 71, 87, 0.1);
+            border: 1px solid rgba(255, 71, 87, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .error-info p {
+            color: #ff6b7a;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .error-info p:last-child {
+            margin-bottom: 0;
+        }
+
+        .actions {
+            margin-top: 30px;
+        }
+
+        .resend-form {
+            margin-bottom: 20px;
+        }
+
+        .action-btn {
+            background: rgba(26, 26, 26, 0.8);
+            border: 2px solid rgba(247, 147, 26, 0.3);
+            color: #f7931a;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            margin: 0 10px;
+        }
+
+        .action-btn:hover {
+            border-color: #f7931a;
+            background: rgba(247, 147, 26, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .secondary-btn {
+            border-color: rgba(153, 153, 153, 0.3);
+            color: #999;
+        }
+
+        .secondary-btn:hover {
+            border-color: #999;
+            background: rgba(153, 153, 153, 0.1);
+            color: white;
+        }
+
+        .back-link {
+            margin-top: 30px;
+        }
+
+        .back-link a {
+            color: #999;
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.3s ease;
+        }
+
+        .back-link a:hover {
+            color: #f7931a;
+        }
+
+        .email-input {
+            background: rgba(26, 26, 26, 0.8);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: white;
+            padding: 10px 15px;
+            margin-right: 10px;
+            width: 200px;
+            font-size: 14px;
+        }
+
+        .email-input:focus {
+            outline: none;
+            border-color: rgba(247, 147, 26, 0.5);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 40px 30px;
+                margin: 20px;
+            }
+            
+            .title {
+                font-size: 24px;
+            }
+
+            .action-btn {
+                display: block;
+                margin: 10px 0;
+            }
+
+            .email-input {
+                width: 100%;
+                margin-right: 0;
+                margin-bottom: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">❌</div>
+        
+        <h1 class="title">Verification Failed</h1>
+        <p class="subtitle">
+            We couldn't verify your email address. The verification link may be invalid or corrupted.
+        </p>
+        
+        <div class="error-info">
+            <p><strong>Common causes:</strong></p>
+            <p>• Invalid or malformed verification link</p>
+            <p>• Link has already been used</p>
+            <p>• Technical error during verification</p>
+            <p>• Link was accessed from a different device</p>
+        </div>
+
+        <div class="actions">
+            <!-- Resend verification form -->
+            <form class="resend-form" method="post" action="{% url 'resend-verification' %}">
+                {% csrf_token %}
+                <p style="color: #999; font-size: 14px; margin-bottom: 15px;">
+                    Request a new verification link:
+                </p>
+                <input type="email" name="email" placeholder="Enter your email" 
+                       class="email-input" required>
+                <button type="submit" class="action-btn">Send New Link</button>
+            </form>
+
+            <div>
+                <a href="{% url 'register-page' %}" class="action-btn secondary-btn">Try Again</a>
+                <a href="{% url 'login-page' %}" class="action-btn secondary-btn">Login Instead</a>
+            </div>
+        </div>
+
+        <div class="back-link">
+            <a href="{% url 'landing-page' %}">← Back to Homepage</a>
+        </div>
+    </div>
+</body>
+</html>

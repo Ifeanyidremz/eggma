@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Your EVGxchain Account</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+        
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #f7931a 0%, #ffb84d 100%);
+            color: white;
+            text-align: center;
+            padding: 40px 20px;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 32px;
+            font-weight: 700;
+        }
+        
+        .content {
+            padding: 40px 30px;
+        }
+        
+        .welcome {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        
+        .message {
+            color: #666;
+            font-size: 16px;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+        
+        .verify-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #f7931a 0%, #ffb84d 100%);
+            color: white;
+            text-decoration: none;
+            padding: 15px 35px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 16px;
+            text-align: center;
+            margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(247, 147, 26, 0.3);
+        }
+        
+        .verify-button:hover {
+            background: linear-gradient(135deg, #e6830f 0%, #f0a33a 100%);
+        }
+        
+        .alternative-link {
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 30px 0;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .alternative-link p {
+            margin: 0 0 10px 0;
+        }
+        
+        .alternative-link a {
+            color: #f7931a;
+            word-break: break-all;
+            text-decoration: none;
+        }
+        
+        .footer {
+            background: #f8f9fa;
+            padding: 30px;
+            text-align: center;
+            border-top: 1px solid #e9ecef;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .security-info {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 20px 0;
+            font-size: 14px;
+            color: #1976d2;
+        }
+        
+        .expiry-info {
+            color: #e53e3e;
+            font-size: 14px;
+            margin-top: 20px;
+            padding: 10px;
+            background: #fed7d7;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h1>EVGxchain</h1>
+        </div>
+        
+        <div class="content">
+            <h2 class="welcome">Welcome, {{ user.full_name }}!</h2>
+            
+            <p class="message">
+                Thank you for joining EVGxchain! To complete your registration and start using your digital wallet, 
+                please verify your email address by clicking the button below.
+            </p>
+            
+            <div style="text-align: center;">
+                <a href="{{ verification_url }}" class="verify-button">
+                    Verify My Email Address
+                </a>
+            </div>
+            
+            <div class="security-info">
+                <strong>Security Notice:</strong> This verification link was sent to {{ user.email }}. 
+                If you didn't create an account with EVGxchain, please ignore this email.
+            </div>
+            
+            <div class="alternative-link">
+                <p><strong>Can't click the button?</strong></p>
+                <p>Copy and paste this link into your browser:</p>
+                <a href="{{ verification_url }}">{{ verification_url }}</a>
+            </div>
+            
+            <div class="expiry-info">
+                <strong>⏰ Important:</strong> This verification link expires in {{ token_expiry_hours }} hours.
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p><strong>{{ site_name }}</strong></p>
+            <p>This email was sent to {{ user.email }}</p>
+            <p>If you have any questions, please contact our support team.</p>
+            <p style="margin-top: 20px; color: #999;">
+                © 2025 EVGxchain. All rights reserved.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

@@ -12,18 +12,21 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import os
+
+from dotenv import load_dotenv
+load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
+from urllib.parse import urlparse
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-s@3ou=m!e^ijlebmji5s&@y2qsi)ujn(ja!@o(t-sov3wavwdm'
+SECRET_KEY= os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG')
 
 ALLOWED_HOSTS = []
 
@@ -71,15 +74,76 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'evgwork.wsgi.application'
 
+AUTH_USER_MODEL = 'acounts.CustomUser'
 
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = os.getenv("MAILTRAP_HOST")
+EMAIL_PORT = os.getenv("MAILTRAP_PORT")
+EMAIL_USE_TLS = os.getenv("MAILTAP_USE_TLS")   
+EMAIL_HOST_USER = os.getenv("MAILTRAP_USERNAME")  
+EMAIL_HOST_PASSWORD = os.getenv("MAILTRAP_PASSWORD")
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL")
+
+
+
+# Site URL for email links
+SITE_URL = os.getenv('SITE_URL', 'http://localhost:8000')
+
+
+DEFAULT_FROM_EMAIL=os.getenv('DEFAULT_FROM_EMAIL')
+SERVER_EMAIL = DEFAULT_FROM_EMAIL
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+db_url = urlparse(os.getenv('DATABASE_URL'))
+
+if DEBUG:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv('DB_NAME'),
+            'USER': os.getenv('DB_USER'),
+            'PASSWORD': os.getenv('DB_PASS'),
+            'HOST': os.getenv("DB_URL"),
+            'PORT': os.getenv('DB_PORT'),
+            "CONN_MAX_AGE": os.getenv("DB_CONN_MAX_AGE", 60)
+        }
     }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': db_url.path[1:],  # Remove leading slash
+            'USER': db_url.username,
+            'PASSWORD': db_url.password,
+            'HOST': db_url.hostname,
+            'PORT': db_url.port or 5432,
+            'CONN_MAX_AGE': int(os.getenv('DB_CONN_MAX_AGE', 60))
+        }
+    }
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'file': {
+            'level': 'ERROR',
+            'class': 'logging.FileHandler',
+            'filename': 'debug.log',
+        },
+        'console': {
+            'level': 'ERROR',
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        '': {
+            'handlers': ['file', 'console'],
+            'level': 'ERROR',
+            'propagate': True,
+        },
+    },
 }
 
 
