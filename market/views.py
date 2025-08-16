@@ -3,6 +3,6 @@ from django.shortcuts import render,HttpResponse
 
 
 
-def test(request):
+def marketPage(request):
 
-    return HttpResponse("testing...")
+    return render(request, 'market_list.html')
