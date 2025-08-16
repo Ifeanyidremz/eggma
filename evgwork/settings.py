@@ -47,6 +47,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -96,9 +97,16 @@ SERVER_EMAIL = DEFAULT_FROM_EMAIL
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-db_url = urlparse(os.getenv('DATABASE_URL'))
+# db_url = urlparse(os.getenv('DATABASE_URL'))
 
-if DEBUG:
+import dj_database_url
+
+
+if os.environ.get('DATABASE_URL'):
+    DATABASES = {
+        'default': dj_database_url.parse(os.environ.get('DATABASE_URL'))
+    }
+else:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
@@ -106,22 +114,11 @@ if DEBUG:
             'USER': os.getenv('DB_USER'),
             'PASSWORD': os.getenv('DB_PASS'),
             'HOST': os.getenv("DB_URL"),
-            'PORT': os.getenv('DB_PORT'),
-            "CONN_MAX_AGE": os.getenv("DB_CONN_MAX_AGE", 60)
+            'PORT': os.getenv('DB_PORT')
         }
     }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': db_url.path[1:],  # Remove leading slash
-            'USER': db_url.username,
-            'PASSWORD': db_url.password,
-            'HOST': db_url.hostname,
-            'PORT': db_url.port or 5432,
-            'CONN_MAX_AGE': int(os.getenv('DB_CONN_MAX_AGE', 60))
-        }
-    }
+
+
 
 LOGGING = {
     'version': 1,
@@ -183,6 +180,8 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
