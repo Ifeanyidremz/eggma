@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prediction Markets - EVGxchain</title>
+    <title>Crypto Prediction Markets - EVGxchain</title>
     <style>
         * {
             margin: 0;
@@ -450,6 +450,63 @@
             100% { transform: translateY(-100px) translateX(50px) rotate(360deg); opacity: 0; }
         }
 
+        .hidden {
+            display: none;
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #f7931a 0%, #ffb84d 100%);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 12px;
+            font-weight: 600;
+            z-index: 1000;
+            opacity: 0;
+            transform: translateY(-50px);
+            transition: all 0.3s ease;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .footer {
+            background: rgba(26, 26, 26, 0.8);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 40px 20px;
+            margin-top: 60px;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 40px;
+        }
+
+        .footer-section h3 {
+            color: #f7931a;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .footer-section p, .footer-section a {
+            color: #999;
+            text-decoration: none;
+            line-height: 1.6;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .footer-section a:hover {
+            color: #f7931a;
+        }
+
         @media (max-width: 768px) {
             .nav-links {
                 display: none;
@@ -479,6 +536,14 @@
             .container {
                 padding: 20px 15px;
             }
+
+            .page-title {
+                font-size: 28px;
+            }
+
+            .trending-markets {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
@@ -495,11 +560,9 @@
         <div class="nav-container">
             <div class="logo">EVGxchain</div>
             <div class="nav-links">
-                <!-- <a href="dashboard.html">Dashboard</a> -->
-                <a href="market_list.html" class="active">Markets</a>
-                <a href="live_crypto.html">Live Data</a>
-                <!-- <a href="wallet.html">Wallet</a> -->
-                <a href="profile.html">Profile</a>
+                <a href="#" class="active">Markets</a>
+                <a href="#">Live Data</a>
+                <a href="#">Profile</a>
             </div>
             <div class="user-profile">
                 <div class="user-avatar">JD</div>
@@ -513,23 +576,23 @@
 
     <div class="container">
         <div class="page-header">
-            <h1 class="page-title">🎯 Prediction Markets</h1>
-            <p class="page-subtitle">Predict the future and earn rewards with multiple outcome betting</p>
+            <h1 class="page-title">₿ Crypto Prediction Markets</h1>
+            <p class="page-subtitle">Predict cryptocurrency price movements and market events</p>
         </div>
 
         <div class="filters-section">
             <div class="filter-controls">
                 <div class="search-box">
-                    <input type="text" class="search-input" placeholder="Search markets..." id="searchInput">
+                    <input type="text" class="search-input" placeholder="Search crypto markets..." id="searchInput">
                     <div class="search-icon">🔍</div>
                 </div>
                 
                 <div class="category-filters">
-                    <button class="category-btn active" data-category="all">All</button>
-                    <button class="category-btn" data-category="crypto">Crypto</button>
-                    <button class="category-btn" data-category="sports">Sports</button>
-                    <button class="category-btn" data-category="politics">Politics</button>
-                    <button class="category-btn" data-category="tech">Tech</button>
+                    <button class="category-btn active" data-category="all">All Crypto</button>
+                    <button class="category-btn" data-category="bitcoin">Bitcoin</button>
+                    <button class="category-btn" data-category="ethereum">Ethereum</button>
+                    <button class="category-btn" data-category="altcoin">Altcoins</button>
+                    <button class="category-btn" data-category="defi">DeFi</button>
                 </div>
                 
                 <select class="sort-dropdown" id="sortSelect">
@@ -542,7 +605,7 @@
         </div>
 
         <div class="trending-section">
-            <h2 class="section-title">🔥 Trending Markets</h2>
+            <h2 class="section-title">🔥 Trending Crypto Markets</h2>
             <div class="trending-markets">
                 <div class="trending-item" onclick="openMarket('btc-100k')">
                     <div class="trending-title">Bitcoin $100K Prediction</div>
@@ -560,22 +623,22 @@
                         <span>1,205 Participants</span>
                     </div>
                 </div>
-                <div class="trending-item" onclick="openMarket('ai-breakthrough')">
-                    <div class="trending-title">Next AI Breakthrough</div>
+                <div class="trending-item" onclick="openMarket('sol-500')">
+                    <div class="trending-title">Solana $500 Target</div>
                     <div class="trending-stats">
-                        <span>🚀 New</span>
-                        <span>$18K Volume</span>
-                        <span>892 Participants</span>
+                        <span>🚀 Rising</span>
+                        <span>$28K Volume</span>
+                        <span>1,543 Participants</span>
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="markets-grid" id="marketsGrid">
-            <!-- Crypto Markets -->
-            <div class="market-card" data-category="crypto" onclick="openMarket('btc-100k')">
+            <!-- Bitcoin Markets -->
+            <div class="market-card" data-category="bitcoin" onclick="openMarket('btc-100k')">
                 <div class="market-header">
-                    <div class="market-category">Crypto</div>
+                    <div class="market-category">Bitcoin</div>
                     <div class="market-hot">Hot</div>
                 </div>
                 <h3 class="market-title">Will Bitcoin reach $100,000 by December 2025?</h3>
@@ -598,9 +661,34 @@
                 </div>
             </div>
 
-            <div class="market-card" data-category="crypto" onclick="openMarket('eth-flip')">
+            <div class="market-card" data-category="bitcoin" onclick="openMarket('btc-halving')">
                 <div class="market-header">
-                    <div class="market-category">Crypto</div>
+                    <div class="market-category">Bitcoin</div>
+                </div>
+                <h3 class="market-title">Bitcoin Price 6 Months After Next Halving</h3>
+                <p class="market-description">Will Bitcoin be above $150,000 six months after the 2028 halving event?</p>
+                <div class="market-outcomes">
+                    <div class="outcome-option">
+                        <div class="outcome-label">YES</div>
+                        <div class="outcome-odds">2.40x</div>
+                        <div class="outcome-percentage">42% chance</div>
+                    </div>
+                    <div class="outcome-option">
+                        <div class="outcome-label">NO</div>
+                        <div class="outcome-odds">1.72x</div>
+                        <div class="outcome-percentage">58% chance</div>
+                    </div>
+                </div>
+                <div class="market-stats">
+                    <div class="market-volume">💰 $38,921 Volume</div>
+                    <div class="market-ends">⏰ Ends Dec 31, 2028</div>
+                </div>
+            </div>
+
+            <!-- Ethereum Markets -->
+            <div class="market-card" data-category="ethereum" onclick="openMarket('eth-flip')">
+                <div class="market-header">
+                    <div class="market-category">Ethereum</div>
                 </div>
                 <h3 class="market-title">Will Ethereum overtake Bitcoin in market cap by 2026?</h3>
                 <p class="market-description">The ultimate "flippening" question - will ETH surpass BTC in total market capitalization?</p>
@@ -622,9 +710,35 @@
                 </div>
             </div>
 
-            <div class="market-card" data-category="crypto" onclick="openMarket('sol-500')">
+            <div class="market-card" data-category="ethereum" onclick="openMarket('eth-10k')">
                 <div class="market-header">
-                    <div class="market-category">Crypto</div>
+                    <div class="market-category">Ethereum</div>
+                    <div class="market-hot">New</div>
+                </div>
+                <h3 class="market-title">Ethereum to Reach $10,000 by 2026?</h3>
+                <p class="market-description">Will ETH break the $10K barrier driven by increased institutional adoption and DeFi growth?</p>
+                <div class="market-outcomes">
+                    <div class="outcome-option">
+                        <div class="outcome-label">YES</div>
+                        <div class="outcome-odds">4.50x</div>
+                        <div class="outcome-percentage">22% chance</div>
+                    </div>
+                    <div class="outcome-option">
+                        <div class="outcome-label">NO</div>
+                        <div class="outcome-odds">1.28x</div>
+                        <div class="outcome-percentage">78% chance</div>
+                    </div>
+                </div>
+                <div class="market-stats">
+                    <div class="market-volume">💰 $24,785 Volume</div>
+                    <div class="market-ends">⏰ Ends Dec 31, 2026</div>
+                </div>
+            </div>
+
+            <!-- Altcoin Markets -->
+            <div class="market-card" data-category="altcoin" onclick="openMarket('sol-500')">
+                <div class="market-header">
+                    <div class="market-category">Altcoins</div>
                 </div>
                 <h3 class="market-title">Solana Price Prediction: Will SOL reach $500?</h3>
                 <p class="market-description">Can Solana continue its impressive run and reach the $500 milestone this year?</p>
@@ -646,80 +760,149 @@
                 </div>
             </div>
 
-            <!-- Sports Markets -->
-            <div class="market-card" data-category="sports" onclick="openMarket('world-cup')">
+            <div class="market-card" data-category="altcoin" onclick="openMarket('ada-top5')">
                 <div class="market-header">
-                    <div class="market-category">Sports</div>
-                    <div class="market-hot">Hot</div>
+                    <div class="market-category">Altcoins</div>
                 </div>
-                <h3 class="market-title">2026 FIFA World Cup Winner</h3>
-                <p class="market-description">Which country will lift the World Cup trophy in 2026?</p>
+                <h3 class="market-title">Cardano (ADA) to Enter Top 5 Cryptocurrencies</h3>
+                <p class="market-description">Will Cardano climb back to the top 5 cryptocurrencies by market cap in 2025?</p>
                 <div class="market-outcomes">
                     <div class="outcome-option">
-                        <div class="outcome-label">BRAZIL</div>
+                        <div class="outcome-label">YES</div>
+                        <div class="outcome-odds">3.80x</div>
+                        <div class="outcome-percentage">26% chance</div>
+                    </div>
+                    <div class="outcome-option">
+                        <div class="outcome-label">NO</div>
+                        <div class="outcome-odds">1.35x</div>
+                        <div class="outcome-percentage">74% chance</div>
+                    </div>
+                </div>
+                <div class="market-stats">
+                    <div class="market-volume">💰 $16,732 Volume</div>
+                    <div class="market-ends">⏰ Ends Dec 31, 2025</div>
+                </div>
+            </div>
+
+            <!-- DeFi Markets -->
+            <div class="market-card" data-category="defi" onclick="openMarket('defi-1trillion')">
+                <div class="market-header">
+                    <div class="market-category">DeFi</div>
+                    <div class="market-hot">Hot</div>
+                </div>
+                <h3 class="market-title">DeFi Total Value Locked to Hit $1 Trillion</h3>
+                <p class="market-description">Will the total value locked in DeFi protocols reach $1 trillion by end of 2026?</p>
+                <div class="market-outcomes">
+                    <div class="outcome-option">
+                        <div class="outcome-label">YES</div>
+                        <div class="outcome-odds">2.10x</div>
+                        <div class="outcome-percentage">48% chance</div>
+                    </div>
+                    <div class="outcome-option">
+                        <div class="outcome-label">NO</div>
+                        <div class="outcome-odds">1.92x</div>
+                        <div class="outcome-percentage">52% chance</div>
+                    </div>
+                </div>
+                <div class="market-stats">
+                    <div class="market-volume">💰 $35,642 Volume</div>
+                    <div class="market-ends">⏰ Ends Dec 31, 2026</div>
+                </div>
+            </div>
+
+            <div class="market-card" data-category="defi" onclick="openMarket('uniswap-governance')">
+                <div class="market-header">
+                    <div class="market-category">DeFi</div>
+                </div>
+                <h3 class="market-title">Uniswap Fee Switch Activation</h3>
+                <p class="market-description">Will Uniswap governance vote to activate the fee switch for UNI holders in 2025?</p>
+                <div class="market-outcomes">
+                    <div class="outcome-option">
+                        <div class="outcome-label">YES</div>
+                        <div class="outcome-odds">1.65x</div>
+                        <div class="outcome-percentage">61% chance</div>
+                    </div>
+                    <div class="outcome-option">
+                        <div class="outcome-label">NO</div>
+                        <div class="outcome-odds">2.56x</div>
+                        <div class="outcome-percentage">39% chance</div>
+                    </div>
+                </div>
+                <div class="market-stats">
+                    <div class="market-volume">💰 $19,877 Volume</div>
+                    <div class="market-ends">⏰ Ends Dec 31, 2025</div>
+                </div>
+            </div>
+
+            <div class="market-card" data-category="altcoin" onclick="openMarket('matic-rebrand')">
+                <div class="market-header">
+                    <div class="market-category">Altcoins</div>
+                </div>
+                <h3 class="market-title">Polygon (MATIC) Price After Rebrand to POL</h3>
+                <p class="market-description">Will the new POL token be worth more than $2 within 3 months of migration?</p>
+                <div class="market-outcomes">
+                    <div class="outcome-option">
+                        <div class="outcome-label">YES</div>
+                        <div class="outcome-odds">1.78x</div>
+                        <div class="outcome-percentage">56% chance</div>
+                    </div>
+                    <div class="outcome-option">
+                        <div class="outcome-label">NO</div>
+                        <div class="outcome-odds">2.25x</div>
+                        <div class="outcome-percentage">44% chance</div>
+                    </div>
+                </div>
+                <div class="market-stats">
+                    <div class="market-volume">💰 $22,543 Volume</div>
+                    <div class="market-ends">⏰ Ends Mar 15, 2025</div>
+                </div>
+            </div>
+
+            <div class="market-card" data-category="bitcoin" onclick="openMarket('btc-dominance')">
+                <div class="market-header">
+                    <div class="market-category">Bitcoin</div>
+                </div>
+                <h3 class="market-title">Bitcoin Dominance Below 40%</h3>
+                <p class="market-description">Will Bitcoin's market dominance fall below 40% during the next altcoin season?</p>
+                <div class="market-outcomes">
+                    <div class="outcome-option">
+                        <div class="outcome-label">YES</div>
+                        <div class="outcome-odds">2.80x</div>
+                        <div class="outcome-percentage">36% chance</div>
+                    </div>
+                    <div class="outcome-option">
+                        <div class="outcome-label">NO</div>
+                        <div class="outcome-odds">1.56x</div>
+                        <div class="outcome-percentage">64% chance</div>
+                    </div>
+                </div>
+                <div class="market-stats">
+                    <div class="market-volume">💰 $41,209 Volume</div>
+                    <div class="market-ends">⏰ Ends Dec 31, 2025</div>
+                </div>
+            </div>
+
+            <div class="market-card" data-category="defi" onclick="openMarket('dex-volume')">
+                <div class="market-header">
+                    <div class="market-category">DeFi</div>
+                </div>
+                <h3 class="market-title">DEX Monthly Volume Exceeds CEX</h3>
+                <p class="market-description">Will decentralized exchange monthly volume surpass centralized exchanges by 2026?</p>
+                <div class="market-outcomes">
+                    <div class="outcome-option">
+                        <div class="outcome-label">YES</div>
                         <div class="outcome-odds">4.20x</div>
                         <div class="outcome-percentage">24% chance</div>
                     </div>
                     <div class="outcome-option">
-                        <div class="outcome-label">OTHER</div>
+                        <div class="outcome-label">NO</div>
                         <div class="outcome-odds">1.32x</div>
                         <div class="outcome-percentage">76% chance</div>
                     </div>
                 </div>
                 <div class="market-stats">
-                    <div class="market-volume">💰 $45,821 Volume</div>
-                    <div class="market-ends">⏰ Ends Jul 19, 2026</div>
-                </div>
-            </div>
-
-            <!-- Tech Markets -->
-            <div class="market-card" data-category="tech" onclick="openMarket('ai-breakthrough')">
-                <div class="market-header">
-                    <div class="market-category">Tech</div>
-                    <div class="market-hot">New</div>
-                </div>
-                <h3 class="market-title">Next Major AI Breakthrough</h3>
-                <p class="market-description">What will be the next significant milestone in artificial intelligence?</p>
-                <div class="market-outcomes">
-                    <div class="outcome-option">
-                        <div class="outcome-label">AGI</div>
-                        <div class="outcome-odds">5.50x</div>
-                        <div class="outcome-percentage">18% chance</div>
-                    </div>
-                    <div class="outcome-option">
-                        <div class="outcome-label">OTHER</div>
-                        <div class="outcome-odds">1.22x</div>
-                        <div class="outcome-percentage">82% chance</div>
-                    </div>
-                </div>
-                <div class="market-stats">
-                    <div class="market-volume">💰 $18,532 Volume</div>
-                    <div class="market-ends">⏰ Ends Dec 31, 2025</div>
-                </div>
-            </div>
-
-            <!-- Politics Markets -->
-            <div class="market-card" data-category="politics" onclick="openMarket('us-election')">
-                <div class="market-header">
-                    <div class="market-category">Politics</div>
-                </div>
-                <h3 class="market-title">2028 US Presidential Election</h3>
-                <p class="market-description">Early predictions for the next US Presidential election.</p>
-                <div class="market-outcomes">
-                    <div class="outcome-option">
-                        <div class="outcome-label">DEM</div>
-                        <div class="outcome-odds">1.95x</div>
-                        <div class="outcome-percentage">51% chance</div>
-                    </div>
-                    <div class="outcome-option">
-                        <div class="outcome-label">REP</div>
-                        <div class="outcome-odds">2.04x</div>
-                        <div class="outcome-percentage">49% chance</div>
-                    </div>
-                </div>
-                <div class="market-stats">
-                    <div class="market-volume">💰 $67,891 Volume</div>
-                    <div class="market-ends">⏰ Ends Nov 5, 2028</div>
+                    <div class="market-volume">💰 $15,687 Volume</div>
+                    <div class="market-ends">⏰ Ends Dec 31, 2026</div>
                 </div>
             </div>
         </div>
@@ -727,144 +910,233 @@
         <button class="load-more-btn" onclick="loadMoreMarkets()">Load More Markets</button>
     </div>
 
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>EVGxchain</h3>
+                <p>The premier destination for cryptocurrency prediction markets. Trade on the future of digital assets with confidence.</p>
+                <p>© 2025 EVGxchain. All rights reserved.</p>
+            </div>
+            <div class="footer-section">
+                <h3>Markets</h3>
+                <a href="#">Bitcoin Markets</a>
+                <a href="#">Ethereum Markets</a>
+                <a href="#">Altcoin Markets</a>
+                <a href="#">DeFi Markets</a>
+                <a href="#">NFT Markets</a>
+            </div>
+            <div class="footer-section">
+                <h3>Resources</h3>
+                <a href="#">How It Works</a>
+                <a href="#">Trading Guide</a>
+                <a href="#">Market Analysis</a>
+                <a href="#">API Documentation</a>
+                <a href="#">Help Center</a>
+            </div>
+            <div class="footer-section">
+                <h3>Community</h3>
+                <a href="#">Discord</a>
+                <a href="#">Twitter</a>
+                <a href="#">Telegram</a>
+                <a href="#">Reddit</a>
+                <a href="#">Blog</a>
+            </div>
+        </div>
+    </footer>
+
+    <div id="toast" class="toast"></div>
+
     <script>
-        // Market filtering and search functionality
-        const searchInput = document.getElementById('searchInput');
-        const categoryBtns = document.querySelectorAll('.category-btn');
-        const sortSelect = document.getElementById('sortSelect');
-        const marketsGrid = document.getElementById('marketsGrid');
-
-        let currentCategory = 'all';
-        let currentSort = 'popular';
-
+        // Market data and functionality
+        const allMarkets = document.querySelectorAll('.market-card');
+        
         // Search functionality
-        searchInput.addEventListener('input', (e) => {
+        document.getElementById('searchInput').addEventListener('input', function(e) {
             const searchTerm = e.target.value.toLowerCase();
-            filterMarkets();
-        });
-
-        // Category filtering
-        categoryBtns.forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                categoryBtns.forEach(b => b.classList.remove('active'));
-                e.target.classList.add('active');
-                currentCategory = e.target.dataset.category;
-                filterMarkets();
-            });
-        });
-
-        // Sort functionality
-        sortSelect.addEventListener('change', (e) => {
-            currentSort = e.target.value;
-            sortMarkets();
-        });
-
-        function filterMarkets() {
-            const searchTerm = searchInput.value.toLowerCase();
-            const marketCards = document.querySelectorAll('.market-card');
-
-            marketCards.forEach(card => {
-                const category = card.dataset.category;
+            
+            allMarkets.forEach(card => {
                 const title = card.querySelector('.market-title').textContent.toLowerCase();
                 const description = card.querySelector('.market-description').textContent.toLowerCase();
-
-                const matchesCategory = currentCategory === 'all' || category === currentCategory;
-                const matchesSearch = searchTerm === '' || 
-                    title.includes(searchTerm) || 
-                    description.includes(searchTerm);
-
-                if (matchesCategory && matchesSearch) {
+                const category = card.querySelector('.market-category').textContent.toLowerCase();
+                
+                if (title.includes(searchTerm) || description.includes(searchTerm) || category.includes(searchTerm)) {
                     card.style.display = 'block';
-                    card.style.animation = 'fadeIn 0.3s ease-in';
                 } else {
                     card.style.display = 'none';
                 }
             });
-        }
+        });
 
-        function sortMarkets() {
-            const marketCards = Array.from(document.querySelectorAll('.market-card'));
-            
-            marketCards.sort((a, b) => {
-                switch(currentSort) {
-                    case 'newest':
-                        return Math.random() - 0.5; // Random for demo
-                    case 'ending-soon':
-                        return Math.random() - 0.5; // Random for demo
-                    case 'highest-volume':
-                        const volumeA = parseInt(a.querySelector('.market-volume').textContent.replace(/[^0-9]/g, ''));
-                        const volumeB = parseInt(b.querySelector('.market-volume').textContent.replace(/[^0-9]/g, ''));
-                        return volumeB - volumeA;
-                    default:
-                        return Math.random() - 0.5; // Random for demo
-                }
-            });
-
-            // Re-append sorted cards
-            marketCards.forEach(card => {
-                marketsGrid.appendChild(card);
-            });
-        }
-
-        // Navigation functions
-        function openMarket(marketId) {
-            window.location.href = `market_detail.html?id=${marketId}`;
-        }
-
-        function loadMoreMarkets() {
-            // Simulate loading more markets
-            const button = document.querySelector('.load-more-btn');
-            const originalText = button.textContent;
-            button.textContent = 'Loading...';
-            button.disabled = true;
-
-            setTimeout(() => {
-                button.textContent = originalText;
-                button.disabled = false;
-                alert('More markets loaded! (Demo functionality)');
-            }, 1500);
-        }
-
-        // Add floating coins periodically
-        setInterval(() => {
-            if (Math.random() < 0.4) {
-                const container = document.querySelector('.floating-coins');
-                const coin = document.createElement('div');
-                coin.className = 'floating-coin';
-                coin.textContent = '₿';
-                coin.style.left = Math.random() * 100 + '%';
-                coin.style.animationDelay = '0s';
-                coin.style.animationDuration = (20 + Math.random() * 10) + 's';
-                container.appendChild(coin);
+        // Category filtering
+        document.querySelectorAll('.category-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                // Remove active class from all buttons
+                document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+                // Add active class to clicked button
+                this.classList.add('active');
                 
-                setTimeout(() => {
-                    coin.remove();
-                }, 30000);
-            }
-        }, 3000);
-
-        // Add some CSS animations
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes fadeIn {
-                from { opacity: 0; transform: translateY(10px); }
-                to { opacity: 1; transform: translateY(0); }
-            }
-        `;
-        document.head.appendChild(style);
-
-        // Initialize page
-        document.addEventListener('DOMContentLoaded', () => {
-            // Add some interactive hover effects
-            document.querySelectorAll('.outcome-option').forEach(option => {
-                option.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const marketCard = e.target.closest('.market-card');
-                    const marketTitle = marketCard.querySelector('.market-title').textContent;
-                    const outcome = e.target.querySelector('.outcome-label').textContent;
-                    alert(`Quick bet on "${outcome}" for: ${marketTitle}\n\nClick "View Market" for full betting interface.`);
+                const category = this.dataset.category;
+                
+                allMarkets.forEach(card => {
+                    if (category === 'all') {
+                        card.style.display = 'block';
+                    } else {
+                        const cardCategory = card.dataset.category;
+                        if (cardCategory === category) {
+                            card.style.display = 'block';
+                        } else {
+                            card.style.display = 'none';
+                        }
+                    }
                 });
             });
+        });
+
+        // Sorting functionality
+        document.getElementById('sortSelect').addEventListener('change', function() {
+            const sortBy = this.value;
+            const marketsGrid = document.getElementById('marketsGrid');
+            const markets = Array.from(allMarkets);
+            
+            let sortedMarkets;
+            
+            switch(sortBy) {
+                case 'newest':
+                    // Sort by newest (reverse order for demo)
+                    sortedMarkets = markets.reverse();
+                    break;
+                case 'ending-soon':
+                    // Sort by ending date (mock implementation)
+                    sortedMarkets = markets.sort((a, b) => {
+                        const dateA = a.querySelector('.market-ends').textContent;
+                        const dateB = b.querySelector('.market-ends').textContent;
+                        return dateA.localeCompare(dateB);
+                    });
+                    break;
+                case 'highest-volume':
+                    // Sort by volume
+                    sortedMarkets = markets.sort((a, b) => {
+                        const volumeA = parseInt(a.querySelector('.market-volume').textContent.replace(/\D/g, ''));
+                        const volumeB = parseInt(b.querySelector('.market-volume').textContent.replace(/\D/g, ''));
+                        return volumeB - volumeA;
+                    });
+                    break;
+                default:
+                    // Most popular (default order)
+                    sortedMarkets = markets;
+            }
+            
+            // Clear and re-append sorted markets
+            marketsGrid.innerHTML = '';
+            sortedMarkets.forEach(market => {
+                marketsGrid.appendChild(market);
+            });
+        });
+
+        // Market opening functionality
+        function openMarket(marketId) {
+            showToast(`Opening market: ${marketId}`);
+            // In a real app, this would navigate to the market details page
+            console.log('Opening market:', marketId);
+        }
+
+        // Load more markets functionality
+        function loadMoreMarkets() {
+            showToast('Loading more markets...');
+            // In a real app, this would fetch more markets from the API
+            setTimeout(() => {
+                showToast('No more markets to load');
+            }, 1000);
+        }
+
+        // Toast notification system
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Outcome option hover effects
+        document.querySelectorAll('.outcome-option').forEach(option => {
+            option.addEventListener('click', function(e) {
+                e.stopPropagation(); // Prevent opening the market
+                const label = this.querySelector('.outcome-label').textContent;
+                const odds = this.querySelector('.outcome-odds').textContent;
+                showToast(`Selected ${label} at ${odds} odds`);
+            });
+        });
+
+        // Mobile menu toggle (for responsive design)
+        function toggleMobileMenu() {
+            const navLinks = document.querySelector('.nav-links');
+            navLinks.classList.toggle('mobile-active');
+        }
+
+        // Add click handler for user profile
+        document.querySelector('.user-profile').addEventListener('click', function() {
+            showToast('Profile menu clicked');
+        });
+
+        // Floating coins animation restart
+        function restartFloatingCoins() {
+            document.querySelectorAll('.floating-coin').forEach((coin, index) => {
+                coin.style.animationDelay = `${index * 5}s`;
+            });
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            restartFloatingCoins();
+            
+            // Add smooth scrolling for anchor links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth'
+                        });
+                    }
+                });
+            });
+        });
+
+        // Add some dynamic price updates (mock real-time data)
+        function updateMarketPrices() {
+            document.querySelectorAll('.outcome-odds').forEach(odd => {
+                if (Math.random() < 0.1) { // 10% chance to update
+                    const currentOdd = parseFloat(odd.textContent.replace('x', ''));
+                    const change = (Math.random() - 0.5) * 0.2; // Small random change
+                    const newOdd = Math.max(1.1, Math.min(5.0, currentOdd + change));
+                    odd.textContent = newOdd.toFixed(2) + 'x';
+                }
+            });
+        }
+
+        // Update prices every 10 seconds
+        setInterval(updateMarketPrices, 10000);
+
+        // Add keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Press '/' to focus search
+            if (e.key === '/' && !e.ctrlKey && !e.metaKey) {
+                e.preventDefault();
+                document.getElementById('searchInput').focus();
+            }
+            
+            // Press 'Escape' to clear search
+            if (e.key === 'Escape') {
+                const searchInput = document.getElementById('searchInput');
+                if (searchInput.value) {
+                    searchInput.value = '';
+                    searchInput.dispatchEvent(new Event('input'));
+                }
+            }
         });
     </script>
 </body>
