@@ -549,9 +549,8 @@
             <div class="logo">EVGxchain</div>
             <div class="nav-links">
                 <!-- <a href="dashboard.html">Dashboard</a> -->
-                <a href="market_list.html">Markets</a>
-                <a href="live_crypto.html">Live Data</a>
-                <a href="">Portfolio</a>
+                <a href="{% url 'market-data' %}" class="active">Markets</a>
+                <a href="{% url 'live-data' %}">Portfolio</a>
             </div>
             <div class="user-profile">
                 <a href="market_list.html" class="back-btn">← Back to Markets</a>
