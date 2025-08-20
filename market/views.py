@@ -2,6 +2,7 @@ from django.shortcuts import render
 from .models import *
 from .utils import CryptoPriceService
 from datetime import timedelta
+from django.utils import timezone
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
