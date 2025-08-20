@@ -3,4 +3,6 @@ from . import views
 
 urlpatterns = [
     path('', views.marketPage, name="market-data"),
+    path('marketz-full/', views.marketDetail, name="market-detail"),
+    path('live-data/', views.livePortfolio, name="live-data"),
 ]
