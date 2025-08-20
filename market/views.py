@@ -157,4 +157,4 @@ def userPortfolio(request):
         'user_balance': request.user.balance,
     }
     
-    return render(request, 'portfolio.html', context)
+    return render(request, 'profile.html', context)
