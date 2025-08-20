@@ -558,16 +558,32 @@
 
     <nav class="navbar">
         <div class="nav-container">
-            <div class="logo">EVGxchain</div>
+            <a href="{% url 'landing-page' %}" class="logo">EVGxchain</a>
             <div class="nav-links">
-                <a href="{% url 'market-data' %}" class="active">Markets</a>
-                <a href="{% url 'live-data' %}">Portfolio</a>
+                <a href="{% url 'dashboard' %}" class="active">Dashboard</a>
+                <a href="{% url 'market-data' %}">Markets</a>
             </div>
-            <div class="user-profile">
-                <div class="user-avatar">JD</div>
+            <div class="user-profile" onclick="toggleProfileMenu()">
+                <div class="user-avatar">
+                    {% if user.full_name %}
+                        {{ user.full_name|slice:":2"|upper }}
+                    {% else %}
+                        {{ user.username|slice:":2"|upper }}
+                    {% endif %}
+                </div>
                 <div>
-                    <div style="font-size: 14px; font-weight: 600;">John Doe</div>
+                    <div style="font-size: 14px; font-weight: 600;">
+                        {% if user.full_name %}
+                            {{ user.full_name }}
+                        {% else %}
+                            {{ user.username }}
+                        {% endif %}
+                    </div>
                     <div style="font-size: 12px; color: #999;">Level 5 Predictor</div>
+                </div>
+                <div class="profile-dropdown" id="profileDropdown">
+                    <div class="dropdown-divider"></div>
+                    <a href="{% url 'logout' %}" class="dropdown-item">🚪 Logout</a>
                 </div>
             </div>
         </div>
