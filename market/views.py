@@ -3,7 +3,7 @@ from django.shortcuts import render,HttpResponse
 
 
 
-def market_list(request):
+def marketPage(request):
     """Main market listing page with filters and real-time data"""
     
     # Get filter parameters
