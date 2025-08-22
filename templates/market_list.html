@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crypto Prediction Markets - EVGxchain</title>
+    <title>Crypto Event Predictions - EVGxchain</title>
     <style>
         * {
             margin: 0;
@@ -259,6 +259,292 @@
             border-color: #f7931a;
         }
 
+        /* Event Trading Section Styles */
+        .event-trading-section {
+            background: rgba(45, 45, 45, 0.6);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .live-events-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .event-card {
+            background: rgba(26, 26, 26, 0.8);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .event-card:hover {
+            border-color: rgba(247, 147, 26, 0.5);
+            transform: translateY(-2px);
+            box-shadow: 0 15px 40px rgba(247, 147, 26, 0.2);
+        }
+
+        .event-card.live {
+            border-color: #ef4444;
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+        }
+
+        .event-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .event-type {
+            background: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .event-status {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .live-indicator {
+            width: 8px;
+            height: 8px;
+            background: #ef4444;
+            border-radius: 50%;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .event-title {
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #fff;
+            font-size: 16px;
+        }
+
+        .event-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .detail-item {
+            text-align: center;
+        }
+
+        .detail-label {
+            font-size: 11px;
+            color: #999;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .detail-value {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .crypto-selector {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .crypto-btn {
+            flex: 1;
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .crypto-btn.active {
+            background: linear-gradient(135deg, #f7931a 0%, #ffb84d 100%);
+            border-color: #f7931a;
+        }
+
+        .prediction-interface {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .timeframe-selector {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .timeframe-btn {
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: white;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .timeframe-btn.active {
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+            border-color: #22c55e;
+        }
+
+        .threshold-display {
+            text-align: center;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+        }
+
+        .threshold-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #f7931a;
+        }
+
+        .threshold-label {
+            font-size: 10px;
+            color: #999;
+            text-transform: uppercase;
+        }
+
+        .prediction-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .prediction-btn {
+            padding: 12px;
+            border: 2px solid;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            position: relative;
+        }
+
+        .prediction-btn.up {
+            background: rgba(34, 197, 94, 0.1);
+            border-color: #22c55e;
+            color: #22c55e;
+        }
+
+        .prediction-btn.down {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: #ef4444;
+            color: #ef4444;
+        }
+
+        .prediction-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: scale(1.02);
+        }
+
+        .prediction-odds {
+            font-size: 12px;
+            margin-top: 4px;
+            font-weight: normal;
+        }
+
+        .bet-interface {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .bet-input {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 10px;
+            color: white;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .bet-input:focus {
+            outline: none;
+            border-color: #f7931a;
+        }
+
+        .pool-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: #999;
+            margin-bottom: 10px;
+        }
+
+        .place-bet-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #f7931a 0%, #ffb84d 100%);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .place-bet-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 5px 15px rgba(247, 147, 26, 0.3);
+        }
+
+        .place-bet-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         .markets-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
@@ -387,57 +673,6 @@
             display: flex;
             align-items: center;
             gap: 5px;
-        }
-
-        .trending-section {
-            background: rgba(45, 45, 45, 0.6);
-            border-radius: 20px;
-            padding: 30px;
-            margin-bottom: 30px;
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .section-title {
-            font-size: 24px;
-            font-weight: 600;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .trending-markets {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-        }
-
-        .trending-item {
-            background: rgba(26, 26, 26, 0.8);
-            border-radius: 15px;
-            padding: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-
-        .trending-item:hover {
-            border-color: rgba(247, 147, 26, 0.5);
-            transform: translateY(-2px);
-        }
-
-        .trending-title {
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: #fff;
-        }
-
-        .trending-stats {
-            display: flex;
-            justify-content: space-between;
-            font-size: 12px;
-            color: #999;
         }
 
         .load-more-btn {
@@ -595,12 +830,57 @@
             }
         }
 
+        /* News Feed Styles */
+        .news-feed {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .news-item {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 12px;
+            color: #ccc;
+        }
+
+        .news-item:last-child {
+            border-bottom: none;
+        }
+
+        .news-time {
+            color: #999;
+            margin-right: 10px;
+        }
+
+        /* Advertisement Space */
+        .ad-space {
+            background: rgba(45, 45, 45, 0.6);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            border: 2px dashed rgba(255, 255, 255, 0.2);
+            margin: 20px 0;
+        }
+
+        .ad-placeholder {
+            color: #666;
+            font-style: italic;
+        }
+
         @media (max-width: 768px) {
             .nav-links {
                 display: none;
             }
 
             .markets-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .live-events-grid {
                 grid-template-columns: 1fr;
             }
 
@@ -629,7 +909,11 @@
                 font-size: 28px;
             }
 
-            .trending-markets {
+            .timeframe-selector {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .event-details {
                 grid-template-columns: 1fr;
             }
         }
@@ -645,44 +929,28 @@
     </div>
 
     <!-- Django Messages -->
-    {% if messages %}
     <div class="messages">
-        {% for message in messages %}
-        <div class="message {{ message.tags }}">
-            {{ message }}
+        <div class="message success">
+            Welcome to Event Mode Trading! Predict crypto price movements during major economic events.
         </div>
-        {% endfor %}
     </div>
-    {% endif %}
 
     <nav class="navbar">
         <div class="nav-container">
-            <a href="{% url 'landing-page' %}" class="logo">EVGxchain</a>
+            <a href="#" class="logo">EVGxchain</a>
             <div class="nav-links">
-                <a href="{% url 'dashboard' %}">Dashboard</a>
-                <a href="{% url 'market-data' %}" class="active">Markets</a>
+                <a href="#">Dashboard</a>
+                <a href="#" class="active">Event Markets</a>
             </div>
             <div class="user-profile" onclick="toggleProfileMenu()">
-                <div class="user-avatar">
-                    {% if user.full_name %}
-                        {{ user.full_name|slice:":2"|upper }}
-                    {% else %}
-                        {{ user.username|slice:":2"|upper }}
-                    {% endif %}
-                </div>
+                <div class="user-avatar">JD</div>
                 <div>
-                    <div style="font-size: 14px; font-weight: 600;">
-                        {% if user.full_name %}
-                            {{ user.full_name }}
-                        {% else %}
-                            {{ user.username }}
-                        {% endif %}
-                    </div>
+                    <div style="font-size: 14px; font-weight: 600;">John Doe</div>
                     <div style="font-size: 12px; color: #999;">Level 5 Predictor</div>
                 </div>
                 <div class="profile-dropdown" id="profileDropdown">
                     <div class="dropdown-divider"></div>
-                    <a href="{% url 'logout' %}" class="dropdown-item">🚪 Logout</a>
+                    <a href="#" class="dropdown-item">🚪 Logout</a>
                 </div>
             </div>
         </div>
@@ -690,172 +958,422 @@
 
     <div class="container">
         <div class="page-header">
-            <h1 class="page-title">₿ Crypto Prediction Markets</h1>
-            <p class="page-subtitle">Predict cryptocurrency price movements and market events</p>
+            <h1 class="page-title">📊 Economic Event Trading</h1>
+            <p class="page-subtitle">Trade crypto volatility during CPI, FOMC, and NFP announcements</p>
         </div>
 
         <div class="filters-section">
             <div class="filter-controls">
                 <div class="search-box">
-                    <input type="text" class="search-input" placeholder="Search crypto markets..." id="searchInput">
+                    <input type="text" class="search-input" placeholder="Search events..." id="searchInput">
                     <div class="search-icon">🔍</div>
                 </div>
                 
                 <div class="category-filters">
-                    <button class="category-btn active" data-category="all">All Crypto</button>
-                    <button class="category-btn" data-category="bitcoin">Bitcoin</button>
-                    <button class="category-btn" data-category="ethereum">Ethereum</button>
-                    <button class="category-btn" data-category="altcoin">Altcoins</button>
-                    <button class="category-btn" data-category="defi">DeFi</button>
+                    <button class="category-btn active" data-category="all">All Events</button>
+                    <button class="category-btn" data-category="cpi">CPI</button>
+                    <button class="category-btn" data-category="fomc">FOMC</button>
+                    <button class="category-btn" data-category="nfp">NFP</button>
                 </div>
                 
                 <select class="sort-dropdown" id="sortSelect">
-                    <option value="popular">Most Popular</option>
-                    <option value="newest">Newest</option>
-                    <option value="ending-soon">Ending Soon</option>
-                    <option value="highest-volume">Highest Volume</option>
+                    <option value="live">Live Events</option>
+                    <option value="upcoming">Upcoming</option>
+                    <option value="highest-volatility">Highest Volatility</option>
+                    <option value="most-volume">Most Volume</option>
                 </select>
             </div>
         </div>
 
-        <div class="trending-section">
-            <h2 class="section-title">🔥 Trending Crypto Markets</h2>
-            <div class="trending-markets">
-                <div class="trending-item" onclick="openMarket('btc-100k')">
-                    <div class="trending-title">Bitcoin $100K Prediction</div>
-                    <div class="trending-stats">
-                        <span>🔥 Hot</span>
-                        <span>$50K Volume</span>
-                        <span>2,847 Participants</span>
+        <!-- Event Trading Section -->
+        <div class="event-trading-section">
+            <h2 class="section-title">⚡ Live Economic Events</h2>
+            <div class="live-events-grid">
+                <!-- CPI Event Card -->
+                <div class="event-card live" data-category="cpi">
+                    <div class="event-header">
+                        <div class="event-type">CPI</div>
+                        <div class="event-status">
+                            <div class="live-indicator"></div>
+                            <span>LIVE</span>
+                        </div>
+                    </div>
+                    <h3 class="event-title">US Consumer Price Index Release</h3>
+                    
+                    <div class="event-details">
+                        <div class="detail-item">
+                            <div class="detail-label">Expected</div>
+                            <div class="detail-value">3.2% YoY</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Previous</div>
+                            <div class="detail-value">3.4% YoY</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Time</div>
+                            <div class="detail-value">08:30 EST</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Impact</div>
+                            <div class="detail-value" style="color: #ef4444;">HIGH</div>
+                        </div>
+                    </div>
+
+                    <div class="crypto-selector">
+                        <button class="crypto-btn active" data-crypto="btc">BTC</button>
+                        <button class="crypto-btn" data-crypto="eth">ETH</button>
+                    </div>
+
+                    <div class="prediction-interface">
+                        <div class="timeframe-selector">
+                            <button class="timeframe-btn" data-timeframe="1m" data-threshold="0.04">1M</button>
+                            <button class="timeframe-btn active" data-timeframe="3m" data-threshold="0.08">3M</button>
+                            <button class="timeframe-btn" data-timeframe="5m" data-threshold="0.12">5M</button>
+                            <button class="timeframe-btn" data-timeframe="10m" data-threshold="0.20">10M</button>
+                            <button class="timeframe-btn" data-timeframe="15m" data-threshold="0.30">15M</button>
+                            <button class="timeframe-btn" data-timeframe="30m" data-threshold="0.50">30M</button>
+                        </div>
+
+                        <div class="threshold-display">
+                            <div class="threshold-value">±0.08%</div>
+                            <div class="threshold-label">Movement Threshold</div>
+                        </div>
+
+                        <div class="prediction-buttons">
+                            <button class="prediction-btn up">
+                                <div>UP ⬆️</div>
+                                <div class="prediction-odds">2.42x Odds</div>
+                            </button>
+                            <button class="prediction-btn down">
+                                <div>DOWN ⬇️</div>
+                                <div class="prediction-odds">2.18x Odds</div>
+                            </button>
+                        </div>
+
+                        <div class="bet-interface">
+                            <input type="number" class="bet-input" placeholder="Bet Amount" value="7.00">
+                            <input type="text" class="bet-input" placeholder="Potential Win" value="$16.94" readonly>
+                        </div>
+
+                        <div class="pool-info">
+                            <span>Total Pool: $17,000</span>
+                            <span>Participants: 247</span>
+                        </div>
+
+                        <button class="place-bet-btn" onclick="placeBet('cpi', 'btc')">Place Bet</button>
+                    </div>
+
+                    <div class="news-feed">
+                        <div class="news-item">
+                            <span class="news-time">08:25</span>
+                            Markets showing volatility ahead of CPI release
+                        </div>
+                        <div class="news-item">
+                            <span class="news-time">08:20</span>
+                            BTC trading at $43,250, down 0.5% in last hour
+                        </div>
+                        <div class="news-item">
+                            <span class="news-time">08:15</span>
+                            High volume detected across major exchanges
+                        </div>
                     </div>
                 </div>
-                <div class="trending-item" onclick="openMarket('eth-flip')">
-                    <div class="trending-title">Ethereum Market Cap Flip</div>
-                    <div class="trending-stats">
-                        <span>💎 Premium</span>
-                        <span>$32K Volume</span>
-                        <span>1,205 Participants</span>
+
+                <!-- FOMC Event Card -->
+                <div class="event-card" data-category="fomc">
+                    <div class="event-header">
+                        <div class="event-type" style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);">FOMC</div>
+                        <div class="event-status">
+                            <span>UPCOMING</span>
+                        </div>
+                    </div>
+                    <h3 class="event-title">Federal Reserve Interest Rate Decision</h3>
+                    
+                    <div class="event-details">
+                        <div class="detail-item">
+                            <div class="detail-label">Expected</div>
+                            <div class="detail-value">5.25-5.50%</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Previous</div>
+                            <div class="detail-value">5.25-5.50%</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Time</div>
+                            <div class="detail-value">14:00 EST</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Impact</div>
+                            <div class="detail-value" style="color: #ef4444;">EXTREME</div>
+                        </div>
+                    </div>
+
+                    <div class="crypto-selector">
+                        <button class="crypto-btn active" data-crypto="btc">BTC</button>
+                        <button class="crypto-btn" data-crypto="eth">ETH</button>
+                    </div>
+
+                    <div class="prediction-interface">
+                        <div class="timeframe-selector">
+                            <button class="timeframe-btn" data-timeframe="1m" data-threshold="0.06">1M</button>
+                            <button class="timeframe-btn" data-timeframe="3m" data-threshold="0.12">3M</button>
+                            <button class="timeframe-btn active" data-timeframe="5m" data-threshold="0.18">5M</button>
+                            <button class="timeframe-btn" data-timeframe="10m" data-threshold="0.35">10M</button>
+                            <button class="timeframe-btn" data-timeframe="15m" data-threshold="0.50">15M</button>
+                            <button class="timeframe-btn" data-timeframe="30m" data-threshold="0.80">30M</button>
+                        </div>
+
+                        <div class="threshold-display">
+                            <div class="threshold-value">±0.18%</div>
+                            <div class="threshold-label">Movement Threshold</div>
+                        </div>
+
+                        <div class="prediction-buttons">
+                            <button class="prediction-btn up">
+                                <div>UP ⬆️</div>
+                                <div class="prediction-odds">1.95x Odds</div>
+                            </button>
+                            <button class="prediction-btn down">
+                                <div>DOWN ⬇️</div>
+                                <div class="prediction-odds">1.87x Odds</div>
+                            </button>
+                        </div>
+
+                        <div class="bet-interface">
+                            <input type="number" class="bet-input" placeholder="Bet Amount" value="">
+                            <input type="text" class="bet-input" placeholder="Potential Win" value="" readonly>
+                        </div>
+
+                        <div class="pool-info">
+                            <span>Total Pool: $45,300</span>
+                            <span>Participants: 892</span>
+                        </div>
+
+                        <button class="place-bet-btn" onclick="placeBet('fomc', 'btc')">Place Bet</button>
+                    </div>
+
+                    <div class="ad-space">
+                        <div class="ad-placeholder">📢 Advertisement Space Available</div>
                     </div>
                 </div>
-                <div class="trending-item" onclick="openMarket('sol-500')">
-                    <div class="trending-title">Solana $500 Target</div>
-                    <div class="trending-stats">
-                        <span>🚀 Rising</span>
-                        <span>$28K Volume</span>
-                        <span>1,543 Participants</span>
+
+                <!-- NFP Event Card -->
+                <div class="event-card" data-category="nfp">
+                    <div class="event-header">
+                        <div class="event-type" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">NFP</div>
+                        <div class="event-status">
+                            <span>UPCOMING</span>
+                        </div>
+                    </div>
+                    <h3 class="event-title">Non-Farm Payrolls Report</h3>
+                    
+                    <div class="event-details">
+                        <div class="detail-item">
+                            <div class="detail-label">Expected</div>
+                            <div class="detail-value">185K</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Previous</div>
+                            <div class="detail-value">199K</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Time</div>
+                            <div class="detail-value">08:30 EST</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Impact</div>
+                            <div class="detail-value" style="color: #f59e0b;">MEDIUM</div>
+                        </div>
+                    </div>
+
+                    <div class="crypto-selector">
+                        <button class="crypto-btn active" data-crypto="btc">BTC</button>
+                        <button class="crypto-btn" data-crypto="eth">ETH</button>
+                    </div>
+
+                    <div class="prediction-interface">
+                        <div class="timeframe-selector">
+                            <button class="timeframe-btn active" data-timeframe="1m" data-threshold="0.03">1M</button>
+                            <button class="timeframe-btn" data-timeframe="3m" data-threshold="0.06">3M</button>
+                            <button class="timeframe-btn" data-timeframe="5m" data-threshold="0.10">5M</button>
+                            <button class="timeframe-btn" data-timeframe="10m" data-threshold="0.18">10M</button>
+                            <button class="timeframe-btn" data-timeframe="15m" data-threshold="0.25">15M</button>
+                            <button class="timeframe-btn" data-timeframe="30m" data-threshold="0.40">30M</button>
+                        </div>
+
+                        <div class="threshold-display">
+                            <div class="threshold-value">±0.03%</div>
+                            <div class="threshold-label">Movement Threshold</div>
+                        </div>
+
+                        <div class="prediction-buttons">
+                            <button class="prediction-btn up">
+                                <div>UP ⬆️</div>
+                                <div class="prediction-odds">2.15x Odds</div>
+                            </button>
+                            <button class="prediction-btn down">
+                                <div>DOWN ⬇️</div>
+                                <div class="prediction-odds">1.92x Odds</div>
+                            </button>
+                        </div>
+
+                        <div class="bet-interface">
+                            <input type="number" class="bet-input" placeholder="Bet Amount" value="">
+                            <input type="text" class="bet-input" placeholder="Potential Win" value="" readonly>
+                        </div>
+
+                        <div class="pool-info">
+                            <span>Total Pool: $23,750</span>
+                            <span>Participants: 456</span>
+                        </div>
+
+                        <button class="place-bet-btn" onclick="placeBet('nfp', 'btc')">Place Bet</button>
+                    </div>
+
+                    <div class="news-feed">
+                        <div class="news-item">
+                            <span class="news-time">07:45</span>
+                            Employment data expected to show continued strength
+                        </div>
+                        <div class="news-item">
+                            <span class="news-time">07:30</span>
+                            Crypto markets positioning ahead of NFP release
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="markets-grid" id="marketsGrid">
-            <!-- Bitcoin Markets -->
-            <div class="market-card" data-category="bitcoin" onclick="openMarket('btc-100k')">
+            <!-- Traditional Markets for comparison -->
+            <div class="market-card" data-category="cpi" onclick="openMarket('cpi-impact')">
                 <div class="market-header">
-                    <div class="market-category">Bitcoin</div>
+                    <div class="market-category">CPI Impact</div>
                     <div class="market-hot">Hot</div>
                 </div>
-                <h3 class="market-title">Will Bitcoin reach $100,000 by December 2025?</h3>
-                <p class="market-description">Predict if Bitcoin will hit the historic $100K milestone before the end of 2025.</p>
+                <h3 class="market-title">Will CPI cause BTC to move more than 5%?</h3>
+                <p class="market-description">Predict if today's CPI release will cause Bitcoin to move more than 5% in either direction within 24 hours.</p>
                 <div class="market-outcomes">
                     <div class="outcome-option">
                         <div class="outcome-label">YES</div>
-                        <div class="outcome-odds">1.85x</div>
-                        <div class="outcome-percentage">54% chance</div>
+                        <div class="outcome-odds">2.85x</div>
+                        <div class="outcome-percentage">35% chance</div>
                     </div>
                     <div class="outcome-option">
                         <div class="outcome-label">NO</div>
-                        <div class="outcome-odds">2.17x</div>
-                        <div class="outcome-percentage">46% chance</div>
+                        <div class="outcome-odds">1.54x</div>
+                        <div class="outcome-percentage">65% chance</div>
                     </div>
                 </div>
                 <div class="market-stats">
-                    <div class="market-volume">💰 $50,247 Volume</div>
-                    <div class="market-ends">⏰ Ends Dec 31, 2025</div>
+                    <div class="market-volume">💰 $75,247 Volume</div>
+                    <div class="market-ends">⏰ Ends Tomorrow 08:30</div>
                 </div>
             </div>
 
-            <div class="market-card" data-category="bitcoin" onclick="openMarket('btc-halving')">
+            <div class="market-card" data-category="fomc" onclick="openMarket('fomc-rate')">
                 <div class="market-header">
-                    <div class="market-category">Bitcoin</div>
+                    <div class="market-category">FOMC</div>
                 </div>
-                <h3 class="market-title">Bitcoin Price 6 Months After Next Halving</h3>
-                <p class="market-description">Will Bitcoin be above $150,000 six months after the 2028 halving event?</p>
+                <h3 class="market-title">Fed Rate Decision: Hawkish or Dovish?</h3>
+                <p class="market-description">Will the Federal Reserve's next statement be perceived as more hawkish or dovish by the crypto markets?</p>
                 <div class="market-outcomes">
                     <div class="outcome-option">
-                        <div class="outcome-label">YES</div>
-                        <div class="outcome-odds">2.40x</div>
-                        <div class="outcome-percentage">42% chance</div>
+                        <div class="outcome-label">HAWKISH</div>
+                        <div class="outcome-odds">1.75x</div>
+                        <div class="outcome-percentage">57% chance</div>
                     </div>
                     <div class="outcome-option">
-                        <div class="outcome-label">NO</div>
-                        <div class="outcome-odds">1.72x</div>
-                        <div class="outcome-percentage">58% chance</div>
+                        <div class="outcome-label">DOVISH</div>
+                        <div class="outcome-odds">2.33x</div>
+                        <div class="outcome-percentage">43% chance</div>
                     </div>
                 </div>
                 <div class="market-stats">
-                    <div class="market-volume">💰 $38,921 Volume</div>
-                    <div class="market-ends">⏰ Ends Dec 31, 2028</div>
+                    <div class="market-volume">💰 $92,156 Volume</div>
+                    <div class="market-ends">⏰ Ends Dec 18, 2025</div>
                 </div>
             </div>
 
-            <!-- Ethereum Markets -->
-            <div class="market-card" data-category="ethereum" onclick="openMarket('eth-flip')">
+            <div class="market-card" data-category="nfp" onclick="openMarket('nfp-surprise')">
                 <div class="market-header">
-                    <div class="market-category">Ethereum</div>
-                </div>
-                <h3 class="market-title">Will Ethereum overtake Bitcoin in market cap by 2026?</h3>
-                <p class="market-description">The ultimate "flippening" question - will ETH surpass BTC in total market capitalization?</p>
-                <div class="market-outcomes">
-                    <div class="outcome-option">
-                        <div class="outcome-label">YES</div>
-                        <div class="outcome-odds">3.20x</div>
-                        <div class="outcome-percentage">31% chance</div>
-                    </div>
-                    <div class="outcome-option">
-                        <div class="outcome-label">NO</div>
-                        <div class="outcome-odds">1.45x</div>
-                        <div class="outcome-percentage">69% chance</div>
-                    </div>
-                </div>
-                <div class="market-stats">
-                    <div class="market-volume">💰 $32,156 Volume</div>
-                    <div class="market-ends">⏰ Ends Dec 31, 2026</div>
-                </div>
-            </div>
-
-            <div class="market-card" data-category="ethereum" onclick="openMarket('eth-10k')">
-                <div class="market-header">
-                    <div class="market-category">Ethereum</div>
+                    <div class="market-category">NFP</div>
                     <div class="market-hot">New</div>
                 </div>
-                <h3 class="market-title">Ethereum to Reach $10,000 by 2026?</h3>
-                <p class="market-description">Will ETH break the $10K barrier driven by increased institutional adoption and DeFi growth?</p>
+                <h3 class="market-title">NFP Surprise: Above or Below Expectations?</h3>
+                <p class="market-description">Will the Non-Farm Payrolls report come in significantly above (>200K) or below (<170K) expectations?</p>
                 <div class="market-outcomes">
                     <div class="outcome-option">
-                        <div class="outcome-label">YES</div>
-                        <div class="outcome-odds">4.50x</div>
-                        <div class="outcome-percentage">22% chance</div>
+                        <div class="outcome-label">ABOVE</div>
+                        <div class="outcome-odds">2.20x</div>
+                        <div class="outcome-percentage">45% chance</div>
                     </div>
                     <div class="outcome-option">
-                        <div class="outcome-label">NO</div>
-                        <div class="outcome-odds">1.28x</div>
-                        <div class="outcome-percentage">78% chance</div>
+                        <div class="outcome-label">BELOW</div>
+                        <div class="outcome-odds">1.82x</div>
+                        <div class="outcome-percentage">55% chance</div>
                     </div>
                 </div>
                 <div class="market-stats">
-                    <div class="market-volume">💰 $24,785 Volume</div>
-                    <div class="market-ends">⏰ Ends Dec 31, 2026</div>
+                    <div class="market-volume">💰 $34,785 Volume</div>
+                    <div class="market-ends">⏰ Ends Friday 08:30</div>
                 </div>
             </div>
 
-            <!-- Altcoin Markets -->
-            <div class="market-card" data-category="altcoin" onclick="openMarket('sol-500')">
+            <div class="market-card" data-category="cpi" onclick="openMarket('eth-cpi-correlation')">
                 <div class="market-header">
-                    <div class="market-category">Altcoins</div>
+                    <div class="market-category">CPI Impact</div>
                 </div>
-                <h3 class="market-title">Solana Price Prediction: Will SOL reach $500?</h3>
-                <p class="market-description">Can Solana continue its impressive run and reach the $500 milestone this year?</p>
+                <h3 class="market-title">Ethereum's CPI Reaction vs Bitcoin</h3>
+                <p class="market-description">Will Ethereum outperform Bitcoin in the 4 hours following the next CPI release?</p>
+                <div class="market-outcomes">
+                    <div class="outcome-option">
+                        <div class="outcome-label">ETH WINS</div>
+                        <div class="outcome-odds">2.10x</div>
+                        <div class="outcome-percentage">48% chance</div>
+                    </div>
+                    <div class="outcome-option">
+                        <div class="outcome-label">BTC WINS</div>
+                        <div class="outcome-odds">1.90x</div>
+                        <div class="outcome-percentage">52% chance</div>
+                    </div>
+                </div>
+                <div class="market-stats">
+                    <div class="market-volume">💰 $28,943 Volume</div>
+                    <div class="market-ends">⏰ Ends Next CPI +4h</div>
+                </div>
+            </div>
+
+            <div class="market-card" data-category="fomc" onclick="openMarket('altcoin-fomc')">
+                <div class="market-header">
+                    <div class="market-category">FOMC</div>
+                </div>
+                <h3 class="market-title">Altcoin Season During Fed Pivot</h3>
+                <p class="market-description">Will we see an "altcoin season" (ALT/BTC ratio +20%) within 30 days of the next Fed rate cut?</p>
+                <div class="market-outcomes">
+                    <div class="outcome-option">
+                        <div class="outcome-label">YES</div>
+                        <div class="outcome-odds">3.50x</div>
+                        <div class="outcome-percentage">29% chance</div>
+                    </div>
+                    <div class="outcome-option">
+                        <div class="outcome-label">NO</div>
+                        <div class="outcome-odds">1.40x</div>
+                        <div class="outcome-percentage">71% chance</div>
+                    </div>
+                </div>
+                <div class="market-stats">
+                    <div class="market-volume">💰 $41,732 Volume</div>
+                    <div class="market-ends">⏰ Ends 30 days post-cut</div>
+                </div>
+            </div>
+
+            <div class="market-card" data-category="nfp" onclick="openMarket('defi-employment')">
+                <div class="market-header">
+                    <div class="market-category">NFP</div>
+                </div>
+                <h3 class="market-title">DeFi TVL Reaction to Strong Employment</h3>
+                <p class="market-description">Will DeFi Total Value Locked increase by more than 3% if NFP beats expectations by 50K+?</p>
                 <div class="market-outcomes">
                     <div class="outcome-option">
                         <div class="outcome-label">YES</div>
@@ -869,191 +1387,45 @@
                     </div>
                 </div>
                 <div class="market-stats">
-                    <div class="market-volume">💰 $28,943 Volume</div>
-                    <div class="market-ends">⏰ Ends Dec 31, 2025</div>
-                </div>
-            </div>
-
-            <div class="market-card" data-category="altcoin" onclick="openMarket('ada-top5')">
-                <div class="market-header">
-                    <div class="market-category">Altcoins</div>
-                </div>
-                <h3 class="market-title">Cardano (ADA) to Enter Top 5 Cryptocurrencies</h3>
-                <p class="market-description">Will Cardano climb back to the top 5 cryptocurrencies by market cap in 2025?</p>
-                <div class="market-outcomes">
-                    <div class="outcome-option">
-                        <div class="outcome-label">YES</div>
-                        <div class="outcome-odds">3.80x</div>
-                        <div class="outcome-percentage">26% chance</div>
-                    </div>
-                    <div class="outcome-option">
-                        <div class="outcome-label">NO</div>
-                        <div class="outcome-odds">1.35x</div>
-                        <div class="outcome-percentage">74% chance</div>
-                    </div>
-                </div>
-                <div class="market-stats">
-                    <div class="market-volume">💰 $16,732 Volume</div>
-                    <div class="market-ends">⏰ Ends Dec 31, 2025</div>
-                </div>
-            </div>
-
-            <!-- DeFi Markets -->
-            <div class="market-card" data-category="defi" onclick="openMarket('defi-1trillion')">
-                <div class="market-header">
-                    <div class="market-category">DeFi</div>
-                    <div class="market-hot">Hot</div>
-                </div>
-                <h3 class="market-title">DeFi Total Value Locked to Hit $1 Trillion</h3>
-                <p class="market-description">Will the total value locked in DeFi protocols reach $1 trillion by end of 2026?</p>
-                <div class="market-outcomes">
-                    <div class="outcome-option">
-                        <div class="outcome-label">YES</div>
-                        <div class="outcome-odds">2.10x</div>
-                        <div class="outcome-percentage">48% chance</div>
-                    </div>
-                    <div class="outcome-option">
-                        <div class="outcome-label">NO</div>
-                        <div class="outcome-odds">1.92x</div>
-                        <div class="outcome-percentage">52% chance</div>
-                    </div>
-                </div>
-                <div class="market-stats">
-                    <div class="market-volume">💰 $35,642 Volume</div>
-                    <div class="market-ends">⏰ Ends Dec 31, 2026</div>
-                </div>
-            </div>
-
-            <div class="market-card" data-category="defi" onclick="openMarket('uniswap-governance')">
-                <div class="market-header">
-                    <div class="market-category">DeFi</div>
-                </div>
-                <h3 class="market-title">Uniswap Fee Switch Activation</h3>
-                <p class="market-description">Will Uniswap governance vote to activate the fee switch for UNI holders in 2025?</p>
-                <div class="market-outcomes">
-                    <div class="outcome-option">
-                        <div class="outcome-label">YES</div>
-                        <div class="outcome-odds">1.65x</div>
-                        <div class="outcome-percentage">61% chance</div>
-                    </div>
-                    <div class="outcome-option">
-                        <div class="outcome-label">NO</div>
-                        <div class="outcome-odds">2.56x</div>
-                        <div class="outcome-percentage">39% chance</div>
-                    </div>
-                </div>
-                <div class="market-stats">
                     <div class="market-volume">💰 $19,877 Volume</div>
-                    <div class="market-ends">⏰ Ends Dec 31, 2025</div>
-                </div>
-            </div>
-
-            <div class="market-card" data-category="altcoin" onclick="openMarket('matic-rebrand')">
-                <div class="market-header">
-                    <div class="market-category">Altcoins</div>
-                </div>
-                <h3 class="market-title">Polygon (MATIC) Price After Rebrand to POL</h3>
-                <p class="market-description">Will the new POL token be worth more than $2 within 3 months of migration?</p>
-                <div class="market-outcomes">
-                    <div class="outcome-option">
-                        <div class="outcome-label">YES</div>
-                        <div class="outcome-odds">1.78x</div>
-                        <div class="outcome-percentage">56% chance</div>
-                    </div>
-                    <div class="outcome-option">
-                        <div class="outcome-label">NO</div>
-                        <div class="outcome-odds">2.25x</div>
-                        <div class="outcome-percentage">44% chance</div>
-                    </div>
-                </div>
-                <div class="market-stats">
-                    <div class="market-volume">💰 $22,543 Volume</div>
-                    <div class="market-ends">⏰ Ends Mar 15, 2025</div>
-                </div>
-            </div>
-
-            <div class="market-card" data-category="bitcoin" onclick="openMarket('btc-dominance')">
-                <div class="market-header">
-                    <div class="market-category">Bitcoin</div>
-                </div>
-                <h3 class="market-title">Bitcoin Dominance Below 40%</h3>
-                <p class="market-description">Will Bitcoin's market dominance fall below 40% during the next altcoin season?</p>
-                <div class="market-outcomes">
-                    <div class="outcome-option">
-                        <div class="outcome-label">YES</div>
-                        <div class="outcome-odds">2.80x</div>
-                        <div class="outcome-percentage">36% chance</div>
-                    </div>
-                    <div class="outcome-option">
-                        <div class="outcome-label">NO</div>
-                        <div class="outcome-odds">1.56x</div>
-                        <div class="outcome-percentage">64% chance</div>
-                    </div>
-                </div>
-                <div class="market-stats">
-                    <div class="market-volume">💰 $41,209 Volume</div>
-                    <div class="market-ends">⏰ Ends Dec 31, 2025</div>
-                </div>
-            </div>
-
-            <div class="market-card" data-category="defi" onclick="openMarket('dex-volume')">
-                <div class="market-header">
-                    <div class="market-category">DeFi</div>
-                </div>
-                <h3 class="market-title">DEX Monthly Volume Exceeds CEX</h3>
-                <p class="market-description">Will decentralized exchange monthly volume surpass centralized exchanges by 2026?</p>
-                <div class="market-outcomes">
-                    <div class="outcome-option">
-                        <div class="outcome-label">YES</div>
-                        <div class="outcome-odds">4.20x</div>
-                        <div class="outcome-percentage">24% chance</div>
-                    </div>
-                    <div class="outcome-option">
-                        <div class="outcome-label">NO</div>
-                        <div class="outcome-odds">1.32x</div>
-                        <div class="outcome-percentage">76% chance</div>
-                    </div>
-                </div>
-                <div class="market-stats">
-                    <div class="market-volume">💰 $15,687 Volume</div>
-                    <div class="market-ends">⏰ Ends Dec 31, 2026</div>
+                    <div class="market-ends">⏰ Ends Next Friday</div>
                 </div>
             </div>
         </div>
 
-        <button class="load-more-btn" onclick="loadMoreMarkets()">Load More Markets</button>
+        <button class="load-more-btn" onclick="loadMoreMarkets()">Load More Event Markets</button>
     </div>
 
     <footer class="footer">
         <div class="footer-content">
             <div class="footer-section">
                 <h3>EVGxchain</h3>
-                <p>The premier destination for cryptocurrency prediction markets. Trade on the future of digital assets with confidence.</p>
+                <p>Trade crypto volatility during major economic events. Advanced prediction markets for CPI, FOMC, and NFP releases.</p>
                 <p>© 2025 EVGxchain. All rights reserved.</p>
             </div>
             <div class="footer-section">
-                <h3>Markets</h3>
-                <a href="#">Bitcoin Markets</a>
-                <a href="#">Ethereum Markets</a>
-                <a href="#">Altcoin Markets</a>
-                <a href="#">DeFi Markets</a>
-                <a href="#">NFT Markets</a>
+                <h3>Event Markets</h3>
+                <a href="#">CPI Predictions</a>
+                <a href="#">FOMC Trading</a>
+                <a href="#">NFP Volatility</a>
+                <a href="#">Economic Calendar</a>
+                <a href="#">Live Events</a>
             </div>
             <div class="footer-section">
-                <h3>Resources</h3>
-                <a href="#">How It Works</a>
-                <a href="#">Trading Guide</a>
-                <a href="#">Market Analysis</a>
-                <a href="#">API Documentation</a>
-                <a href="#">Help Center</a>
+                <h3>Trading Tools</h3>
+                <a href="#">Volatility Calculator</a>
+                <a href="#">Event Alerts</a>
+                <a href="#">Price Thresholds</a>
+                <a href="#">Risk Management</a>
+                <a href="#">Trading History</a>
             </div>
             <div class="footer-section">
                 <h3>Community</h3>
-                <a href="#">Discord</a>
-                <a href="#">Twitter</a>
-                <a href="#">Telegram</a>
-                <a href="#">Reddit</a>
-                <a href="#">Blog</a>
+                <a href="#">Discord Trading Room</a>
+                <a href="#">Twitter Updates</a>
+                <a href="#">Telegram Alerts</a>
+                <a href="#">Event Analysis</a>
+                <a href="#">Strategy Guides</a>
             </div>
         </div>
     </footer>
@@ -1061,13 +1433,19 @@
     <div id="toast" class="toast"></div>
 
     <script>
-        // Profile dropdown functionality (copied from dashboard)
+        // Global variables for trading interface
+        let currentEvent = 'cpi';
+        let currentCrypto = 'btc';
+        let currentTimeframe = '3m';
+        let currentThreshold = 0.08;
+
+        // Profile dropdown functionality
         function toggleProfileMenu() {
             const dropdown = document.getElementById('profileDropdown');
             dropdown.classList.toggle('show');
         }
 
-        // Close dropdown when clicking outside (copied from dashboard)
+        // Close dropdown when clicking outside
         document.addEventListener('click', function(event) {
             const profile = document.querySelector('.user-profile');
             const dropdown = document.getElementById('profileDropdown');
@@ -1077,19 +1455,19 @@
             }
         });
 
-        // Market data and functionality
+        // Event and market filtering
         const allMarkets = document.querySelectorAll('.market-card');
+        const allEvents = document.querySelectorAll('.event-card');
         
         // Search functionality
         document.getElementById('searchInput').addEventListener('input', function(e) {
             const searchTerm = e.target.value.toLowerCase();
             
-            allMarkets.forEach(card => {
-                const title = card.querySelector('.market-title').textContent.toLowerCase();
-                const description = card.querySelector('.market-description').textContent.toLowerCase();
-                const category = card.querySelector('.market-category').textContent.toLowerCase();
+            [...allMarkets, ...allEvents].forEach(card => {
+                const title = card.querySelector('.market-title, .event-title').textContent.toLowerCase();
+                const category = card.querySelector('.market-category, .event-type').textContent.toLowerCase();
                 
-                if (title.includes(searchTerm) || description.includes(searchTerm) || category.includes(searchTerm)) {
+                if (title.includes(searchTerm) || category.includes(searchTerm)) {
                     card.style.display = 'block';
                 } else {
                     card.style.display = 'none';
@@ -1100,14 +1478,12 @@
         // Category filtering
         document.querySelectorAll('.category-btn').forEach(btn => {
             btn.addEventListener('click', function() {
-                // Remove active class from all buttons
                 document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
-                // Add active class to clicked button
                 this.classList.add('active');
                 
                 const category = this.dataset.category;
                 
-                allMarkets.forEach(card => {
+                [...allMarkets, ...allEvents].forEach(card => {
                     if (category === 'all') {
                         card.style.display = 'block';
                     } else {
@@ -1122,58 +1498,121 @@
             });
         });
 
-        // Sorting functionality
-        document.getElementById('sortSelect').addEventListener('change', function() {
-            const sortBy = this.value;
-            const marketsGrid = document.getElementById('marketsGrid');
-            const markets = Array.from(allMarkets);
-            
-            let sortedMarkets;
-            
-            switch(sortBy) {
-                case 'newest':
-                    // Sort by newest (reverse order for demo)
-                    sortedMarkets = markets.reverse();
-                    break;
-                case 'ending-soon':
-                    // Sort by ending date (mock implementation)
-                    sortedMarkets = markets.sort((a, b) => {
-                        const dateA = a.querySelector('.market-ends').textContent;
-                        const dateB = b.querySelector('.market-ends').textContent;
-                        return dateA.localeCompare(dateB);
-                    });
-                    break;
-                case 'highest-volume':
-                    // Sort by volume
-                    sortedMarkets = markets.sort((a, b) => {
-                        const volumeA = parseInt(a.querySelector('.market-volume').textContent.replace(/\D/g, ''));
-                        const volumeB = parseInt(b.querySelector('.market-volume').textContent.replace(/\D/g, ''));
-                        return volumeB - volumeA;
-                    });
-                    break;
-                default:
-                    // Most popular (default order)
-                    sortedMarkets = markets;
-            }
-            
-            // Clear and re-append sorted markets
-            marketsGrid.innerHTML = '';
-            sortedMarkets.forEach(market => {
-                marketsGrid.appendChild(market);
+        // Crypto selection functionality
+        document.querySelectorAll('.crypto-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const eventCard = this.closest('.event-card');
+                eventCard.querySelectorAll('.crypto-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentCrypto = this.dataset.crypto;
+                updatePredictionInterface(eventCard);
             });
         });
+
+        // Timeframe selection functionality
+        document.querySelectorAll('.timeframe-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const eventCard = this.closest('.event-card');
+                eventCard.querySelectorAll('.timeframe-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                
+                currentTimeframe = this.dataset.timeframe;
+                currentThreshold = parseFloat(this.dataset.threshold);
+                
+                updateThresholdDisplay(eventCard);
+                updateOdds(eventCard);
+            });
+        });
+
+        // Update threshold display
+        function updateThresholdDisplay(eventCard) {
+            const thresholdDisplay = eventCard.querySelector('.threshold-value');
+            thresholdDisplay.textContent = `±${currentThreshold}%`;
+        }
+
+        // Update odds based on timeframe and volatility
+        function updateOdds(eventCard) {
+            const upBtn = eventCard.querySelector('.prediction-btn.up .prediction-odds');
+            const downBtn = eventCard.querySelector('.prediction-btn.down .prediction-odds');
+            
+            // Simulate different odds based on timeframe
+            const baseOdds = {
+                '1m': { up: 2.8, down: 2.5 },
+                '3m': { up: 2.4, down: 2.2 },
+                '5m': { up: 2.1, down: 1.9 },
+                '10m': { up: 1.8, down: 1.7 },
+                '15m': { up: 1.6, down: 1.5 },
+                '30m': { up: 1.4, down: 1.3 }
+            };
+            
+            const odds = baseOdds[currentTimeframe] || baseOdds['3m'];
+            upBtn.textContent = `${odds.up}x Odds`;
+            downBtn.textContent = `${odds.down}x Odds`;
+        }
+
+        // Bet amount calculation
+        document.querySelectorAll('.bet-input[placeholder="Bet Amount"]').forEach(input => {
+            input.addEventListener('input', function() {
+                const betAmount = parseFloat(this.value) || 0;
+                const winInput = this.parentNode.querySelector('input[placeholder="Potential Win"]');
+                const eventCard = this.closest('.event-card');
+                const activeOdds = eventCard.querySelector('.prediction-btn.up .prediction-odds').textContent;
+                const odds = parseFloat(activeOdds.replace('x Odds', ''));
+                
+                const potentialWin = (betAmount * odds).toFixed(2);
+                winInput.value = `${potentialWin}`;
+            });
+        });
+
+        // Prediction button selection
+        document.querySelectorAll('.prediction-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const eventCard = this.closest('.event-card');
+                eventCard.querySelectorAll('.prediction-btn').forEach(b => b.classList.remove('selected'));
+                this.classList.add('selected');
+                
+                // Update bet calculation with selected odds
+                const betInput = eventCard.querySelector('.bet-input[placeholder="Bet Amount"]');
+                if (betInput.value) {
+                    betInput.dispatchEvent(new Event('input'));
+                }
+            });
+        });
+
+        // Place bet functionality
+        function placeBet(eventType, crypto) {
+            const eventCard = document.querySelector(`[data-category="${eventType}"]`);
+            const betAmount = eventCard.querySelector('.bet-input[placeholder="Bet Amount"]').value;
+            const selectedDirection = eventCard.querySelector('.prediction-btn.selected');
+            
+            if (!betAmount || !selectedDirection) {
+                showToast('Please enter bet amount and select direction');
+                return;
+            }
+            
+            const direction = selectedDirection.classList.contains('up') ? 'UP' : 'DOWN';
+            const odds = selectedDirection.querySelector('.prediction-odds').textContent;
+            
+            showToast(`Placed ${direction} bet: ${betAmount} on ${crypto.toUpperCase()} at ${odds}`);
+            
+            // Reset form
+            eventCard.querySelector('.bet-input[placeholder="Bet Amount"]').value = '';
+            eventCard.querySelector('input[placeholder="Potential Win"]').value = '';
+            eventCard.querySelectorAll('.prediction-btn').forEach(b => b.classList.remove('selected'));
+        }
 
         // Market opening functionality
         function openMarket(marketId) {
             showToast(`Opening market: ${marketId}`);
-            // In a real app, this would navigate to the market details page
             console.log('Opening market:', marketId);
         }
 
-        // Load more markets functionality
+        // Load more markets
         function loadMoreMarkets() {
-            showToast('Loading more markets...');
-            // In a real app, this would fetch more markets from the API
+            showToast('Loading more event markets...');
             setTimeout(() => {
                 showToast('No more markets to load');
             }, 1000);
@@ -1190,75 +1629,77 @@
             }, 3000);
         }
 
-        // Outcome option hover effects
-        document.querySelectorAll('.outcome-option').forEach(option => {
-            option.addEventListener('click', function(e) {
-                e.stopPropagation(); // Prevent opening the market
-                const label = this.querySelector('.outcome-label').textContent;
-                const odds = this.querySelector('.outcome-odds').textContent;
-                showToast(`Selected ${label} at ${odds} odds`);
-            });
-        });
-
-        // Mobile menu toggle (for responsive design)
-        function toggleMobileMenu() {
-            const navLinks = document.querySelector('.nav-links');
-            navLinks.classList.toggle('mobile-active');
-        }
-
-        // Floating coins animation restart
-        function restartFloatingCoins() {
-            document.querySelectorAll('.floating-coin').forEach((coin, index) => {
-                coin.style.animationDelay = `${index * 5}s`;
-            });
-        }
-
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            restartFloatingCoins();
-            
-            // Add smooth scrolling for anchor links
-            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-                anchor.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    const target = document.querySelector(this.getAttribute('href'));
-                    if (target) {
-                        target.scrollIntoView({
-                            behavior: 'smooth'
-                        });
+        // Real-time price updates simulation
+        function updateLivePrices() {
+            document.querySelectorAll('.event-card.live').forEach(card => {
+                const newsItems = card.querySelectorAll('.news-item');
+                if (newsItems.length > 0) {
+                    // Update news feed with real-time updates
+                    const currentTime = new Date().toLocaleTimeString('en-US', { 
+                        hour12: false, 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                    });
+                    
+                    // Simulate price movements
+                    const priceChanges = [
+                        `BTC: ${(43250 + Math.random() * 100 - 50).toFixed(0)}`,
+                        `ETH: ${(2650 + Math.random() * 50 - 25).toFixed(0)}`,
+                        `Volume spike detected`,
+                        `Volatility increasing pre-announcement`,
+                        `Order book showing heavy accumulation`
+                    ];
+                    
+                    if (Math.random() < 0.1) { // 10% chance to add new update
+                        const newUpdate = document.createElement('div');
+                        newUpdate.className = 'news-item';
+                        newUpdate.innerHTML = `
+                            <span class="news-time">${currentTime}</span>
+                            ${priceChanges[Math.floor(Math.random() * priceChanges.length)]}
+                        `;
+                        card.querySelector('.news-feed').insertBefore(newUpdate, newsItems[0]);
+                        
+                        // Remove oldest update if more than 5
+                        if (newsItems.length >= 5) {
+                            newsItems[newsItems.length - 1].remove();
+                        }
                     }
-                });
-            });
-
-            // Auto-hide messages after 5 seconds (copied from dashboard)
-            const messages = document.querySelectorAll('.message');
-            messages.forEach(message => {
-                setTimeout(() => {
-                    message.style.opacity = '0';
-                    message.style.transform = 'translateY(-10px)';
-                    setTimeout(() => {
-                        message.remove();
-                    }, 300);
-                }, 5000);
-            });
-        });
-
-        // Add some dynamic price updates (mock real-time data)
-        function updateMarketPrices() {
-            document.querySelectorAll('.outcome-odds').forEach(odd => {
-                if (Math.random() < 0.1) { // 10% chance to update
-                    const currentOdd = parseFloat(odd.textContent.replace('x', ''));
-                    const change = (Math.random() - 0.5) * 0.2; // Small random change
-                    const newOdd = Math.max(1.1, Math.min(5.0, currentOdd + change));
-                    odd.textContent = newOdd.toFixed(2) + 'x';
+                }
+                
+                // Update participant counts and pool sizes
+                const poolInfo = card.querySelector('.pool-info');
+                if (poolInfo && Math.random() < 0.05) { // 5% chance to update
+                    const currentPool = parseInt(poolInfo.textContent.match(/\$[\d,]+/)[0].replace(/[$,]/g, ''));
+                    const currentParticipants = parseInt(poolInfo.textContent.match(/\d+(?=\s+Participants)/)[0]);
+                    
+                    const newPool = currentPool + Math.floor(Math.random() * 1000);
+                    const newParticipants = currentParticipants + Math.floor(Math.random() * 5);
+                    
+                    poolInfo.innerHTML = `
+                        <span>Total Pool: ${newPool.toLocaleString()}</span>
+                        <span>Participants: ${newParticipants}</span>
+                    `;
                 }
             });
         }
 
-        // Update prices every 10 seconds
-        setInterval(updateMarketPrices, 10000);
+        // Update prediction interface based on selection
+        function updatePredictionInterface(eventCard) {
+            // Update odds based on crypto selection and current market conditions
+            updateOdds(eventCard);
+            
+            // Update threshold based on crypto volatility
+            const crypto = eventCard.querySelector('.crypto-btn.active').dataset.crypto;
+            if (crypto === 'eth') {
+                // ETH typically more volatile, so slightly higher thresholds
+                const currentBtn = eventCard.querySelector('.timeframe-btn.active');
+                const baseThreshold = parseFloat(currentBtn.dataset.threshold);
+                currentThreshold = baseThreshold * 1.2; // 20% higher for ETH
+                updateThresholdDisplay(eventCard);
+            }
+        }
 
-        // Add keyboard shortcuts
+        // Keyboard shortcuts
         document.addEventListener('keydown', function(e) {
             // Press '/' to focus search
             if (e.key === '/' && !e.ctrlKey && !e.metaKey) {
@@ -1274,7 +1715,208 @@
                     searchInput.dispatchEvent(new Event('input'));
                 }
             }
+            
+            // Press '1', '2', '3' to switch between event categories
+            if (['1', '2', '3', '4'].includes(e.key) && !e.ctrlKey && !e.metaKey) {
+                e.preventDefault();
+                const categories = ['all', 'cpi', 'fomc', 'nfp'];
+                const categoryBtn = document.querySelector(`[data-category="${categories[parseInt(e.key) - 1]}"]`);
+                if (categoryBtn) {
+                    categoryBtn.click();
+                }
+            }
         });
+
+        // Initialize countdown timers for events
+        function initializeCountdowns() {
+            document.querySelectorAll('.event-card').forEach(card => {
+                const timeElement = card.querySelector('.detail-value');
+                if (timeElement && timeElement.textContent.includes(':')) {
+                    // This is a time display, we can add countdown logic here
+                    const eventTime = timeElement.textContent;
+                    // Add countdown functionality if needed
+                }
+            });
+        }
+
+        // Mobile responsiveness
+        function handleMobileLayout() {
+            if (window.innerWidth <= 768) {
+                // Adjust grid layouts for mobile
+                document.querySelectorAll('.timeframe-selector').forEach(selector => {
+                    selector.style.gridTemplateColumns = 'repeat(2, 1fr)';
+                });
+            }
+        }
+
+        // Initialize everything on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeCountdowns();
+            handleMobileLayout();
+            
+            // Auto-update live prices every 5 seconds
+            setInterval(updateLivePrices, 5000);
+            
+            // Auto-hide messages after 5 seconds
+            const messages = document.querySelectorAll('.message');
+            messages.forEach(message => {
+                setTimeout(() => {
+                    message.style.opacity = '0';
+                    message.style.transform = 'translateY(-10px)';
+                    setTimeout(() => {
+                        message.remove();
+                    }, 300);
+                }, 5000);
+            });
+            
+            // Add smooth scrolling for anchor links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth'
+                        });
+                    }
+                });
+            });
+        });
+
+        // Window resize handler
+        window.addEventListener('resize', handleMobileLayout);
+
+        // Sorting functionality
+        document.getElementById('sortSelect').addEventListener('change', function() {
+            const sortBy = this.value;
+            const eventsGrid = document.querySelector('.live-events-grid');
+            const events = Array.from(document.querySelectorAll('.event-card'));
+            
+            let sortedEvents;
+            
+            switch(sortBy) {
+                case 'live':
+                    sortedEvents = events.sort((a, b) => {
+                        const aLive = a.classList.contains('live') ? 1 : 0;
+                        const bLive = b.classList.contains('live') ? 1 : 0;
+                        return bLive - aLive;
+                    });
+                    break;
+                case 'upcoming':
+                    sortedEvents = events.sort((a, b) => {
+                        const aUpcoming = !a.classList.contains('live') ? 1 : 0;
+                        const bUpcoming = !b.classList.contains('live') ? 1 : 0;
+                        return bUpcoming - aUpcoming;
+                    });
+                    break;
+                case 'highest-volatility':
+                    sortedEvents = events.sort((a, b) => {
+                        const aImpact = a.querySelector('.detail-value[style*="color: #ef4444"]') ? 3 :
+                                      a.querySelector('.detail-value[style*="color: #f59e0b"]') ? 2 : 1;
+                        const bImpact = b.querySelector('.detail-value[style*="color: #ef4444"]') ? 3 :
+                                      b.querySelector('.detail-value[style*="color: #f59e0b"]') ? 2 : 1;
+                        return bImpact - aImpact;
+                    });
+                    break;
+                case 'most-volume':
+                    sortedEvents = events.sort((a, b) => {
+                        const aPool = parseInt(a.querySelector('.pool-info span').textContent.replace(/\D/g, '')) || 0;
+                        const bPool = parseInt(b.querySelector('.pool-info span').textContent.replace(/\D/g, '')) || 0;
+                        return bPool - aPool;
+                    });
+                    break;
+                default:
+                    sortedEvents = events;
+            }
+            
+            // Clear and re-append sorted events
+            eventsGrid.innerHTML = '';
+            sortedEvents.forEach(event => {
+                eventsGrid.appendChild(event);
+            });
+        });
+
+        // Add visual feedback for bet placement
+        function addBetAnimation(button) {
+            button.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                button.style.transform = 'scale(1)';
+            }, 150);
+        }
+
+        // Enhanced bet placement with animation
+        document.querySelectorAll('.place-bet-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                addBetAnimation(this);
+            });
+        });
+
+        // Add loading states
+        function showLoadingState(element) {
+            const originalText = element.textContent;
+            element.textContent = 'Processing...';
+            element.disabled = true;
+            
+            setTimeout(() => {
+                element.textContent = originalText;
+                element.disabled = false;
+            }, 1500);
+        }
+
+        // Enhanced market card interactions
+        document.querySelectorAll('.market-card').forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-8px) scale(1.02)';
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0) scale(1)';
+            });
+        });
+
+        // Add pulse animation to live indicators
+        function pulseLiveIndicators() {
+            document.querySelectorAll('.live-indicator').forEach(indicator => {
+                indicator.style.animation = 'pulse 1s infinite';
+            });
+        }
+
+        // Start live indicator pulse
+        pulseLiveIndicators();
+
+        // Advanced filtering with multiple criteria
+        function advancedFilter() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const selectedCategory = document.querySelector('.category-btn.active').dataset.category;
+            const sortBy = document.getElementById('sortSelect').value;
+            
+            // Apply all filters simultaneously
+            [...allMarkets, ...allEvents].forEach(card => {
+                let showCard = true;
+                
+                // Search filter
+                if (searchTerm) {
+                    const title = card.querySelector('.market-title, .event-title').textContent.toLowerCase();
+                    const category = card.querySelector('.market-category, .event-type').textContent.toLowerCase();
+                    showCard = showCard && (title.includes(searchTerm) || category.includes(searchTerm));
+                }
+                
+                // Category filter
+                if (selectedCategory !== 'all') {
+                    showCard = showCard && (card.dataset.category === selectedCategory);
+                }
+                
+                card.style.display = showCard ? 'block' : 'none';
+            });
+        }
+
+        // Bind advanced filtering to all filter controls
+        document.getElementById('searchInput').addEventListener('input', advancedFilter);
+        document.querySelectorAll('.category-btn').forEach(btn => {
+            btn.addEventListener('click', advancedFilter);
+        });
+
+        console.log('EVGxchain Event Trading Platform initialized successfully!');
     </script>
 </body>
 </html>
