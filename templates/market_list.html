@@ -939,8 +939,8 @@
         <div class="nav-container">
             <a href="#" class="logo">EVGxchain</a>
             <div class="nav-links">
-                <a href="#">Dashboard</a>
-                <a href="#" class="active">Event Markets</a>
+                <a href="{% url 'dashboard' %}">Dashboard</a>
+                <a href="{% url 'market-data' %}" class="active">Event Markets</a>
             </div>
             <div class="user-profile" onclick="toggleProfileMenu()">
                 <div class="user-avatar">JD</div>
