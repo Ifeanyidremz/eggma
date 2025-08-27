@@ -87,51 +87,51 @@ def marketPage(request):
 
 
 
-@login_required
-def marketDetail(request, market_id):
+
+def marketDetail(request):
     """Market detail page with betting functionality"""
     
-    market = get_object_or_404(Market, id=market_id)
+    # market = get_object_or_404(Market)
     
-    # Get user's existing bets on this market
-    user_bets = Bet.objects.filter(
-        user=request.user,
-        market=market,
-        status='active'
-    ).order_by('-placed_at')
+    # # Get user's existing bets on this market
+    # user_bets = Bet.objects.filter(
+    #     user=request.user,
+    #     market=market,
+    #     status='active'
+    # ).order_by('-placed_at')
     
-    # Get market statistics
-    total_bets = market.bets.filter(status='active').count()
-    unique_participants = market.bets.filter(status='active').values('user').distinct().count()
+    # # Get market statistics
+    # total_bets = market.bets.filter(status='active').count()
+    # unique_participants = market.bets.filter(status='active').values('user').distinct().count()
     
-    # Get recent bets (anonymized)
-    recent_bets = market.bets.filter(status='active').select_related('user')[:10]
+    # # Get recent bets (anonymized)
+    # recent_bets = market.bets.filter(status='active').select_related('user')[:10]
     
-    # Get comments
-    comments = market.comments.filter(is_hidden=False).select_related('user')[:20]
+    # # Get comments
+    # comments = market.comments.filter(is_hidden=False).select_related('user')[:20]
     
-    # Get related crypto price data
-    crypto_prices = CryptoPriceService.get_crypto_prices()
-    market.crypto_data = None
-    for symbol, data in crypto_prices.items():
-        if symbol.lower() in market.title.lower():
-            market.crypto_data = data
-            break
+    # # Get related crypto price data
+    # crypto_prices = CryptoPriceService.get_crypto_prices()
+    # market.crypto_data = None
+    # for symbol, data in crypto_prices.items():
+    #     if symbol.lower() in market.title.lower():
+    #         market.crypto_data = data
+    #         break
     
-    context = {
-        'market': market,
-        'user_bets': user_bets,
-        'total_bets': total_bets,
-        'unique_participants': unique_participants,
-        'recent_bets': recent_bets,
-        'comments': comments,
-        'crypto_prices': crypto_prices,
-        'user_balance': request.user.balance,
-        'min_bet': market.min_bet,
-        'max_bet': market.max_bet,
-    }
+    # context = {
+    #     'market': market,
+    #     'user_bets': user_bets,
+    #     'total_bets': total_bets,
+    #     'unique_participants': unique_participants,
+    #     'recent_bets': recent_bets,
+    #     'comments': comments,
+    #     'crypto_prices': crypto_prices,
+    #     'user_balance': request.user.balance,
+    #     'min_bet': market.min_bet,
+    #     'max_bet': market.max_bet,
+    # }
     
-    return render(request, 'market_detail.html', context)
+    return render(request, 'market_detail.html')
 
 
 @login_required
