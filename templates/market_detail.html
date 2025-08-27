@@ -721,10 +721,6 @@
                 {% endif %}
                 <div class="profile-dropdown" id="profileDropdown">
                     {% if user.is_authenticated %}
-                        <a href="{% url 'profile' %}" class="dropdown-item">👤 Profile</a>
-                        <a href="{% url 'settings' %}" class="dropdown-item">⚙️ Settings</a>
-                        <a href="{% url 'transaction-history' %}" class="dropdown-item">💰 Transactions</a>
-                        <div class="dropdown-divider"></div>
                         <a href="{% url 'logout' %}" class="dropdown-item">🚪 Logout</a>
                     {% else %}
                         <a href="{% url 'login' %}" class="dropdown-item">🔑 Login</a>
