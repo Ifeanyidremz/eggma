@@ -1,6 +1,3 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Crypto Event Predictions - EVGxchain</title>
@@ -610,8 +607,7 @@
         <div class="nav-container">
             <a href="#" class="logo">EVGxchain</a>
             <div class="nav-links">
-                <a href="#">Dashboard</a>
-                <a href="#" class="active">Event Markets</a>
+                <a href="{% url 'dashboard' %}">Dashboard</a>
             </div>
             <div class="user-profile" onclick="toggleProfileMenu()">
                 <div class="user-avatar">JD</div>
@@ -708,7 +704,7 @@
                     </div>
                 </div>
 
-                <a href="#" class="action-button">Check Detail</a>
+                <a href="{% url 'market-detail' %}" class="action-button">Check Detail</a>
             </div>
 
             <!-- News Summary Card -->
