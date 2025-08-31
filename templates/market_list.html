@@ -1,3 +1,6 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Crypto Event Predictions - EVGxchain</title>
@@ -164,6 +167,155 @@
             margin-bottom: 30px;
         }
 
+        /* News Summary Card */
+        .news-summary-card {
+            background: rgba(20, 20, 20, 0.9);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 40px;
+            transition: all 0.3s ease;
+        }
+
+        .news-summary-card:hover {
+            border-color: rgba(34, 197, 94, 0.3);
+            box-shadow: 0 8px 25px rgba(34, 197, 94, 0.1);
+        }
+
+        .news-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .news-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .news-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: white;
+        }
+
+        .news-timestamp {
+            color: #999;
+            font-size: 12px;
+            margin-left: auto;
+        }
+
+        .news-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .news-item {
+            background: rgba(30, 30, 30, 0.6);
+            border-radius: 10px;
+            padding: 16px;
+            border-left: 3px solid;
+            transition: all 0.3s ease;
+        }
+
+        .news-item.high-impact {
+            border-left-color: #ef4444;
+        }
+
+        .news-item.medium-impact {
+            border-left-color: #f97316;
+        }
+
+        .news-item.low-impact {
+            border-left-color: #22c55e;
+        }
+
+        .news-item:hover {
+            background: rgba(40, 40, 40, 0.8);
+            transform: translateY(-1px);
+        }
+
+        .news-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .news-impact {
+            font-size: 10px;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 8px;
+            text-transform: uppercase;
+        }
+
+        .news-impact.high {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+
+        .news-impact.medium {
+            background: rgba(249, 115, 22, 0.2);
+            color: #f97316;
+        }
+
+        .news-impact.low {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+        }
+
+        .news-time {
+            font-size: 11px;
+            color: #666;
+        }
+
+        .news-headline {
+            font-size: 14px;
+            font-weight: 600;
+            color: white;
+            line-height: 1.4;
+            margin-bottom: 8px;
+        }
+
+        .news-summary {
+            font-size: 12px;
+            color: #ccc;
+            line-height: 1.5;
+        }
+
+        .news-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .news-action-btn {
+            padding: 8px 16px;
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 8px;
+            color: #60a5fa;
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .news-action-btn:hover {
+            background: rgba(59, 130, 246, 0.3);
+            border-color: #3b82f6;
+            transform: translateY(-1px);
+        }
+
         /* Trading Cards Grid */
         .trading-cards-grid {
             display: grid;
@@ -187,22 +339,6 @@
             border-color: rgba(34, 197, 94, 0.5);
             transform: translateY(-2px);
             box-shadow: 0 15px 40px rgba(34, 197, 94, 0.2);
-        }
-
-        .news-card {
-            background: rgba(20, 20, 20, 0.9);
-            border-radius: 15px;
-            padding: 25px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: all 0.3s ease;
-            overflow: hidden;
-            min-height: 500px;
-        }
-
-        .news-card:hover {
-            border-color: rgba(147, 51, 234, 0.5);
-            transform: translateY(-2px);
-            box-shadow: 0 15px 40px rgba(147, 51, 234, 0.2);
         }
 
         .card-header {
@@ -446,95 +582,6 @@
             box-shadow: 0 8px 25px rgba(34, 197, 94, 0.3);
         }
 
-        /* News Card Styles */
-        .news-header {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .news-icon {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, #9333ea 0%, #a855f7 100%);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-        }
-
-        .news-title {
-            font-size: 22px;
-            font-weight: 600;
-            color: white;
-        }
-
-        .news-content {
-            margin-bottom: 25px;
-        }
-
-        .news-item {
-            background: rgba(30, 30, 30, 0.5);
-            border-left: 3px solid #9333ea;
-            padding: 15px;
-            margin-bottom: 15px;
-            border-radius: 8px;
-        }
-
-        .news-headline {
-            font-size: 16px;
-            font-weight: 600;
-            color: white;
-            margin-bottom: 8px;
-        }
-
-        .news-summary {
-            font-size: 14px;
-            color: #ccc;
-            line-height: 1.5;
-            margin-bottom: 8px;
-        }
-
-        .news-date {
-            font-size: 12px;
-            color: #999;
-        }
-
-        .economic-indicators {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            margin-bottom: 25px;
-        }
-
-        .indicator {
-            background: rgba(30, 30, 30, 0.8);
-            padding: 15px;
-            border-radius: 8px;
-            text-align: center;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .indicator-name {
-            font-size: 12px;
-            color: #999;
-            margin-bottom: 8px;
-        }
-
-        .indicator-value {
-            font-size: 16px;
-            font-weight: 600;
-            color: #22c55e;
-        }
-
-        .indicator-impact {
-            font-size: 11px;
-            color: #ccc;
-            margin-top: 4px;
-        }
-
         .footer {
             background: rgba(26, 26, 26, 0.8);
             border-top: 1px solid rgba(255, 255, 255, 0.1);
@@ -578,6 +625,10 @@
                 gap: 20px;
             }
 
+            .news-grid {
+                grid-template-columns: 1fr;
+            }
+
             .container {
                 padding: 20px 15px;
             }
@@ -596,8 +647,14 @@
                 align-items: flex-start;
             }
 
-            .economic-indicators {
-                grid-template-columns: 1fr;
+            .news-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .news-timestamp {
+                margin-left: 0;
             }
         }
     </style>
@@ -617,7 +674,7 @@
                 </div>
                 <div class="profile-dropdown" id="profileDropdown">
                     <div class="dropdown-divider"></div>
-                    <a href="#" class="dropdown-item">🚪 Logout</a>
+                    <a href="{% url 'logout' %}" class="dropdown-item">🚪 Logout</a>
                 </div>
             </div>
         </div>
@@ -629,19 +686,63 @@
             <p class="page-subtitle">Trade crypto volatility during CPI, FOMC, and NFP announcements</p>
         </div>
 
+        <!-- News Summary Card -->
+        <div class="news-summary-card">
+            <div class="news-header">
+                <div class="news-icon">📰</div>
+                <div class="news-title">Market-Moving News</div>
+                <div class="news-timestamp">Last updated: 2 mins ago</div>
+            </div>
+            
+            <div class="news-grid">
+                <div class="news-item high-impact">
+                    <div class="news-item-header">
+                        <span class="news-impact high">High Impact</span>
+                        <span class="news-time">15 mins ago</span>
+                    </div>
+                    <div class="news-headline">Fed Chair Powell Hints at Policy Shift in Jackson Hole Speech</div>
+                    <div class="news-summary">Markets react to unexpected dovish tone regarding future rate decisions. BTC showing increased volatility.</div>
+                </div>
+
+                <div class="news-item medium-impact">
+                    <div class="news-item-header">
+                        <span class="news-impact medium">Medium Impact</span>
+                        <span class="news-time">1 hour ago</span>
+                    </div>
+                    <div class="news-headline">US CPI Data Release Scheduled for Tomorrow 8:30 AM EST</div>
+                    <div class="news-summary">Economists expect 0.2% monthly increase. Historical data shows 15-20% crypto volatility spike during CPI releases.</div>
+                </div>
+
+                <div class="news-item low-impact">
+                    <div class="news-item-header">
+                        <span class="news-impact low">Low Impact</span>
+                        <span class="news-time">2 hours ago</span>
+                    </div>
+                    <div class="news-headline">Bitcoin ETF Inflows Reach $2.1B This Week</div>
+                    <div class="news-summary">Institutional demand remains strong despite recent price consolidation. ETH ETF launches gaining momentum.</div>
+                </div>
+            </div>
+
+            <div class="news-actions">
+                <a href="#" class="news-action-btn">📅 Economic Calendar</a>
+                <a href="#" class="news-action-btn">📊 Volatility Tracker</a>
+                <a href="#" class="news-action-btn">🔔 News Alerts</a>
+            </div>
+        </div>
+
         <div class="trading-cards-grid">
-            <!-- BTC/ETH Trading Card -->
+            <!-- BTC/USDT Trading Card -->
             <div class="trading-card">
                 <div class="card-header">
                     <div class="crypto-pair">
                         <div class="crypto-icon">₿</div>
                         <div class="pair-info">
-                            <div class="pair-name">BTC/ETH</div>
+                            <div class="pair-name">BTC/USDT</div>
                             <div class="timeframe">15m</div>
                         </div>
                     </div>
                     <div class="timer-section">
-                        <div class="timer-circle">3m 42s</div>
+                        <div class="timer-circle">20s</div>
                         <div class="current-round-text">Current Round Info</div>
                     </div>
                 </div>
@@ -654,40 +755,40 @@
 
                 <div class="prediction-options">
                     <div class="prediction-option up">
-                        <div class="option-label up">BTC Strengthens</div>
-                        <div class="option-change">+1.2%</div>
+                        <div class="option-label up">Closes above</div>
+                        <div class="option-change">+0.04%</div>
                         <div class="option-stats">
                             <span class="pool-share">Pool share</span>
-                            <span class="payout">1.85x</span>
+                            <span class="payout">2.00x</span>
                         </div>
                         <div class="option-stats">
-                            <span class="pool-share">54.1%</span>
+                            <span class="pool-share">49.5%</span>
                             <span class="payout">Payout</span>
                         </div>
                     </div>
 
                     <div class="prediction-option flat">
-                        <div class="option-label flat">Sideways</div>
-                        <div class="option-change">±0.8%</div>
+                        <div class="option-label flat">Stay Flat</div>
+                        <div class="option-change">±0.04%</div>
                         <div class="option-stats">
                             <span class="pool-share">Pool share</span>
-                            <span class="payout">4.76x</span>
+                            <span class="payout">2.00x</span>
                         </div>
                         <div class="option-stats">
-                            <span class="pool-share">21.0%</span>
+                            <span class="pool-share">25.2%</span>
                             <span class="payout">Payout</span>
                         </div>
                     </div>
 
                     <div class="prediction-option down">
-                        <div class="option-label down">ETH Strengthens</div>
-                        <div class="option-change">-1.5%</div>
+                        <div class="option-label down">Closes below</div>
+                        <div class="option-change">-0.04%</div>
                         <div class="option-stats">
                             <span class="pool-share">Pool share</span>
-                            <span class="payout">4.01x</span>
+                            <span class="payout">1.98x</span>
                         </div>
                         <div class="option-stats">
-                            <span class="pool-share">24.9%</span>
+                            <span class="pool-share">25.3%</span>
                             <span class="payout">Payout</span>
                         </div>
                     </div>
@@ -696,61 +797,92 @@
                 <div class="card-stats">
                     <div class="stat-item">
                         <div style="font-size: 12px; color: #999;">Total pool outcome:</div>
-                        <div class="stat-value">$142,500</div>
+                        <div class="stat-value">$105,000</div>
                     </div>
                     <div class="stat-item">
                         <div style="font-size: 12px; color: #999;"># of participants in current round:</div>
-                        <div class="stat-value">287</div>
+                        <div class="stat-value">210</div>
                     </div>
                 </div>
 
                 <a href="{% url 'market-detail' %}" class="action-button">Check Detail</a>
             </div>
 
-            <!-- News Summary Card -->
-            <div class="news-card">
-                <div class="news-header">
-                    <div class="news-icon">📰</div>
-                    <div class="news-title">Economic Events Impact</div>
-                </div>
-
-                <div class="economic-indicators">
-                    <div class="indicator">
-                        <div class="indicator-name">Next CPI</div>
-                        <div class="indicator-value">Sep 11</div>
-                        <div class="indicator-impact">High Impact</div>
+            <!-- ETH/USDT Trading Card -->
+            <div class="trading-card">
+                <div class="card-header">
+                    <div class="crypto-pair">
+                        <div class="crypto-icon" style="background: linear-gradient(135deg, #627eea 0%, #8c94ff 100%);">Ξ</div>
+                        <div class="pair-info">
+                            <div class="pair-name">ETH/USDT</div>
+                            <div class="timeframe">15m</div>
+                        </div>
                     </div>
-                    <div class="indicator">
-                        <div class="indicator-name">Next FOMC</div>
-                        <div class="indicator-value">Sep 18</div>
-                        <div class="indicator-impact">Critical</div>
-                    </div>
-                    <div class="indicator">
-                        <div class="indicator-name">Next NFP</div>
-                        <div class="indicator-value">Sep 6</div>
-                        <div class="indicator-impact">High Impact</div>
+                    <div class="timer-section">
+                        <div class="timer-circle" style="background: conic-gradient(#22c55e 0deg, #22c55e 180deg, rgba(255,255,255,0.1) 180deg);">1m 45s</div>
+                        <div class="current-round-text">Current Round Info</div>
                     </div>
                 </div>
 
-                <div class="news-content">
-                    <div class="news-item">
-                        <div class="news-headline">Labor Markets in Transition</div>
-                        <div class="news-summary">2025's Jackson Hole theme focuses on demographic shifts and productivity changes affecting monetary policy. Central banks are closely monitoring how labor market transitions impact inflation targets.</div>
-                        <div class="news-date">August 2025</div>
-                    </div>
-
-                    <div class="news-item">
-                        <div class="news-headline">Crypto Market Volatility During CPI</div>
-                        <div class="news-summary">Bitcoin and major altcoins continue showing heightened volatility around CPI releases. Key US economic events in September, including CPI data and Fed decisions, could drive Bitcoin and crypto market volatility.</div>
-                        <div class="news-date">Recent Analysis</div>
-                    </div>
-
-                    <div class="news-item">
-                        <div class="news-headline">FOMC Decision Impact</div>
-                        <div class="news-summary">Market expects continued focus on inflation data as higher-than-expected readings may strengthen the U.S. dollar, which could add pressure on risk assets, including cryptocurrencies.</div>
-                        <div class="news-date">July 2025</div>
+                <div class="chart-area">
+                    <div class="price-chart">
+                        <div class="price-line" style="animation-delay: -1s; top: 35%;"></div>
                     </div>
                 </div>
+
+                <div class="prediction-options">
+                    <div class="prediction-option up">
+                        <div class="option-label up">Closes above</div>
+                        <div class="option-change">+0.08%</div>
+                        <div class="option-stats">
+                            <span class="pool-share">Pool share</span>
+                            <span class="payout">1.92x</span>
+                        </div>
+                        <div class="option-stats">
+                            <span class="pool-share">52.1%</span>
+                            <span class="payout">Payout</span>
+                        </div>
+                    </div>
+
+                    <div class="prediction-option flat">
+                        <div class="option-label flat">Stay Flat</div>
+                        <div class="option-change">±0.08%</div>
+                        <div class="option-stats">
+                            <span class="pool-share">Pool share</span>
+                            <span class="payout">5.43x</span>
+                        </div>
+                        <div class="option-stats">
+                            <span class="pool-share">18.4%</span>
+                            <span class="payout">Payout</span>
+                        </div>
+                    </div>
+
+                    <div class="prediction-option down">
+                        <div class="option-label down">Closes below</div>
+                        <div class="option-change">-0.08%</div>
+                        <div class="option-stats">
+                            <span class="pool-share">Pool share</span>
+                            <span class="payout">3.39x</span>
+                        </div>
+                        <div class="option-stats">
+                            <span class="pool-share">29.5%</span>
+                            <span class="payout">Payout</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-stats">
+                    <div class="stat-item">
+                        <div style="font-size: 12px; color: #999;">Total pool outcome:</div>
+                        <div class="stat-value">$87,400</div>
+                    </div>
+                    <div class="stat-item">
+                        <div style="font-size: 12px; color: #999;"># of participants in current round:</div>
+                        <div class="stat-value">156</div>
+                    </div>
+                </div>
+
+               <a href="{% url 'market-detail' %}" class="action-button">Check Detail</a>
             </div>
         </div>
     </div>
@@ -859,17 +991,52 @@
                     const newPool = currentPool + Math.floor(Math.random() * 5000);
                     const newParticipants = currentParticipants + Math.floor(Math.random() * 5);
                     
-                    poolValue.textContent = `$${newPool.toLocaleString()}`;
+                    poolValue.textContent = `${newPool.toLocaleString()}`;
                     participants.textContent = newParticipants;
                 }
             });
         }
 
+        // News timestamp simulation
+        function updateNewsTimestamps() {
+            const timestamps = document.querySelectorAll('.news-time');
+            const mainTimestamp = document.querySelector('.news-timestamp');
+            
+            if (Math.random() < 0.05) { // 5% chance to update news
+                mainTimestamp.textContent = 'Last updated: Just now';
+                
+                // Simulate new news item
+                if (Math.random() < 0.02) {
+                    const newsGrid = document.querySelector('.news-grid');
+                    const firstItem = newsGrid.firstElementChild;
+                    
+                    // Create new news item
+                    const newItem = document.createElement('div');
+                    newItem.className = 'news-item high-impact';
+                    newItem.innerHTML = `
+                        <div class="news-item-header">
+                            <span class="news-impact high">Breaking</span>
+                            <span class="news-time">Just now</span>
+                        </div>
+                        <div class="news-headline">Major Economic Data Release Alert</div>
+                        <div class="news-summary">Unexpected market development could trigger significant crypto volatility in the next hour.</div>
+                    `;
+                    
+                    // Insert at the beginning and remove the last item
+                    newsGrid.insertBefore(newItem, firstItem);
+                    if (newsGrid.children.length > 3) {
+                        newsGrid.removeChild(newsGrid.lastElementChild);
+                    }
+                }
+            }
+        }
+
         // Initialize timers and data updates
         setInterval(updateTimers, 1000);
         setInterval(updateMarketData, 5000);
+        setInterval(updateNewsTimestamps, 10000);
 
-        console.log('EVGxchain BTC/ETH Trading Platform initialized successfully!');
+        console.log('EVGxchain BTC/ETH Trading Platform with News Summary initialized successfully!');
     </script>
 </body>
 </html>
