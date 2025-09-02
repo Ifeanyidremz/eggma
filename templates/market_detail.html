@@ -311,15 +311,15 @@
         .option-buttons {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
-            gap: 15px;
+            gap: 12px;
             margin-bottom: 25px;
         }
 
         .option-btn {
             background: rgba(30, 30, 30, 0.8);
             border: 2px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            padding: 20px 15px;
+            border-radius: 10px;
+            padding: 15px 10px;
             cursor: pointer;
             transition: all 0.3s ease;
             text-align: center;
@@ -357,9 +357,9 @@
         }
 
         .option-label {
-            font-size: 16px;
+            font-size: 14px;
             font-weight: 600;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
 
         .option-label.up { color: #22c55e; }
@@ -367,15 +367,15 @@
         .option-label.down { color: #ef4444; }
 
         .option-change {
-            font-size: 14px;
+            font-size: 12px;
             color: #999;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
 
         .option-stats {
             display: flex;
             justify-content: space-between;
-            font-size: 12px;
+            font-size: 10px;
         }
 
         .pool-share {
@@ -544,6 +544,30 @@
         .pte-pair {
             color: #666;
             font-size: 12px;
+        }
+
+        .pte-timer {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .pte-timer-circle {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: conic-gradient(#8b5cf6 0deg, #8b5cf6 270deg, rgba(255,255,255,0.1) 270deg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 8px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #8b5cf6;
+        }
+
+        .pte-timer-label {
+            font-size: 11px;
+            color: #999;
         }
 
         .pte-timeframes {
@@ -864,6 +888,11 @@
                     </div>
                 </div>
 
+                <div class="pte-timer">
+                    <div class="pte-timer-circle" id="pteTimerCircle">20s</div>
+                    <div class="pte-timer-label">Round Ends</div>
+                </div>
+
                 <div class="pte-timeframes">
                     <button class="pte-tf-btn active" onclick="selectPteTimeframe('1m')">1m</button>
                     <button class="pte-tf-btn" onclick="selectPteTimeframe('2m')">2m</button>
@@ -904,6 +933,7 @@
         let currentTimeframe = '1m';
         let currentPteTimeframe = '1m';
         let timeRemaining = 20;
+        let pteTimeRemaining = 20;
 
         // Profile dropdown functionality
         function toggleProfileMenu() {
@@ -949,6 +979,11 @@
             currentPteTimeframe = tf;
             document.querySelectorAll('.pte-tf-btn').forEach(btn => btn.classList.remove('active'));
             event.target.classList.add('active');
+            
+            // Reset PTE timer based on timeframe
+            if (tf === '1m') pteTimeRemaining = 60;
+            else if (tf === '2m') pteTimeRemaining = 120;
+            else if (tf === '3m') pteTimeRemaining = 180;
         }
 
         function selectPteOption(option) {
@@ -1082,6 +1117,24 @@
                 `conic-gradient(#22c55e 0deg, #22c55e ${percentage}deg, rgba(255,255,255,0.1) ${percentage}deg)`;
         }
 
+        function updatePteTimer() {
+            pteTimeRemaining--;
+            
+            if (pteTimeRemaining <= 0) {
+                // Reset PTE timer (always starts at 20 seconds)
+                pteTimeRemaining = 20;
+            }
+            
+            const display = `${pteTimeRemaining}s`;
+            
+            document.getElementById('pteTimerCircle').textContent = display;
+            
+            // Update PTE timer circle gradient
+            const percentage = (pteTimeRemaining / 20) * 360;
+            document.getElementById('pteTimerCircle').style.background = 
+                `conic-gradient(#8b5cf6 0deg, #8b5cf6 ${percentage}deg, rgba(255,255,255,0.1) ${percentage}deg)`;
+        }
+
         function simulateMarketData() {
             // Update pool shares randomly
             const upShare = 45 + Math.random() * 10;
@@ -1115,6 +1168,7 @@
         
         // Start timers
         setInterval(updateTimer, 1000);
+        setInterval(updatePteTimer, 1000);
         setInterval(simulateMarketData, 5000);
         
         // Add input listener for bet amount
