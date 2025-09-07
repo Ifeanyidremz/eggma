@@ -902,7 +902,10 @@
                     </div>
                     <div style="font-size: 12px; color: #999;">{{ user.get_level_title|default:"Level 1 - Rookie Predictor" }}</div>
                 </div>
-                <!-- Rest of profile dropdown stays the same -->
+                <div class="profile-dropdown" id="profileDropdown">
+                    <div class="dropdown-divider"></div>
+                    <a href="{% url 'logout' %}" class="dropdown-item">🚪 Logout</a>
+                </div>
             </div>
         </div>
     </nav>
