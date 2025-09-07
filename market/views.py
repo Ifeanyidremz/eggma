@@ -10,6 +10,7 @@ from django.utils import timezone
 from datetime import timedelta
 import json
 from .payment_utils import *
+from django.views.decorators.http import require_POST
 from .models import Market, CryptocurrencyCategory, EconomicEvent
 from predict.models import NewsArticle
 from decimal import Decimal, InvalidOperation
@@ -628,31 +629,138 @@ def wallet_deposit(request):
 
 
 @csrf_exempt
+@require_POST
 def stripe_webhook(request):
-    """Handle Stripe webhooks for payment confirmations"""
-    
-    if request.method != 'POST':
-        return HttpResponse(status=405)
-    
+    """
+    Handle Stripe webhooks - specifically payment_intent.succeeded events
+    """
     payload = request.body
     sig_header = request.META.get('HTTP_STRIPE_SIGNATURE', '')
     
     try:
-        from .utils import WebhookService
-        result = WebhookService.handle_stripe_webhook(
-            payload=payload.decode('utf-8'),
-            sig_header=sig_header
+        STRIPE_WEBHOOK_SECRET = os.getenv('STRIPE_WEBHOOK_SECRET')
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, STRIPE_WEBHOOK_SECRET
         )
         
-        if result['success']:
-            return JsonResponse(result)
-        else:
-            logger.error(f"Webhook processing failed: {result.get('error')}")
-            return JsonResponse(result, status=400)
-            
-    except Exception as e:
-        logger.error(f"Webhook error: {str(e)}")
+        logger.info(f"Received Stripe webhook: {event['type']}")
+        
+    except ValueError as e:
+        logger.error(f"Invalid payload: {e}")
         return HttpResponse(status=400)
+    except stripe.error.SignatureVerificationError as e:
+        logger.error(f"Invalid signature: {e}")
+        return HttpResponse(status=400)
+    
+    # Handle the event
+    if event['type'] == 'payment_intent.succeeded':
+        payment_intent = event['data']['object']
+        handle_successful_payment(payment_intent)
+        
+    elif event['type'] == 'payment_intent.payment_failed':
+        payment_intent = event['data']['object']
+        handle_failed_payment(payment_intent)
+        
+    else:
+        logger.info(f"Unhandled event type: {event['type']}")
+    
+    return HttpResponse(status=200)
+
+
+
+def handle_successful_payment(payment_intent):
+    """
+    Handle successful payment - update transaction and user balance
+    """
+    try:
+        payment_intent_id = payment_intent['id']
+        amount_cents = payment_intent['amount']  # Stripe amounts are in cents
+        amount_dollars = Decimal(str(amount_cents / 100))
+        
+        logger.info(f"Processing successful payment: {payment_intent_id} for ${amount_dollars}")
+        
+        # Find the pending transaction
+        try:
+            transaction = Transaction.objects.get(
+                stripe_payment_intent_id=payment_intent_id,
+                status='pending'
+            )
+            
+            logger.info(f"Found transaction {transaction.id} for user {transaction.user.username}")
+            
+            # Update transaction and user balance atomically
+            from django.db import transaction as db_transaction
+            
+            with db_transaction.atomic():
+                # Store old balance
+                old_balance = transaction.user.balance
+                
+                # Update user balance
+                transaction.user.balance += transaction.amount
+                transaction.user.save(update_fields=['balance'])
+                
+                # Update transaction status
+                transaction.status = 'completed'
+                transaction.balance_before = old_balance
+                transaction.balance_after = transaction.user.balance
+                transaction.save(update_fields=['status', 'balance_before', 'balance_after'])
+                
+                # Award XP bonus
+                xp_bonus = min(int(transaction.amount // Decimal('10')) * 5, 50)
+                transaction.user.xp += xp_bonus
+                transaction.user.save(update_fields=['xp'])
+                
+                logger.info(f"Payment processed successfully: "
+                          f"User {transaction.user.username} "
+                          f"Balance: ${old_balance} -> ${transaction.user.balance} "
+                          f"XP: +{xp_bonus}")
+                
+        except Transaction.DoesNotExist:
+            logger.error(f"No pending transaction found for payment_intent: {payment_intent_id}")
+            
+            # Try to find any transaction with this payment intent
+            existing_transactions = Transaction.objects.filter(
+                stripe_payment_intent_id=payment_intent_id
+            )
+            
+            if existing_transactions.exists():
+                logger.info(f"Found {existing_transactions.count()} existing transactions with this payment_intent_id")
+                for txn in existing_transactions:
+                    logger.info(f"  Transaction {txn.id}: {txn.status} - ${txn.amount}")
+            else:
+                logger.error("No transactions found at all with this payment_intent_id")
+        
+    except Exception as e:
+        logger.error(f"Error processing successful payment: {e}", exc_info=True)
+
+
+def handle_failed_payment(payment_intent):
+    """
+    Handle failed payment - mark transaction as failed
+    """
+    try:
+        payment_intent_id = payment_intent['id']
+        
+        logger.info(f"Processing failed payment: {payment_intent_id}")
+        
+        # Find the pending transaction and mark it as failed
+        try:
+            transaction = Transaction.objects.get(
+                stripe_payment_intent_id=payment_intent_id,
+                status='pending'
+            )
+            
+            transaction.status = 'failed'
+            transaction.description += ' - Payment failed'
+            transaction.save(update_fields=['status', 'description'])
+            
+            logger.info(f"Marked transaction {transaction.id} as failed")
+            
+        except Transaction.DoesNotExist:
+            logger.error(f"No pending transaction found for failed payment: {payment_intent_id}")
+    
+    except Exception as e:
+        logger.error(f"Error processing failed payment: {e}", exc_info=True)
 
 
 @login_required
