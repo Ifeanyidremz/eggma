@@ -406,8 +406,7 @@ def userPortfolio(request):
         'next_level_xp': next_level_xp,
         'level_title': request.user.get_level_title(),
         'trending_markets': trending_markets,
-        # FIXED: Ensure these values are passed to template
-        'user_balance': request.user.balance,
+        'user_balance': deposits,
         'user_xp': request.user.xp,
         'calculated_balance': calculated_balance,
     }
