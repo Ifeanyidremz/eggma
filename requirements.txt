@@ -45,7 +45,7 @@ pydantic_core==2.33.2
 python-dateutil==2.9.0.post0
 python-dotenv==1.0.1
 pyunormalize==16.0.0
-pywin32==311
+pywin32
 redis==6.4.0
 regex==2025.9.1
 requests==2.32.5
