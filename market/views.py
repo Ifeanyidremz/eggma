@@ -336,6 +336,55 @@ def userPortfolio(request):
         status='completed'
     ).order_by('-created_at')[:10]
     
+    deposits = Transaction.objects.filter(
+        user=request.user,
+        transaction_type='deposit',
+        status='completed'
+    ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+    
+    withdrawals = Transaction.objects.filter(
+        user=request.user,
+        transaction_type='withdrawal',
+        status='completed'
+    ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+    
+    bets_placed = Transaction.objects.filter(
+        user=request.user,
+        transaction_type='bet',
+        status='completed'
+    ).aggregate(total=Sum('amount'))['total'] or Decimal('0')  # This will be negative
+    
+    payouts = Transaction.objects.filter(
+        user=request.user,
+        transaction_type='payout',
+        status='completed'
+    ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+    
+    bonuses = Transaction.objects.filter(
+        user=request.user,
+        transaction_type='bonus',
+        status='completed'
+    ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+    
+    # Calculate real balance: deposits + payouts + bonuses - withdrawals + bets_placed (bets_placed is negative)
+    calculated_balance = deposits + payouts + bonuses - withdrawals + bets_placed
+    
+    # Update user balance if different
+    if abs(request.user.balance - calculated_balance) > Decimal('0.01'):
+        request.user.balance = calculated_balance
+        request.user.save(update_fields=['balance'])
+    
+    bet_xp = user_stats.total_bets * 10  # 10 XP per bet
+    deposit_xp = deposits // Decimal('10') * 5  # 5 XP per $10 deposited
+    win_xp = user_stats.won_bets * 25  # 25 XP per win
+    
+    calculated_xp = int(bet_xp + deposit_xp + win_xp)
+    
+    # Update user XP if different
+    if request.user.xp != calculated_xp:
+        request.user.xp = calculated_xp
+        request.user.save(update_fields=['xp'])
+    
     # Calculate level progress
     current_xp = request.user.xp
     next_level_xp = request.user.get_xp_for_next_level()
@@ -357,6 +406,10 @@ def userPortfolio(request):
         'next_level_xp': next_level_xp,
         'level_title': request.user.get_level_title(),
         'trending_markets': trending_markets,
+        # FIXED: Ensure these values are passed to template
+        'user_balance': request.user.balance,
+        'user_xp': request.user.xp,
+        'calculated_balance': calculated_balance,
     }
     
     return render(request, 'profile.html', context)
@@ -413,10 +466,12 @@ def place_bet(request):
         from django.db import transaction as db_transaction
         
         with db_transaction.atomic():
+            # Store old balance for transaction record
+            old_balance = request.user.balance
+            
             # Deduct from user balance
             request.user.balance -= amount
-            request.user.total_volume += amount
-            request.user.save()
+            request.user.save(update_fields=['balance'])
             
             # Create bet record
             bet = Bet.objects.create(
@@ -442,12 +497,12 @@ def place_bet(request):
                 market.flat_volume += amount
             market.save()
             
-            # Create transaction record
+            # Create transaction record with proper balance tracking
             Transaction.objects.create(
                 user=request.user,
                 transaction_type='bet',
                 amount=-amount,  # Negative because it's deducted
-                balance_before=request.user.balance + amount,
+                balance_before=old_balance,
                 balance_after=request.user.balance,
                 status='completed',
                 bet=bet,
@@ -460,13 +515,15 @@ def place_bet(request):
             if bet_type == 'quick':
                 xp_earned = 25  # Fixed XP for quick bets
             
-            request.user.add_xp(xp_earned)
+            request.user.xp += xp_earned
+            request.user.save(update_fields=['xp'])
         
         return JsonResponse({
             'success': True,
             'message': f'Bet placed successfully! {xp_earned} XP earned.',
             'bet_id': str(bet.id),
             'new_balance': float(request.user.balance),
+            'new_xp': request.user.xp,
             'xp_earned': xp_earned
         })
         
@@ -620,24 +677,31 @@ def confirm_deposit(request):
                         status='pending'
                     )
                     
-                    # Update user balance immediately
+                    # Update user balance and transaction in atomic operation
                     from django.db import transaction as db_transaction
                     with db_transaction.atomic():
+                        # Update user balance
+                        old_balance = request.user.balance
                         request.user.balance += transaction.amount
                         request.user.save(update_fields=['balance'])
                         
+                        # Update transaction
                         transaction.status = 'completed'
+                        transaction.balance_before = old_balance
                         transaction.balance_after = request.user.balance
-                        transaction.completed_at = django_timezone.now()
-                        transaction.save()
+                        transaction.save(update_fields=['status', 'balance_before', 'balance_after'])
                         
-                        # Award XP
-                        request.user.add_xp(10)
+                        # Award XP for deposit
+                        xp_bonus = min(int(transaction.amount // Decimal('10')) * 5, 50)  # 5 XP per $10, max 50
+                        request.user.xp += xp_bonus
+                        request.user.save(update_fields=['xp'])
                     
                     return JsonResponse({
                         'success': True,
-                        'message': 'Deposit confirmed successfully!',
-                        'new_balance': float(request.user.balance)
+                        'message': f'Deposit confirmed! +${transaction.amount} added to your balance. +{xp_bonus} XP earned!',
+                        'new_balance': float(request.user.balance),
+                        'new_xp': request.user.xp,
+                        'xp_earned': xp_bonus
                     })
                     
                 except Transaction.DoesNotExist:
