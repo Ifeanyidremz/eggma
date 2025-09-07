@@ -668,24 +668,47 @@
 <body>
     <nav class="navbar">
         <div class="nav-container">
-            <a href="#" class="logo">EVGxchain</a>
+            <a href="{% url 'landing-page' %}" class="logo">EVGxchain</a>
             <div class="nav-links">
+                {% if user.is_authenticated %}
                 <a href="{% url 'dashboard' %}">Dashboard</a>
+                {% endif %}
             </div>
             <div class="user-profile" onclick="toggleProfileMenu()">
-                <div class="user-avatar">JD</div>
-                <div>
-                    <div style="font-size: 14px; font-weight: 600;">John Doe</div>
-                    <div style="font-size: 12px; color: #999;">Pro Trader</div>
+                <div class="user-avatar">
+                    {% if user.is_authenticated %}
+                        {% if user.full_name %}
+                            {{ user.full_name|slice:":2"|upper }}
+                        {% else %}
+                            {{ user.username|slice:":2"|upper }}
+                        {% endif %}
+                    {% else %}
+                        JD
+                    {% endif %}
                 </div>
+                {% if user.is_authenticated %}
+                <div>
+                    <div style="font-size: 14px; font-weight: 600;">
+                        {% if user.full_name %}
+                            {{ user.full_name }}
+                        {% else %}
+                            {{ user.username }}
+                        {% endif %}
+                    </div>
+                    <div style="font-size: 12px; color: #999;">{{ user.get_level_title|default:"Level 1 Predictor" }}</div>
+                </div>
+                {% endif %}
                 <div class="profile-dropdown" id="profileDropdown">
-                    <a href="#" class="dropdown-item">🔐 Login</a>
-                    <a href="#" class="dropdown-item">📝 Register</a>
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'logout' %}" class="dropdown-item">🚪 Logout</a>
+                    {% else %}
+                        <a href="{% url 'login' %}" class="dropdown-item">🔒 Login</a>
+                        <a href="{% url 'register' %}" class="dropdown-item">📝 Register</a>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </nav>
-
     <div class="container">
         <div class="page-header">
             <h1 class="page-title">Economic Event Trading</h1>
