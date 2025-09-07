@@ -293,7 +293,7 @@ def marketDetail(request, market_id=None):
     return render(request, 'market_detail.html', context)
 
 
-@login_required
+@login_required 
 def userPortfolio(request):
     """User's betting portfolio and statistics dashboard"""
     
@@ -406,9 +406,14 @@ def userPortfolio(request):
         'next_level_xp': next_level_xp,
         'level_title': request.user.get_level_title(),
         'trending_markets': trending_markets,
-        'user_balance': deposits,
+        'user_balance': request.user.balance,  # FIXED: Use actual user balance instead of deposits
         'user_xp': request.user.xp,
         'calculated_balance': calculated_balance,
+        'deposits_total': deposits,
+        'withdrawals_total': withdrawals,
+        'bets_total': abs(bets_placed),  # Show as positive for display
+        'payouts_total': payouts,
+        'bonuses_total': bonuses,
     }
     
     return render(request, 'profile.html', context)
