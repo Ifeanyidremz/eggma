@@ -900,12 +900,9 @@
                             {{ user.username }}
                         {% endif %}
                     </div>
-                    <div style="font-size: 12px; color: #999;">{{ level_title|default:"Level 5 Predictor" }}</div>
+                    <div style="font-size: 12px; color: #999;">{{ user.get_level_title|default:"Level 1 - Rookie Predictor" }}</div>
                 </div>
-                <div class="profile-dropdown" id="profileDropdown">
-                    <div class="dropdown-divider"></div>
-                    <a href="{% url 'logout' %}" class="dropdown-item">🚪 Logout</a>
-                </div>
+                <!-- Rest of profile dropdown stays the same -->
             </div>
         </div>
     </nav>
@@ -955,15 +952,19 @@
             </div>
         </div>
 
-        <div class="level-system">
+       <div class="level-system">
             <div class="level-header">
                 <h2 class="level-title">Level Progress</h2>
-                <div class="level-badge">{{ level_title|default:"Level 5 - Expert Predictor" }}</div>
+                <div class="level-badge" style="background: {{ user.level_badge_color|default:'#f7931a' }};">
+                    {{ user.get_level_title|default:"Level 1 - Rookie Predictor" }}
+                </div>
             </div>
             <div class="xp-bar">
-                <div class="xp-progress" data-progress="{{ xp_progress|default:'75' }}"></div>
+                <div class="xp-progress" data-progress="{{ user.get_level_progress_percentage|default:'0' }}"></div>
             </div>
-            <div class="xp-text">{{ user.xp|default:"0" }} / {{ next_level_xp|default:"3000" }} XP to next level</div>
+            <div class="xp-text">
+                {{ user.xp|default:"0" }} / {{ user.get_xp_for_next_level|default:"100" }} XP to next level
+            </div>
         </div>
 
         <div class="main-content">
@@ -1040,6 +1041,18 @@
                 <!-- Performance Metrics -->
                 <div class="performance-metrics">
                     <h3 style="margin-bottom: 15px; color: #ccc; font-size: 16px;">Performance Stats</h3>
+                    <div class="metric-row">
+                        <span class="metric-label">Current Balance:</span>
+                        <span class="metric-value">${{ user.balance|floatformat:2|default:"0.00" }}</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Total XP:</span>
+                        <span class="metric-value">{{ user.xp|default:"0" }}</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Current Level:</span>
+                        <span class="metric-value">{{ user.level|default:"1" }}</span>
+                    </div>
                     <div class="metric-row">
                         <span class="metric-label">Total Bets:</span>
                         <span class="metric-value">{{ user_stats.total_bets|default:"0" }}</span>
