@@ -17,7 +17,7 @@ from django.views.decorators.csrf import csrf_protect
 from .utils import *
 from predict.models import Bet, Transaction, UserStats
 
-
+@login_required
 def marketPage(request):
     """Main market listing page with filters and real-time data"""
     
@@ -153,7 +153,7 @@ def _ensure_data_exists():
         print(f"Error ensuring data exists: {e}")
         # Continue without failing the view
 
-
+@login_required
 def marketDetail(request, market_id=None):
     """Market detail page with betting functionality"""
     
