@@ -6,7 +6,6 @@ import uuid
 from datetime import datetime, timezone
 
 
-
 class CryptocurrencyCategory(models.Model):
     """Cryptocurrency-specific market categories"""
     
@@ -32,8 +31,8 @@ class CryptocurrencyCategory(models.Model):
     category_type = models.CharField(max_length=20, choices=CRYPTO_CATEGORIES, unique=True)
     display_name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
-    icon = models.CharField(max_length=10, default='₿')  # Crypto symbols/emojis
-    color_code = models.CharField(max_length=7, default='#F7931A')  # Hex color for UI
+    icon = models.CharField(max_length=10, default='₿')
+    color_code = models.CharField(max_length=7, default='#F7931A')
     is_active = models.BooleanField(default=True)
     sort_order = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -44,33 +43,6 @@ class CryptocurrencyCategory(models.Model):
 
     def __str__(self):
         return self.display_name
-    
-    @classmethod
-    def get_default_categories(cls):
-        """Create default crypto categories if they don't exist"""
-        defaults = [
-            ('bitcoin', 'Bitcoin (BTC)', '₿', '#F7931A', 1),
-            ('ethereum', 'Ethereum (ETH)', 'Ξ', '#627EEA', 2),
-            ('altcoins', 'Altcoins', '🚀', '#00D4AA', 3),
-            ('defi', 'DeFi Tokens', '🏦', '#FF6B6B', 4),
-            ('nft', 'NFT Collections', '🎨', '#9B59B6', 5),
-            ('memecoins', 'Meme Coins', '🐕', '#FFD93D', 6),
-            ('layer1', 'Layer 1 Blockchains', '⛓️', '#3498DB', 7),
-            ('exchanges', 'Exchange Tokens', '💱', '#E74C3C', 8),
-            ('general', 'General Crypto', '📊', '#95A5A6', 9),
-        ]
-        
-        for category_type, display_name, icon, color, order in defaults:
-            cls.objects.get_or_create(
-                category_type=category_type,
-                defaults={
-                    'display_name': display_name,
-                    'icon': icon,
-                    'color_code': color,
-                    'sort_order': order,
-                    'is_active': True
-                }
-            )
 
 
 class Market(models.Model):
@@ -83,41 +55,59 @@ class Market(models.Model):
         ('cancelled', 'Cancelled'),
     ]
     
+    MARKET_TYPES = [
+        ('event', 'Economic Event'),
+        ('price', 'Price Prediction'),
+        ('quick', 'Quick Predict'),
+    ]
+    
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=500)
     description = models.TextField(blank=True)
+    market_type = models.CharField(max_length=10, choices=MARKET_TYPES, default='price')
     creator = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='created_markets')
     category = models.ForeignKey(CryptocurrencyCategory, on_delete=models.CASCADE, related_name='markets')
+    
+    # Trading pair information
+    base_currency = models.CharField(max_length=10, default='BTC')  # BTC, ETH, SOL
+    quote_currency = models.CharField(max_length=10, default='USDT')
     
     # Market configuration
     min_bet = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('1.00'))
     max_bet = models.DecimalField(max_digits=15, decimal_places=2, default=Decimal('10000.00'))
     
-    # Time settings
+    # Time settings for different market types
     created_at = models.DateTimeField(auto_now_add=True)
     resolution_date = models.DateTimeField()
     resolved_at = models.DateTimeField(null=True, blank=True)
+    round_duration = models.IntegerField(default=900)  # Duration in seconds (15m default)
     
     # Market state
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
-    winning_outcome = models.CharField(max_length=10, choices=[('YES', 'Yes'), ('NO', 'No')], null=True, blank=True)
+    winning_outcome = models.CharField(max_length=10, choices=[('UP', 'Up'), ('DOWN', 'Down'), ('FLAT', 'Flat')], null=True, blank=True)
     
     # Volume tracking
     total_volume = models.DecimalField(max_digits=20, decimal_places=6, default=Decimal('0.000000'))
-    yes_volume = models.DecimalField(max_digits=20, decimal_places=6, default=Decimal('0.000000'))
-    no_volume = models.DecimalField(max_digits=20, decimal_places=6, default=Decimal('0.000000'))
+    up_volume = models.DecimalField(max_digits=20, decimal_places=6, default=Decimal('0.000000'))
+    down_volume = models.DecimalField(max_digits=20, decimal_places=6, default=Decimal('0.000000'))
+    flat_volume = models.DecimalField(max_digits=20, decimal_places=6, default=Decimal('0.000000'))
+    
+    # Current round tracking
+    current_round = models.IntegerField(default=1)
+    round_start_time = models.DateTimeField(null=True, blank=True)
+    round_start_price = models.DecimalField(max_digits=15, decimal_places=6, null=True, blank=True)
     
     # Fee structure
     creator_fee_percentage = models.DecimalField(
         max_digits=5, 
         decimal_places=4, 
-        default=Decimal('0.0200'),  # 2%
+        default=Decimal('0.0200'),
         validators=[MinValueValidator(Decimal('0')), MaxValueValidator(Decimal('0.1000'))]
     )
     platform_fee_percentage = models.DecimalField(
         max_digits=5, 
         decimal_places=4, 
-        default=Decimal('0.0100'),  # 1%
+        default=Decimal('0.0100'),
         validators=[MinValueValidator(Decimal('0')), MaxValueValidator(Decimal('0.0500'))]
     )
     
@@ -129,6 +119,7 @@ class Market(models.Model):
             models.Index(fields=['status', '-created_at']),
             models.Index(fields=['category', '-total_volume']),
             models.Index(fields=['resolution_date']),
+            models.Index(fields=['market_type', 'status']),
         ]
 
     def __str__(self):
@@ -140,31 +131,97 @@ class Market(models.Model):
                 self.resolution_date > datetime.now(timezone.utc))
     
     @property
-    def yes_probability(self):
-        """Calculate YES probability based on volume"""
+    def trading_pair(self):
+        return f"{self.base_currency}/{self.quote_currency}"
+    
+    @property
+    def up_probability(self):
+        """Calculate UP probability based on volume"""
         if self.total_volume == 0:
-            return Decimal('0.50')  # 50% default
-        return self.yes_volume / self.total_volume
+            return Decimal('0.33')
+        return self.up_volume / self.total_volume
     
     @property
-    def no_probability(self):
-        """Calculate NO probability"""
-        return Decimal('1.00') - self.yes_probability
+    def down_probability(self):
+        """Calculate DOWN probability based on volume"""
+        if self.total_volume == 0:
+            return Decimal('0.33')
+        return self.down_volume / self.total_volume
     
     @property
-    def yes_odds(self):
-        """Calculate YES odds (multiplier)"""
-        prob = self.yes_probability
+    def flat_probability(self):
+        """Calculate FLAT probability based on volume"""
+        if self.total_volume == 0:
+            return Decimal('0.34')
+        return self.flat_volume / self.total_volume
+    
+    @property
+    def up_odds(self):
+        """Calculate UP odds (multiplier)"""
+        prob = self.up_probability
         if prob == 0:
             return Decimal('2.00')
         return min(Decimal('1.00') / prob, Decimal('100.00'))
     
     @property
-    def no_odds(self):
-        """Calculate NO odds (multiplier)"""
-        prob = self.no_probability
+    def down_odds(self):
+        """Calculate DOWN odds (multiplier)"""
+        prob = self.down_probability
         if prob == 0:
             return Decimal('2.00')
         return min(Decimal('1.00') / prob, Decimal('100.00'))
+    
+    @property
+    def flat_odds(self):
+        """Calculate FLAT odds (multiplier)"""
+        prob = self.flat_probability
+        if prob == 0:
+            return Decimal('3.00')
+        return min(Decimal('1.00') / prob, Decimal('100.00'))
+    
+    def get_participant_count(self):
+        """Get number of unique participants in current round"""
+        return self.bets.filter(
+            round_number=self.current_round,
+            status='active'
+        ).values('user').distinct().count()
 
 
+class EconomicEvent(models.Model):
+    """Economic events that affect crypto markets"""
+    
+    EVENT_TYPES = [
+        ('cpi', 'Consumer Price Index'),
+        ('fomc', 'Federal Open Market Committee'),
+        ('nfp', 'Non-Farm Payrolls'),
+        ('gdp', 'GDP Release'),
+        ('unemployment', 'Unemployment Data'),
+        ('retail_sales', 'Retail Sales'),
+    ]
+    
+    IMPACT_LEVELS = [
+        ('high', 'High Impact'),
+        ('medium', 'Medium Impact'),
+        ('low', 'Low Impact'),
+    ]
+    
+    name = models.CharField(max_length=200)
+    event_type = models.CharField(max_length=20, choices=EVENT_TYPES)
+    impact_level = models.CharField(max_length=10, choices=IMPACT_LEVELS)
+    description = models.TextField()
+    
+    scheduled_time = models.DateTimeField()
+    actual_time = models.DateTimeField(null=True, blank=True)
+    
+    expected_value = models.CharField(max_length=50, blank=True)
+    actual_value = models.CharField(max_length=50, blank=True)
+    previous_value = models.CharField(max_length=50, blank=True)
+    
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['scheduled_time']
+    
+    def __str__(self):
+        return f"{self.name} - {self.scheduled_time.strftime('%Y-%m-%d %H:%M')}"

@@ -28,7 +28,8 @@ SECRET_KEY= os.getenv('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG')
 
-ALLOWED_HOSTS = ['www.evgxchain.com','evgxchain.com']
+# ALLOWED_HOSTS = ['www.evgxchain.com','evgxchain.com']
+ALLOWED_HOSTS = []
 
 
 # Application definition
@@ -117,6 +118,21 @@ else:
             'PORT': os.getenv('DB_PORT')
         }
     }
+
+
+CELERY_BROKER_URL = os.getenv('REDIS_URL', default='redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = os.getenv('REDIS_URL', default='redis://localhost:6379/0')
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'UTC'
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+
+
+
+STRIPE_PUBLISHABLE_KEY=os.getenv('STRIPE_PUBLISHABLE_KEY')
+STRIPE_SECRET_KEY=os.getenv('STRIPE_SECRET_KEY')
+STRIPE_WEBHOOK_SECRET=os.getenv('STRIPE_WEBHOOK_SECRET')
 
 
 

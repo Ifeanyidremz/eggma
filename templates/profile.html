@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - EVGxchain</title>
+    {% load static %}
+    <script src="https://js.stripe.com/v3/"></script>
     <style>
         * {
             margin: 0;
@@ -344,6 +346,16 @@
             color: #fbbf24;
         }
 
+        .status-won {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+        }
+
+        .status-lost {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+
         .prediction-details {
             color: #999;
             font-size: 14px;
@@ -522,6 +534,296 @@
             }
         }
 
+        .wallet-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .wallet-btn {
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: none;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .wallet-btn.deposit {
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+            color: white;
+        }
+
+        .wallet-btn.withdraw {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+        }
+
+        .wallet-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .performance-metrics {
+            background: rgba(26, 26, 26, 0.8);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .metric-row:last-child {
+            border-bottom: none;
+        }
+
+        .metric-label {
+            color: #999;
+            font-size: 13px;
+        }
+
+        .metric-value {
+            color: #fff;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .metric-value.positive {
+            color: #22c55e;
+        }
+
+        .metric-value.negative {
+            color: #ef4444;
+        }
+
+        /* Payment Modals */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 2000;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: rgba(45, 45, 45, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: #999;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-btn:hover {
+            color: #f7931a;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            color: #ccc;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(26, 26, 26, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: white;
+            font-size: 16px;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #f7931a;
+            box-shadow: 0 0 0 2px rgba(247, 147, 26, 0.2);
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(26, 26, 26, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: white;
+            font-size: 16px;
+        }
+
+        .amount-presets {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .preset-btn {
+            padding: 8px 12px;
+            background: rgba(26, 26, 26, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            color: #ccc;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .preset-btn:hover, .preset-btn.active {
+            border-color: #f7931a;
+            color: #f7931a;
+        }
+
+        .fee-info {
+            background: rgba(26, 26, 26, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .fee-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .fee-row:last-child {
+            margin-bottom: 0;
+            padding-top: 8px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            font-weight: 600;
+        }
+
+        .fee-label {
+            color: #999;
+            font-size: 14px;
+        }
+
+        .fee-value {
+            color: #fff;
+            font-size: 14px;
+        }
+
+        /* Enhanced Stripe Elements Styling */
+        #card-element {
+            background: rgba(26, 26, 26, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 12px 16px;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        #card-element.StripeElement--focus {
+            border-color: #f7931a;
+            box-shadow: 0 0 0 2px rgba(247, 147, 26, 0.2);
+        }
+
+        .loading-spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            color: #ef4444;
+            font-size: 14px;
+            margin-top: 8px;
+        }
+
+        .success-message {
+            color: #22c55e;
+            font-size: 14px;
+            margin-top: 8px;
+        }
+
+        .network-info {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .network-name {
+            font-weight: 600;
+            color: #93c5fd;
+            margin-bottom: 5px;
+        }
+
+        .network-details {
+            color: #ccc;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
         @media (max-width: 768px) {
             .nav-links {
                 display: none;
@@ -543,6 +845,14 @@
                 flex-direction: column;
                 gap: 10px;
                 align-items: flex-start;
+            }
+
+            .wallet-actions {
+                grid-template-columns: 1fr;
+            }
+
+            .amount-presets {
+                grid-template-columns: repeat(2, 1fr);
             }
         }
     </style>
@@ -571,7 +881,7 @@
         <div class="nav-container">
             <a href="{% url 'landing-page' %}" class="logo">EVGxchain</a>
             <div class="nav-links">
-                <a href="{% url 'dashboard' %}" class="active">Dashboard</a>
+                <a href="#" class="active">Dashboard</a>
                 <a href="{% url 'market-data' %}">Markets</a>
             </div>
             <div class="user-profile" onclick="toggleProfileMenu()">
@@ -590,7 +900,7 @@
                             {{ user.username }}
                         {% endif %}
                     </div>
-                    <div style="font-size: 12px; color: #999;">Level 5 Predictor</div>
+                    <div style="font-size: 12px; color: #999;">{{ level_title|default:"Level 5 Predictor" }}</div>
                 </div>
                 <div class="profile-dropdown" id="profileDropdown">
                     <div class="dropdown-divider"></div>
@@ -606,34 +916,41 @@
                 <h1 class="welcome-title">
                     Welcome back, 
                     {% if user.full_name %}
-                        {{ user.full_name|slice:":15" }}
+                        {{ user.full_name|truncatechars:15 }}
                     {% else %}
                         {{ user.username }}
                     {% endif %}! 👋
                 </h1>
-                <p class="welcome-subtitle">Ready to make some predictions and earn rewards? You're on fire with a 73% accuracy rate!</p>
+                <p class="welcome-subtitle">
+                    Ready to make some predictions and earn rewards? 
+                    {% if user_stats.win_rate > 0 %}
+                        You're on fire with a {{ user_stats.win_rate|floatformat:0 }}% accuracy rate!
+                    {% else %}
+                        Start placing bets to track your performance!
+                    {% endif %}
+                </p>
             </div>
         </div>
 
         <div class="quick-stats">
             <div class="stat-card">
                 <div class="stat-icon">💰</div>
-                <div class="stat-value">$1,247.50</div>
-                <div class="stat-label">Total Earnings</div>
+                <div class="stat-value">${{ user.balance|floatformat:2|default:"0.00" }}</div>
+                <div class="stat-label">Current Balance</div>
             </div>
             <div class="stat-card">
                 <div class="stat-icon">🎯</div>
-                <div class="stat-value">73%</div>
+                <div class="stat-value">{{ user_stats.win_rate|floatformat:0|default:"0" }}%</div>
                 <div class="stat-label">Accuracy Rate</div>
             </div>
             <div class="stat-card">
                 <div class="stat-icon">⚡</div>
-                <div class="stat-value">2,450</div>
+                <div class="stat-value">{{ user.xp|default:"0" }}</div>
                 <div class="stat-label">Total XP</div>
             </div>
             <div class="stat-card">
                 <div class="stat-icon">📈</div>
-                <div class="stat-value">47</div>
+                <div class="stat-value">{{ active_bets.count|default:"0" }}</div>
                 <div class="stat-label">Active Predictions</div>
             </div>
         </div>
@@ -641,68 +958,111 @@
         <div class="level-system">
             <div class="level-header">
                 <h2 class="level-title">Level Progress</h2>
-                <div class="level-badge">Level 5 - Expert Predictor</div>
+                <div class="level-badge">{{ level_title|default:"Level 5 - Expert Predictor" }}</div>
             </div>
             <div class="xp-bar">
-                <div class="xp-progress" data-progress="75"></div>
+                <div class="xp-progress" data-progress="{{ xp_progress|default:'75' }}"></div>
             </div>
-            <div class="xp-text">2,450 / 3,000 XP to Level 6</div>
+            <div class="xp-text">{{ user.xp|default:"0" }} / {{ next_level_xp|default:"3000" }} XP to next level</div>
         </div>
 
         <div class="main-content">
             <div class="active-predictions">
                 <h2 class="section-title">🔥 Active Predictions</h2>
                 
+                {% for bet in active_bets %}
                 <div class="prediction-item">
                     <div class="prediction-header">
-                        <div class="prediction-title">Bitcoin Price Prediction</div>
-                        <div class="prediction-status status-active">Active</div>
+                        <div class="prediction-title">{{ bet.market.title }}</div>
+                        <div class="prediction-status status-{{ bet.status }}">{{ bet.get_status_display }}</div>
                     </div>
                     <div class="prediction-details">
-                        Will BTC reach $100,000 by end of 2025?
+                        {{ bet.get_outcome_display }} prediction on {{ bet.market.trading_pair|default:"BTC/USDT" }}
                     </div>
                     <div class="prediction-details">
-                        Your bet: <span class="prediction-value">$50 on YES</span> • Potential win: <span class="prediction-value">$85</span>
+                        Your bet: <span class="prediction-value">${{ bet.amount|floatformat:2 }} on {{ bet.get_outcome_display }}</span> • 
+                        Potential win: <span class="prediction-value">${{ bet.potential_payout|floatformat:2 }}</span>
                     </div>
                 </div>
-
+                {% empty %}
                 <div class="prediction-item">
                     <div class="prediction-header">
-                        <div class="prediction-title">Ethereum Market Cap</div>
-                        <div class="prediction-status status-pending">Pending</div>
+                        <div class="prediction-title">No Active Predictions</div>
                     </div>
                     <div class="prediction-details">
-                        Will ETH overtake BTC in market cap by 2026?
-                    </div>
-                    <div class="prediction-details">
-                        Your bet: <span class="prediction-value">$25 on NO</span> • Potential win: <span class="prediction-value">$75</span>
+                        Start betting on crypto price movements to see your predictions here.
                     </div>
                 </div>
+                {% endfor %}
 
+                {% if bet_history %}
+                <h2 class="section-title" style="margin-top: 30px;">📊 Recent Results</h2>
+                {% for bet in bet_history|slice:":3" %}
                 <div class="prediction-item">
                     <div class="prediction-header">
-                        <div class="prediction-title">Solana Performance</div>
-                        <div class="prediction-status status-active">Active</div>
+                        <div class="prediction-title">{{ bet.market.title }}</div>
+                        <div class="prediction-status status-{{ bet.status }}">{{ bet.get_status_display }}</div>
                     </div>
                     <div class="prediction-details">
-                        Will SOL reach $500 this year?
-                    </div>
-                    <div class="prediction-details">
-                        Your bet: <span class="prediction-value">$30 on YES</span> • Potential win: <span class="prediction-value">$90</span>
+                        {{ bet.get_outcome_display }} prediction - 
+                        {% if bet.status == 'won' %}
+                            <span class="prediction-value" style="color: #22c55e;">Won ${{ bet.payout_amount|floatformat:2|default:bet.potential_payout|floatformat:2 }}</span>
+                        {% else %}
+                            <span class="prediction-value" style="color: #ef4444;">Lost ${{ bet.amount|floatformat:2 }}</span>
+                        {% endif %}
                     </div>
                 </div>
+                {% endfor %}
+                {% endif %}
 
-                <a href="#all-predictions" class="action-btn secondary">
-                    View All Predictions →
+                <a href="{% url 'market-data' %}" class="action-btn secondary" style="margin-top: 20px;">
+                    View All Markets →
                 </a>
             </div>
 
             <div class="quick-actions">
                 <h2 class="section-title">🚀 Quick Actions</h2>
                 
+                <!-- Enhanced Wallet Actions -->
+                <div class="wallet-actions">
+                    <button type="button" class="wallet-btn deposit" onclick="openDepositModal()">
+                        💳 Deposit Funds
+                    </button>
+                    <button type="button" class="wallet-btn withdraw" onclick="openWithdrawModal()">
+                        💸 Withdraw Crypto
+                    </button>
+                </div>
+
                 <a href="{% url 'market-data' %}" class="action-btn">
                     🎯 Browse Markets
                 </a>
+
+                <!-- Performance Metrics -->
+                <div class="performance-metrics">
+                    <h3 style="margin-bottom: 15px; color: #ccc; font-size: 16px;">Performance Stats</h3>
+                    <div class="metric-row">
+                        <span class="metric-label">Total Bets:</span>
+                        <span class="metric-value">{{ user_stats.total_bets|default:"0" }}</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Won:</span>
+                        <span class="metric-value positive">{{ user_stats.won_bets|default:"0" }}</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Lost:</span>
+                        <span class="metric-value negative">{{ user_stats.lost_bets|default:"0" }}</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Total Wagered:</span>
+                        <span class="metric-value">${{ user_stats.total_wagered|floatformat:2|default:"0.00" }}</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Total Winnings:</span>
+                        <span class="metric-value positive">${{ user_stats.total_winnings|floatformat:2|default:"0.00" }}</span>
+                    </div>
+                </div>
+
+                <!-- Crypto Widget -->
                 <div class="crypto-widget">
                     <h3 style="margin-bottom: 15px; color: #ccc;">Live Crypto Prices</h3>
                     <div class="crypto-item">
@@ -711,8 +1071,8 @@
                             <div style="font-size: 12px; color: #999;">BTC</div>
                         </div>
                         <div>
-                            <div class="crypto-price">$67,432</div>
-                            <div class="price-change price-up">+2.4%</div>
+                            <div class="crypto-price" id="btc-price">$67,432</div>
+                            <div class="price-change price-up" id="btc-change">+2.4%</div>
                         </div>
                     </div>
                     <div class="crypto-item">
@@ -721,18 +1081,8 @@
                             <div style="font-size: 12px; color: #999;">ETH</div>
                         </div>
                         <div>
-                            <div class="crypto-price">$3,421</div>
-                            <div class="price-change price-up">+1.8%</div>
-                        </div>
-                    </div>
-                    <div class="crypto-item">
-                        <div>
-                            <div class="crypto-name">Solana</div>
-                            <div style="font-size: 12px; color: #999;">SOL</div>
-                        </div>
-                        <div>
-                            <div class="crypto-price">$187.65</div>
-                            <div class="price-change price-down">-0.5%</div>
+                            <div class="crypto-price" id="eth-price">$3,421</div>
+                            <div class="price-change price-up" id="eth-change">+1.8%</div>
                         </div>
                     </div>
                 </div>
@@ -744,7 +1094,219 @@
         </div>
     </div>
 
+    <!-- Deposit Modal -->
+    <div id="depositModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">💳 Deposit Funds</h2>
+                <button class="close-btn" onclick="closeDepositModal()">×</button>
+            </div>
+            
+            <form id="depositForm">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label class="form-label">Deposit Amount (USD)</label>
+                    <input type="number" id="depositAmount" class="form-input" placeholder="Enter amount" min="5" max="10000" step="0.01" required>
+                    <div class="amount-presets">
+                        <button type="button" class="preset-btn" onclick="setDepositAmount(25)">$25</button>
+                        <button type="button" class="preset-btn" onclick="setDepositAmount(50)">$50</button>
+                        <button type="button" class="preset-btn" onclick="setDepositAmount(100)">$100</button>
+                        <button type="button" class="preset-btn" onclick="setDepositAmount(250)">$250</button>
+                    </div>
+                </div>
+
+                <div class="fee-info">
+                    <div class="fee-row">
+                        <span class="fee-label">Deposit Amount:</span>
+                        <span class="fee-value" id="depositFeeAmount">$0.00</span>
+                    </div>
+                    <div class="fee-row">
+                        <span class="fee-label">Processing Fee:</span>
+                        <span class="fee-value">$0.00</span>
+                    </div>
+                    <div class="fee-row">
+                        <span class="fee-label">Total to Pay:</span>
+                        <span class="fee-value" id="depositTotal">$0.00</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Payment Method</label>
+                    <div id="card-element">
+                        <!-- Stripe Elements will create form elements here -->
+                    </div>
+                    <div id="card-errors" class="error-message" style="display: none;"></div>
+                </div>
+
+                <button type="submit" class="action-btn" id="depositSubmitBtn">
+                    <span class="loading-spinner" id="depositSpinner"></span>
+                    <span id="depositBtnText">💳 Process Deposit</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Withdraw Modal -->
+    <div id="withdrawModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">💸 Withdraw Crypto</h2>
+                <button class="close-btn" onclick="closeWithdrawModal()">×</button>
+            </div>
+            
+            <form id="withdrawForm">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label class="form-label">Withdrawal Amount (USD)</label>
+                    <input type="number" id="withdrawAmount" class="form-input" placeholder="Enter amount" min="10" max="{{ user.balance }}" step="0.01" required>
+                    <div class="amount-presets">
+                        <button type="button" class="preset-btn" onclick="setWithdrawAmount(50)">$50</button>
+                        <button type="button" class="preset-btn" onclick="setWithdrawAmount(100)">$100</button>
+                        <button type="button" class="preset-btn" onclick="setWithdrawAmount(250)">$250</button>
+                        <button type="button" class="preset-btn" onclick="setWithdrawAmount('{{ user.balance|floatformat:0 }}')">Max</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Network</label>
+                    <select id="withdrawNetwork" class="form-select" onchange="updateWithdrawFees()">
+                        <option value="ethereum">Ethereum (ERC-20)</option>
+                        <option value="bsc">Binance Smart Chain (BEP-20)</option>
+                        <option value="polygon">Polygon (MATIC)</option>
+                    </select>
+                </div>
+
+                <div class="network-info" id="networkInfo">
+                    <div class="network-name">Ethereum (ERC-20)</div>
+                    <div class="network-details">
+                        • Min withdrawal: $20.00<br>
+                        • Estimated time: 10-30 minutes<br>
+                        • Fee: 2.0% + $5.00 network fee
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Wallet Address</label>
+                    <input type="text" id="withdrawAddress" class="form-input" placeholder="0x..." required>
+                    <div style="color: #999; font-size: 12px; margin-top: 5px;">
+                        Enter your USDT wallet address. Double-check the address as transactions cannot be reversed.
+                    </div>
+                </div>
+
+                <div class="fee-info">
+                    <div class="fee-row">
+                        <span class="fee-label">Withdrawal Amount:</span>
+                        <span class="fee-value" id="withdrawFeeAmount">$0.00</span>
+                    </div>
+                    <div class="fee-row">
+                        <span class="fee-label">Percentage Fee (2.0%):</span>
+                        <span class="fee-value" id="withdrawPercentageFee">$0.00</span>
+                    </div>
+                    <div class="fee-row">
+                        <span class="fee-label">Network Fee:</span>
+                        <span class="fee-value" id="withdrawNetworkFee">$5.00</span>
+                    </div>
+                    <div class="fee-row">
+                        <span class="fee-label">You'll Receive:</span>
+                        <span class="fee-value" id="withdrawNetAmount">$0.00</span>
+                    </div>
+                </div>
+
+                <button type="submit" class="action-btn" id="withdrawSubmitBtn">
+                    <span class="loading-spinner" id="withdrawSpinner"></span>
+                    <span id="withdrawBtnText">💸 Process Withdrawal</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
     <script>
+        // Fixed Stripe Configuration - Use your actual publishable key
+        const stripe = Stripe('{{ STRIPE_PUBLISHABLE_KEY|default:"pk_test_51Rwr0cKDBFHQr38IUHFsZNoElLZBlNr8OlC9FLqSgW1zKMZ2P9s2Q4lOxurs474tMnbbKqyxzyjYNMSZQtdF2VOi00n1rdORUO" }}');
+        let elements;
+        let card;
+
+        // Helper function to get CSRF token
+        function getCSRFToken() {
+            // Try multiple methods to get CSRF token
+            let token = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+            if (!token) {
+                token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            }
+            if (!token) {
+                token = getCookie('csrftoken');
+            }
+            return token;
+        }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // Fixed Stripe Elements initialization
+        function initializeStripe() {
+            if (elements && card) {
+                return; // Already initialized
+            }
+
+            elements = stripe.elements({
+                appearance: {
+                    theme: 'night',
+                    variables: {
+                        colorPrimary: '#f7931a',
+                        colorBackground: 'rgba(26, 26, 26, 0.8)',
+                        colorText: '#ffffff',
+                        colorDanger: '#ef4444',
+                        fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
+                        borderRadius: '8px',
+                        colorTextPlaceholder: '#999999',
+                    }
+                }
+            });
+
+            card = elements.create('card', {
+                hidePostalCode: false,
+                style: {
+                    base: {
+                        fontSize: '16px',
+                        color: '#ffffff',
+                        '::placeholder': {
+                            color: '#999999',
+                        },
+                    },
+                    invalid: {
+                        color: '#ef4444',
+                        iconColor: '#ef4444',
+                    },
+                },
+            });
+
+            // Mount and add event listeners
+            card.mount('#card-element');
+            
+            card.on('change', function(event) {
+                const displayError = document.getElementById('card-errors');
+                if (event.error) {
+                    displayError.textContent = event.error.message;
+                    displayError.style.display = 'block';
+                } else {
+                    displayError.textContent = '';
+                    displayError.style.display = 'none';
+                }
+            });
+        }
+
         // Profile dropdown functionality
         function toggleProfileMenu() {
             const dropdown = document.getElementById('profileDropdown');
@@ -761,15 +1323,518 @@
             }
         });
 
+        // Modal Functions - Fixed to ensure Stripe initialization
+        function openDepositModal() {
+            document.getElementById('depositModal').classList.add('show');
+            
+            // Initialize Stripe with a small delay to ensure DOM is ready
+            setTimeout(() => {
+                if (!card) {
+                    initializeStripe();
+                }
+            }, 100);
+        }
+
+        function closeDepositModal() {
+            document.getElementById('depositModal').classList.remove('show');
+        }
+
+        function openWithdrawModal() {
+            document.getElementById('withdrawModal').classList.add('show');
+        }
+
+        function closeWithdrawModal() {
+            document.getElementById('withdrawModal').classList.remove('show');
+        }
+
+        // Close modals when clicking outside
+        document.addEventListener('click', function(event) {
+            const depositModal = document.getElementById('depositModal');
+            const withdrawModal = document.getElementById('withdrawModal');
+            
+            if (event.target === depositModal) {
+                closeDepositModal();
+            }
+            if (event.target === withdrawModal) {
+                closeWithdrawModal();
+            }
+        });
+
+        // Deposit Functions
+        function setDepositAmount(amount) {
+            document.getElementById('depositAmount').value = amount;
+            updateDepositFees();
+            
+            // Update preset button states
+            document.querySelectorAll('.amount-presets .preset-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+
+        function updateDepositFees() {
+            const amount = parseFloat(document.getElementById('depositAmount').value) || 0;
+            
+            document.getElementById('depositFeeAmount').textContent = `${amount.toFixed(2)}`;
+            document.getElementById('depositTotal').textContent = `${amount.toFixed(2)}`;
+        }
+
+        // Withdraw Functions
+        function setWithdrawAmount(amount) {
+            const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+            document.getElementById('withdrawAmount').value = numAmount;
+            updateWithdrawFees();
+            
+            // Update preset button states
+            document.querySelectorAll('#withdrawModal .amount-presets .preset-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+
+        function updateWithdrawFees() {
+            const amount = parseFloat(document.getElementById('withdrawAmount').value) || 0;
+            const network = document.getElementById('withdrawNetwork').value;
+            
+            // Network fee structure
+            const networkFees = {
+                'ethereum': { name: 'Ethereum (ERC-20)', fee: 5.00, minAmount: 20, time: '10-30 minutes' },
+                'bsc': { name: 'Binance Smart Chain (BEP-20)', fee: 2.00, minAmount: 10, time: '5-15 minutes' },
+                'polygon': { name: 'Polygon (MATIC)', fee: 1.00, minAmount: 5, time: '2-10 minutes' }
+            };
+            
+            const networkConfig = networkFees[network];
+            const percentageFee = amount * 0.02; // 2%
+            const networkFee = networkConfig.fee;
+            const totalFees = percentageFee + networkFee;
+            const netAmount = amount - totalFees;
+            
+            // Update fee display
+            document.getElementById('withdrawFeeAmount').textContent = `${amount.toFixed(2)}`;
+            document.getElementById('withdrawPercentageFee').textContent = `${percentageFee.toFixed(2)}`;
+            document.getElementById('withdrawNetworkFee').textContent = `${networkFee.toFixed(2)}`;
+            document.getElementById('withdrawNetAmount').textContent = `${Math.max(0, netAmount).toFixed(2)}`;
+            
+            // Update network info
+            document.getElementById('networkInfo').innerHTML = `
+                <div class="network-name">${networkConfig.name}</div>
+                <div class="network-details">
+                    • Min withdrawal: ${networkConfig.minAmount.toFixed(2)}<br>
+                    • Estimated time: ${networkConfig.time}<br>
+                    • Fee: 2.0% + ${networkConfig.fee.toFixed(2)} network fee
+                </div>
+            `;
+        }
+
+        // Form Event Listeners
+        document.getElementById('depositAmount').addEventListener('input', updateDepositFees);
+        document.getElementById('withdrawAmount').addEventListener('input', updateWithdrawFees);
+
+        // FIXED: Handle Deposit Form Submission
+        document.getElementById('depositForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            
+            const submitBtn = document.getElementById('depositSubmitBtn');
+            const spinner = document.getElementById('depositSpinner');
+            const btnText = document.getElementById('depositBtnText');
+            
+            // Disable button and show loading
+            submitBtn.disabled = true;
+            spinner.style.display = 'inline-block';
+            btnText.textContent = 'Processing...';
+            
+            const amount = parseFloat(document.getElementById('depositAmount').value);
+            
+            if (amount < 5) {
+                showError('Minimum deposit is $5.00');
+                resetDepositButton();
+                return;
+            }
+            
+            if (amount > 10000) {
+                showError('Maximum deposit is $10,000.00');
+                resetDepositButton();
+                return;
+            }
+            
+            try {
+                // Get CSRF token
+                const csrfToken = getCSRFToken();
+                if (!csrfToken) {
+                    throw new Error('CSRF token not found. Please refresh the page.');
+                }
+
+                // FIXED: Create payment intent on server - Use form data
+                const response = await fetch('{% url "wallet-deposit" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: new URLSearchParams({
+                        'amount': amount.toString()
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (!data.success) {
+                    showError(data.error || 'Payment failed');
+                    resetDepositButton();
+                    return;
+                }
+                
+                // Confirm payment with Stripe
+                btnText.textContent = 'Confirming Payment...';
+                const result = await stripe.confirmCardPayment(data.client_secret, {
+                    payment_method: {
+                        card: card,
+                        billing_details: {
+                            name: '{% if user.full_name %}{{ user.full_name }}{% else %}{{ user.username }}{% endif %}'
+                        }
+                    }
+                });
+                
+                if (result.error) {
+                    showError(result.error.message);
+                } else {
+                    // Payment succeeded
+                    showSuccess(`Deposit of ${amount.toFixed(2)} successful! Your balance will update shortly.`);
+                    closeDepositModal();
+                    
+                    // Update balance display
+                    setTimeout(() => {
+                        location.reload();
+                    }, 2000);
+                }
+            } catch (error) {
+                console.error('Payment error:', error);
+                showError(error.message || 'Payment processing failed. Please try again.');
+            }
+            
+            resetDepositButton();
+        });
+
+        function updateBalanceDisplay(newBalance) {
+            // Update all balance elements on the page
+            const balanceElements = document.querySelectorAll('.stat-value');
+            if (balanceElements[0]) {
+                balanceElements[0].textContent = `$${parseFloat(newBalance).toFixed(2)}`;
+                
+                // Add animation to highlight the change
+                balanceElements[0].style.transform = 'scale(1.1)';
+                balanceElements[0].style.color = '#22c55e';
+                
+                setTimeout(() => {
+                    balanceElements[0].style.transform = 'scale(1)';
+                    balanceElements[0].style.color = '#f7931a';
+                }, 1000);
+            }
+            
+            // Also update any other balance displays
+            document.querySelectorAll('[data-balance]').forEach(element => {
+                element.textContent = `$${parseFloat(newBalance).toFixed(2)}`;
+            });
+        }
+
+        async function checkBalanceUpdate() {
+            try {
+                const response = await fetch('{% url "api-user-stats" %}');
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    // Get current displayed balance
+                    const currentDisplayed = parseFloat(
+                        document.querySelector('.stat-value').textContent.replace('$', '').replace(',', '') || 0
+                    );
+                    
+                    // If balance changed, update display
+                    if (Math.abs(data.balance - currentDisplayed) > 0.01) {
+                        updateBalanceDisplay(data.balance);
+                        
+                        // Show notification if balance increased
+                        if (data.balance > currentDisplayed) {
+                            showSuccess(`Balance updated: +$${(data.balance - currentDisplayed).toFixed(2)}`);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.log('Could not check balance update:', error);
+            }
+        }
+
+        // Check for balance updates every 10 seconds after deposit
+        let balanceCheckInterval = null;
+
+        function startBalanceMonitoring() {
+            if (balanceCheckInterval) {
+                clearInterval(balanceCheckInterval);
+            }
+            
+            balanceCheckInterval = setInterval(checkBalanceUpdate, 10000); // Every 10 seconds
+            
+            // Stop monitoring after 5 minutes
+            setTimeout(() => {
+                if (balanceCheckInterval) {
+                    clearInterval(balanceCheckInterval);
+                    balanceCheckInterval = null;
+                }
+            }, 300000); // 5 minutes
+        }
+
+        // FIXED: Enhanced success function with balance update
+        function showSuccessWithBalanceUpdate(message, newBalance) {
+            if (newBalance) {
+                updateBalanceDisplay(newBalance);
+            }
+            
+            showSuccess(message);
+            
+            // Start monitoring for any missed updates
+            startBalanceMonitoring();
+        }
+
+        // FIXED: Add visual feedback for successful deposit
+        function createDepositSuccessAnimation(amount) {
+            const container = document.querySelector('.container');
+            
+            // Create success indicator
+            const successIndicator = document.createElement('div');
+            successIndicator.innerHTML = `
+                <div style="
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+                    color: white;
+                    padding: 30px;
+                    border-radius: 20px;
+                    font-size: 24px;
+                    font-weight: bold;
+                    z-index: 3000;
+                    box-shadow: 0 20px 40px rgba(34, 197, 94, 0.3);
+                    animation: depositSuccess 3s ease-out forwards;
+                ">
+                    💰 +$${amount.toFixed(2)} Added!
+                </div>
+            `;
+            
+            // Add animation keyframes
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes depositSuccess {
+                    0% { 
+                        opacity: 0; 
+                        transform: translate(-50%, -50%) scale(0.5); 
+                    }
+                    20% { 
+                        opacity: 1; 
+                        transform: translate(-50%, -50%) scale(1.1); 
+                    }
+                    80% { 
+                        opacity: 1; 
+                        transform: translate(-50%, -50%) scale(1); 
+                    }
+                    100% { 
+                        opacity: 0; 
+                        transform: translate(-50%, -60%) scale(0.8); 
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            document.body.appendChild(successIndicator);
+            
+            setTimeout(() => {
+                successIndicator.remove();
+                style.remove();
+            }, 3000);
+        }
+
+        // Handle Withdraw Form Submission
+        document.getElementById('withdrawForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            
+            const submitBtn = document.getElementById('withdrawSubmitBtn');
+            const spinner = document.getElementById('withdrawSpinner');
+            const btnText = document.getElementById('withdrawBtnText');
+            
+            // Disable button and show loading
+            submitBtn.disabled = true;
+            spinner.style.display = 'inline-block';
+            btnText.textContent = 'Processing...';
+            
+            const amount = parseFloat(document.getElementById('withdrawAmount').value);
+            const address = document.getElementById('withdrawAddress').value;
+            const network = document.getElementById('withdrawNetwork').value;
+            
+            if (!address || !address.match(/^0x[a-fA-F0-9]{40}$/)) {
+                showError('Please enter a valid wallet address');
+                resetWithdrawButton();
+                return;
+            }
+            
+            try {
+                const csrfToken = getCSRFToken();
+                const response = await fetch('{% url "wallet-withdraw" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: new URLSearchParams({
+                        amount: amount,
+                        wallet_address: address,
+                        network: network
+                    })
+                });
+                
+                if (response.ok) {
+                    showSuccess(`Withdrawal request submitted! Your crypto will be sent to ${address.slice(0, 10)}...${address.slice(-6)} within 30 minutes.`);
+                    closeWithdrawModal();
+                    
+                    // Update balance display
+                    setTimeout(() => {
+                        location.reload();
+                    }, 2000);
+                } else {
+                    const data = await response.json();
+                    showError(data.error || 'Withdrawal failed');
+                }
+            } catch (error) {
+                console.error('Withdrawal error:', error);
+                showError('Withdrawal processing failed. Please try again.');
+            }
+            
+            resetWithdrawButton();
+        });
+
+        function resetDepositButton() {
+            const submitBtn = document.getElementById('depositSubmitBtn');
+            const spinner = document.getElementById('depositSpinner');
+            const btnText = document.getElementById('depositBtnText');
+            
+            submitBtn.disabled = false;
+            spinner.style.display = 'none';
+            btnText.textContent = '💳 Process Deposit';
+        }
+
+        function resetWithdrawButton() {
+            const submitBtn = document.getElementById('withdrawSubmitBtn');
+            const spinner = document.getElementById('withdrawSpinner');
+            const btnText = document.getElementById('withdrawBtnText');
+            
+            submitBtn.disabled = false;
+            spinner.style.display = 'none';
+            btnText.textContent = '💸 Process Withdrawal';
+        }
+
+        // Enhanced error/success message functions
+        function showError(message) {
+            // Remove any existing toast
+            const existingError = document.querySelector('.error-toast');
+            if (existingError) {
+                existingError.remove();
+            }
+            
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'message error error-toast';
+            errorDiv.textContent = message;
+            errorDiv.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 3000;
+                max-width: 400px;
+                animation: slideIn 0.3s ease-out;
+            `;
+            
+            document.body.appendChild(errorDiv);
+            
+            setTimeout(() => {
+                errorDiv.remove();
+            }, 5000);
+        }
+
+        function showSuccess(message) {
+            // Remove any existing toast
+            const existingSuccess = document.querySelector('.success-toast');
+            if (existingSuccess) {
+                existingSuccess.remove();
+            }
+            
+            const successDiv = document.createElement('div');
+            successDiv.className = 'message success success-toast';
+            successDiv.textContent = message;
+            successDiv.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 3000;
+                max-width: 400px;
+                animation: slideIn 0.3s ease-out;
+            `;
+            
+            document.body.appendChild(successDiv);
+            
+            setTimeout(() => {
+                successDiv.remove();
+            }, 8000);
+        }
+
         // Simulate real-time updates
         function updateCryptoPrices() {
-            const cryptoItems = document.querySelectorAll('.crypto-price');
-            cryptoItems.forEach(item => {
-                const currentPrice = parseFloat(item.textContent.replace('$', '').replace(',', ''));
-                const change = (Math.random() - 0.5) * 100;
-                const newPrice = Math.max(0, currentPrice + change);
-                item.textContent = '$' + newPrice.toLocaleString();
+            const prices = {
+                btc: { element: 'btc-price', changeElement: 'btc-change', basePrice: 67432 },
+                eth: { element: 'eth-price', changeElement: 'eth-change', basePrice: 3421 }
+            };
+            
+            Object.values(prices).forEach(crypto => {
+                const priceElement = document.getElementById(crypto.element);
+                const changeElement = document.getElementById(crypto.changeElement);
+                
+                if (priceElement && changeElement) {
+                    const change = (Math.random() - 0.5) * 0.05; // ±2.5% max change
+                    const newPrice = crypto.basePrice * (1 + change);
+                    const changePercent = change * 100;
+                    
+                    priceElement.textContent = `${newPrice.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0})}`;
+                    changeElement.textContent = `${changePercent > 0 ? '+' : ''}${changePercent.toFixed(1)}%`;
+                    changeElement.className = `price-change ${changePercent > 0 ? 'price-up' : 'price-down'}`;
+                }
             });
+        }
+
+        // Fetch real crypto prices from API
+        async function fetchRealCryptoPrices() {
+            try {
+                const response = await fetch('{% url "api-crypto-prices" %}');
+                if (response.ok) {
+                    const data = await response.json();
+                    updateRealCryptoPrices(data);
+                }
+            } catch (error) {
+                console.log('Could not fetch real prices, using simulation');
+                updateCryptoPrices();
+            }
+        }
+
+        function updateRealCryptoPrices(data) {
+            if (data.BTC) {
+                document.getElementById('btc-price').textContent = `${Math.round(data.BTC.price).toLocaleString()}`;
+                document.getElementById('btc-change').textContent = `${data.BTC.change_24h > 0 ? '+' : ''}${data.BTC.change_24h.toFixed(1)}%`;
+                document.getElementById('btc-change').className = `price-change ${data.BTC.change_24h > 0 ? 'price-up' : 'price-down'}`;
+            }
+            if (data.ETH) {
+                document.getElementById('eth-price').textContent = `${Math.round(data.ETH.price).toLocaleString()}`;
+                document.getElementById('eth-change').textContent = `${data.ETH.change_24h > 0 ? '+' : ''}${data.ETH.change_24h.toFixed(1)}%`;
+                document.getElementById('eth-change').className = `price-change ${data.ETH.change_24h > 0 ? 'price-up' : 'price-down'}`;
+            }
         }
 
         // Update XP progress animation
@@ -808,19 +1873,11 @@
         // Initialize animations on page load
         window.addEventListener('load', () => {
             setTimeout(animateXPBar, 500);
-            // Simulate periodic price updates
-            setInterval(updateCryptoPrices, 5000);
+            fetchRealCryptoPrices();
+            updateWithdrawFees(); // Initialize withdraw fees
+            // Update prices periodically
+            setInterval(fetchRealCryptoPrices, 30000); // Every 30 seconds
         });
-
-        // Add some interactive stats updates
-        setInterval(() => {
-            const accuracyElements = document.querySelectorAll('.stat-value');
-            if (accuracyElements[1]) { // Accuracy rate element
-                const currentAccuracy = parseInt(accuracyElements[1].textContent);
-                const newAccuracy = Math.max(65, Math.min(85, currentAccuracy + (Math.random() - 0.5) * 2));
-                accuracyElements[1].textContent = Math.round(newAccuracy) + '%';
-            }
-        }, 10000);
 
         // Auto-hide messages after 5 seconds
         document.addEventListener('DOMContentLoaded', function() {
@@ -898,6 +1955,94 @@
                 setTimeout(createSuccessAnimation, 1000);
             }
         });
+
+        // Update user stats periodically
+        async function updateUserStats() {
+            try {
+                const response = await fetch('{% url "api-user-stats" %}');
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    // Update balance
+                    const balanceElements = document.querySelectorAll('.stat-value');
+                    if (balanceElements[0]) {
+                        balanceElements[0].textContent = `${data.balance.toFixed(2)}`;
+                    }
+                    
+                    // Update level title
+                    const levelElements = document.querySelectorAll('.level-badge');
+                    if (levelElements[0]) {
+                        levelElements[0].textContent = data.level_title;
+                    }
+                }
+            } catch (error) {
+                console.log('Could not fetch user stats:', error);
+            }
+        }
+
+        // Update user stats every minute
+        setInterval(updateUserStats, 60000);
+
+        // Handle keyboard shortcuts
+        document.addEventListener('keydown', function(event) {
+            // ESC to close modals
+            if (event.key === 'Escape') {
+                closeDepositModal();
+                closeWithdrawModal();
+            }
+            
+            // Ctrl+D for deposit modal
+            if (event.ctrlKey && event.key === 'd') {
+                event.preventDefault();
+                openDepositModal();
+            }
+            
+            // Ctrl+W for withdraw modal
+            if (event.ctrlKey && event.key === 'w') {
+                event.preventDefault();
+                openWithdrawModal();
+            }
+        });
+
+        // Add tooltip functionality for better UX
+        function addTooltips() {
+            const tooltipElements = [
+                { selector: '.stat-card', text: 'Click for detailed breakdown' },
+                { selector: '.crypto-price', text: 'Live price updates every 30 seconds' },
+                { selector: '.level-badge', text: 'Earn XP by placing bets and making deposits' }
+            ];
+
+            tooltipElements.forEach(({ selector, text }) => {
+                document.querySelectorAll(selector).forEach(element => {
+                    element.title = text;
+                });
+            });
+        }
+
+        // Initialize tooltips
+        addTooltips();
+
+        // Add pulse animation to important buttons
+        function pulseImportantElements() {
+            const importantElements = document.querySelectorAll('.wallet-btn.deposit');
+            importantElements.forEach(element => {
+                element.style.animation = 'pulse 2s infinite';
+            });
+        }
+
+        // Add pulse keyframes
+        const pulseStyle = document.createElement('style');
+        pulseStyle.textContent = `
+            @keyframes pulse {
+                0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+                70% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
+                100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+            }
+        `;
+        document.head.appendChild(pulseStyle);
+
+        // Initialize pulse after page load
+        setTimeout(pulseImportantElements, 2000);
     </script>
 </body>
 </html>

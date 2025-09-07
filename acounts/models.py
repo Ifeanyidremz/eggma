@@ -4,7 +4,6 @@ import uuid
 from django.utils import timezone
 from decimal import Decimal
 from django.core.validators import MinValueValidator
-import uuid
 from datetime import timedelta
 
 class CustomUser(AbstractUser):
@@ -12,6 +11,7 @@ class CustomUser(AbstractUser):
     full_name = models.CharField(max_length=255)
     is_email_verified = models.BooleanField(default=False)
     
+    # Wallet and financial fields
     wallet_address = models.CharField(max_length=42, blank=True, null=True)
     balance = models.DecimalField(
         max_digits=20, 
@@ -30,6 +30,18 @@ class CustomUser(AbstractUser):
         default=Decimal('0.000000')
     )
     
+    # User experience and gamification
+    level = models.IntegerField(default=1)
+    xp = models.IntegerField(default=0)
+    accuracy_rate = models.DecimalField(
+        max_digits=5, 
+        decimal_places=2, 
+        default=Decimal('0.00')
+    )
+    
+    # Stripe customer integration
+    stripe_customer_id = models.CharField(max_length=255, blank=True, null=True)
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -38,6 +50,37 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return f"{self.email} - Balance: ${self.balance}"
+    
+    def get_level_title(self):
+        """Get user's level title"""
+        level_titles = {
+            1: "Novice Predictor",
+            2: "Amateur Trader",
+            3: "Skilled Analyst", 
+            4: "Advanced Trader",
+            5: "Expert Predictor",
+            6: "Master Oracle",
+            7: "Elite Forecaster",
+            8: "Legendary Predictor"
+        }
+        return level_titles.get(self.level, "Expert Predictor")
+    
+    def get_xp_for_next_level(self):
+        """Calculate XP needed for next level"""
+        return self.level * 600  # 600, 1200, 1800, etc.
+    
+    def add_xp(self, amount):
+        """Add XP and check for level up"""
+        self.xp += amount
+        next_level_xp = self.get_xp_for_next_level()
+        
+        if self.xp >= next_level_xp and self.level < 8:
+            self.level += 1
+            # Bonus for leveling up
+            self.balance += Decimal('10.00')  # $10 level up bonus
+        
+        self.save()
+
 
 class EmailVerificationToken(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
