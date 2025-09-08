@@ -19,6 +19,9 @@ from decimal import Decimal, InvalidOperation
 from django.views.decorators.csrf import csrf_protect
 from .utils import *
 from predict.models import Bet, Transaction, UserStats
+import logging
+
+logger = logging.getLogger(__name__)
 
 stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
 
