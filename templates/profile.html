@@ -1444,93 +1444,109 @@
 
         // FIXED: Handle Deposit Form Submission
         document.getElementById('depositForm').addEventListener('submit', async function(event) {
-            event.preventDefault();
-            
-            const submitBtn = document.getElementById('depositSubmitBtn');
-            const spinner = document.getElementById('depositSpinner');
-            const btnText = document.getElementById('depositBtnText');
-            
-            // Disable button and show loading
-            submitBtn.disabled = true;
-            spinner.style.display = 'inline-block';
-            btnText.textContent = 'Processing...';
-            
-            const amount = parseFloat(document.getElementById('depositAmount').value);
-            
-            if (amount < 5) {
-                showError('Minimum deposit is $5.00');
-                resetDepositButton();
-                return;
-            }
-            
-            if (amount > 10000) {
-                showError('Maximum deposit is $10,000.00');
-                resetDepositButton();
-                return;
-            }
-            
-            try {
-                // Get CSRF token
-                const csrfToken = getCSRFToken();
-                if (!csrfToken) {
-                    throw new Error('CSRF token not found. Please refresh the page.');
-                }
-
-                // FIXED: Create payment intent on server - Use form data
-                const response = await fetch('{% url "wallet-deposit" %}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                        'X-CSRFToken': csrfToken
-                    },
-                    body: new URLSearchParams({
-                        'amount': amount.toString()
-                    })
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`Server error: ${response.status}`);
-                }
-                
-                const data = await response.json();
-                
-                if (!data.success) {
-                    showError(data.error || 'Payment failed');
-                    resetDepositButton();
-                    return;
-                }
-                
-                // Confirm payment with Stripe
-                btnText.textContent = 'Confirming Payment...';
-                const result = await stripe.confirmCardPayment(data.client_secret, {
-                    payment_method: {
-                        card: card,
-                        billing_details: {
-                            name: '{% if user.full_name %}{{ user.full_name }}{% else %}{{ user.username }}{% endif %}'
-                        }
-                    }
-                });
-                
-                if (result.error) {
-                    showError(result.error.message);
-                } else {
-                    // Payment succeeded
-                    showSuccess(`Deposit of ${amount.toFixed(2)} successful! Your balance will update shortly.`);
-                    closeDepositModal();
-                    
-                    // Update balance display
-                    setTimeout(() => {
-                        location.reload();
-                    }, 2000);
-                }
-            } catch (error) {
-                console.error('Payment error:', error);
-                showError(error.message || 'Payment processing failed. Please try again.');
-            }
-            
+        event.preventDefault();
+        
+        const submitBtn = document.getElementById('depositSubmitBtn');
+        const spinner = document.getElementById('depositSpinner');
+        const btnText = document.getElementById('depositBtnText');
+        
+        // Disable button and show loading
+        submitBtn.disabled = true;
+        spinner.style.display = 'inline-block';
+        btnText.textContent = 'Processing...';
+        
+        const amount = parseFloat(document.getElementById('depositAmount').value);
+        
+        if (amount < 5) {
+            showError('Minimum deposit is $5.00');
             resetDepositButton();
+            return;
+        }
+        
+        if (amount > 10000) {
+            showError('Maximum deposit is $10,000.00');
+            resetDepositButton();
+            return;
+        }
+        
+        try {
+            // Get CSRF token
+            const csrfToken = getCSRFToken();
+            if (!csrfToken) {
+                throw new Error('CSRF token not found. Please refresh the page.');
+            }
+    
+            // Create payment intent on server
+            const response = await fetch('{% url "wallet-deposit" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': csrfToken
+                },
+                body: new URLSearchParams({
+                    'amount': amount.toString()
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Server error: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            if (!data.success) {
+                showError(data.error || 'Payment failed');
+                resetDepositButton();
+                return;
+            }
+            
+            // Store payment intent ID for tracking
+            const paymentIntentId = data.payment_intent_id;
+            console.log('Payment Intent ID:', paymentIntentId);
+            
+            // Confirm payment with Stripe
+            btnText.textContent = 'Confirming Payment...';
+            const result = await stripe.confirmCardPayment(data.client_secret, {
+                payment_method: {
+                    card: card,
+                    billing_details: {
+                        name: '{% if user.full_name %}{{ user.full_name }}{% else %}{{ user.username }}{% endif %}'
+                    }
+                }
+            });
+            
+            if (result.error) {
+                showError(result.error.message);
+                resetDepositButton();
+            } else {
+                // Payment succeeded - now wait for webhook processing
+                btnText.textContent = 'Processing Deposit...';
+                
+                // Store payment info for tracking
+                sessionStorage.setItem('pending_deposit', JSON.stringify({
+                    payment_intent_id: paymentIntentId,
+                    amount: amount,
+                    timestamp: Date.now()
+                }));
+                
+                showSuccess(`Payment confirmed! Processing deposit of $${amount.toFixed(2)}. Your balance will update shortly.`);
+                
+                // Start polling for balance updates
+                startDepositTracking(paymentIntentId, amount);
+                
+                // Close modal after short delay
+                setTimeout(() => {
+                    closeDepositModal();
+                    resetDepositButton();
+                }, 2000);
+            }
+            } catch (error) {
+                    console.error('Payment error:', error);
+                    showError(error.message || 'Payment processing failed. Please try again.');
+                    resetDepositButton();
+                }
         });
-
+        
         function updateBalanceDisplay(newBalance) {
             // Update all balance elements on the page
             const balanceElements = document.querySelectorAll('.stat-value');
@@ -1540,17 +1556,23 @@
                 // Add animation to highlight the change
                 balanceElements[0].style.transform = 'scale(1.1)';
                 balanceElements[0].style.color = '#22c55e';
+                balanceElements[0].style.transition = 'all 0.3s ease';
                 
                 setTimeout(() => {
                     balanceElements[0].style.transform = 'scale(1)';
                     balanceElements[0].style.color = '#f7931a';
                 }, 1000);
             }
-            
-            // Also update any other balance displays
-            document.querySelectorAll('[data-balance]').forEach(element => {
-                element.textContent = `$${parseFloat(newBalance).toFixed(2)}`;
-            });
+        
+            // Update performance metrics balance
+            const metricsBalance = document.querySelector('.performance-metrics .metric-value');
+            if (metricsBalance && metricsBalance.parentElement.querySelector('.metric-label').textContent.includes('Balance')) {
+                metricsBalance.textContent = `$${parseFloat(newBalance).toFixed(2)}`;
+                metricsBalance.style.color = '#22c55e';
+                setTimeout(() => {
+                    metricsBalance.style.color = '#fff';
+                }, 2000);
+            }
         }
 
         async function checkBalanceUpdate() {
@@ -1773,6 +1795,134 @@
             }, 5000);
         }
 
+        function startDepositTracking(paymentIntentId, expectedAmount) {
+            let attempts = 0;
+            const maxAttempts = 30; // 5 minutes of checking
+            const pollInterval = 10000; // Check every 10 seconds
+            
+            const trackingInterval = setInterval(async () => {
+                attempts++;
+                
+                try {
+                    // Check if balance has updated
+                    const response = await fetch('{% url "api-user-stats" %}');
+                    if (response.ok) {
+                        const data = await response.json();
+                        const currentBalance = data.balance;
+                        
+                        // Get stored balance before deposit
+                        let storedBalance = parseFloat(localStorage.getItem('pre_deposit_balance') || '0');
+                        
+                        // If we don't have a stored balance, get it from the page
+                        if (!storedBalance) {
+                            const balanceElement = document.querySelector('.stat-value');
+                            if (balanceElement) {
+                                storedBalance = parseFloat(balanceElement.textContent.replace('$', '').replace(',', ''));
+                            }
+                        }
+                        
+                        // Check if balance increased by expected amount (within 1 cent tolerance)
+                        const balanceIncrease = currentBalance - storedBalance;
+                        
+                        if (Math.abs(balanceIncrease - expectedAmount) < 0.01) {
+                            // Deposit processed successfully!
+                            clearInterval(trackingInterval);
+                            
+                            // Update UI
+                            updateBalanceDisplay(currentBalance);
+                            createDepositSuccessAnimation(expectedAmount);
+                            
+                            // Clean up storage
+                            sessionStorage.removeItem('pending_deposit');
+                            localStorage.removeItem('pre_deposit_balance');
+                            
+                            // Show final success message
+                            showSuccess(`Deposit completed! +$${expectedAmount.toFixed(2)} added to your balance.`);
+                            
+                            // Reload page to ensure all data is fresh
+                            setTimeout(() => {
+                                location.reload();
+                            }, 3000);
+                            
+                            return;
+                        }
+                    }
+                    
+                    // Stop trying after max attempts
+                    if (attempts >= maxAttempts) {
+                        clearInterval(trackingInterval);
+                        console.log('Deposit tracking timed out - webhook may be delayed');
+                        
+                        // Show message about delayed processing
+                        showInfo('Your payment was successful. If your balance hasn\'t updated yet, please wait a few more minutes or contact support.');
+                        
+                        // Clean up storage
+                        sessionStorage.removeItem('pending_deposit');
+                    }
+                    
+                } catch (error) {
+                    console.error('Error tracking deposit:', error);
+                    
+                    // Don't stop tracking on error, just log it
+                    if (attempts >= maxAttempts) {
+                        clearInterval(trackingInterval);
+                        sessionStorage.removeItem('pending_deposit');
+                    }
+                }
+            }, pollInterval);
+        }
+        
+        // Store balance before deposit for comparison
+        function storePreDepositBalance() {
+            const balanceElement = document.querySelector('.stat-value');
+            if (balanceElement) {
+                const currentBalance = parseFloat(balanceElement.textContent.replace('$', '').replace(',', ''));
+                localStorage.setItem('pre_deposit_balance', currentBalance.toString());
+            }
+        }
+        
+        // Enhanced modal functions
+        function openDepositModal() {
+            // Store current balance for comparison
+            storePreDepositBalance();
+            
+            document.getElementById('depositModal').classList.add('show');
+            
+            // Initialize Stripe with a small delay to ensure DOM is ready
+            setTimeout(() => {
+                if (!card) {
+                    initializeStripe();
+                }
+            }, 100);
+        }
+        
+        // Check for pending deposits on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if there's a pending deposit from previous session
+            const pendingDeposit = sessionStorage.getItem('pending_deposit');
+            
+            if (pendingDeposit) {
+                try {
+                    const depositData = JSON.parse(pendingDeposit);
+                    const timeSinceDeposit = Date.now() - depositData.timestamp;
+                    
+                    // If deposit is less than 10 minutes old, start tracking
+                    if (timeSinceDeposit < 600000) { // 10 minutes
+                        console.log('Resuming tracking for pending deposit:', depositData.payment_intent_id);
+                        showInfo('Checking for pending deposit...');
+                        startDepositTracking(depositData.payment_intent_id, depositData.amount);
+                    } else {
+                        // Too old, clean up
+                        sessionStorage.removeItem('pending_deposit');
+                    }
+                } catch (error) {
+                    console.error('Error parsing pending deposit:', error);
+                    sessionStorage.removeItem('pending_deposit');
+                }
+            }
+        });
+        
+        // Enhanced success message function
         function showSuccess(message) {
             // Remove any existing toast
             const existingSuccess = document.querySelector('.success-toast');
@@ -1790,14 +1940,49 @@
                 z-index: 3000;
                 max-width: 400px;
                 animation: slideIn 0.3s ease-out;
+                padding: 15px 20px;
+                border-radius: 8px;
+                background: rgba(34, 197, 94, 0.1);
+                border: 1px solid rgba(34, 197, 94, 0.3);
+                color: #86efac;
             `;
             
             document.body.appendChild(successDiv);
             
             setTimeout(() => {
-                successDiv.remove();
+                if (successDiv.parentNode) {
+                    successDiv.remove();
+                }
             }, 8000);
         }
+        
+        // Add info message function
+        function showInfo(message) {
+            const infoDiv = document.createElement('div');
+            infoDiv.className = 'message info info-toast';
+            infoDiv.textContent = message;
+            infoDiv.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 3000;
+                max-width: 400px;
+                animation: slideIn 0.3s ease-out;
+                padding: 15px 20px;
+                border-radius: 8px;
+                background: rgba(59, 130, 246, 0.1);
+                border: 1px solid rgba(59, 130, 246, 0.3);
+                color: #93c5fd;
+            `;
+            
+            document.body.appendChild(infoDiv);
+            
+            setTimeout(() => {
+                if (infoDiv.parentNode) {
+                    infoDiv.remove();
+                }
+            }, 6000);
+
 
         // Simulate real-time updates
         function updateCryptoPrices() {
