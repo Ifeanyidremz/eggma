@@ -684,31 +684,31 @@ def stripe_webhook(request):
 
 def handle_successful_payment(payment_intent):
     """
-    Handle successful payment - update transaction and user balance
+    FIXED: Handle successful payment - update transaction and user balance
     """
     try:
         payment_intent_id = payment_intent['id']
-        amount_cents = payment_intent['amount']  # Stripe amounts are in cents
-        amount_dollars = Decimal(str(amount_cents / 100))
+        amount_cents = payment_intent.get('amount', 0)
+        amount_dollars = Decimal(str(amount_cents)) / Decimal('100')
         
         logger.info(f"Processing successful payment: {payment_intent_id} for ${amount_dollars}")
         
-        # Find the pending transaction
-        try:
-            from predict.models import Transaction  # Make sure this import is correct
-            
-            transaction = Transaction.objects.select_for_update().get(
-                stripe_payment_intent_id=payment_intent_id,
-                status='pending'
-            )
-            
-            logger.info(f"Found pending transaction {transaction.id} for user {transaction.user.username}")
-            
-            # Update transaction and user balance atomically
-            from django.db import transaction as db_transaction
-            
-            with db_transaction.atomic():
-                # Refresh user from database to avoid stale data
+        from predict.models import Transaction
+        from django.db import transaction as db_transaction
+        
+        # Use atomic transaction to ensure data consistency
+        with db_transaction.atomic():
+            try:
+                # Find the pending transaction - this is the critical part
+                transaction = Transaction.objects.select_for_update().get(
+                    stripe_payment_intent_id=payment_intent_id,
+                    status='pending',
+                    transaction_type='deposit'
+                )
+                
+                logger.info(f"Found pending transaction {transaction.id} for user {transaction.user.username}")
+                
+                # Get fresh user instance
                 user = transaction.user
                 user.refresh_from_db()
                 
@@ -719,46 +719,29 @@ def handle_successful_payment(payment_intent):
                 user.balance += transaction.amount
                 user.save(update_fields=['balance'])
                 
-                # Update transaction status
+                # CRITICAL: Update transaction status to completed
                 transaction.status = 'completed'
                 transaction.balance_before = old_balance
                 transaction.balance_after = user.balance
-                transaction.completed_at = timezone.now()  # Add timestamp
+                transaction.completed_at = timezone.now()
                 transaction.save(update_fields=['status', 'balance_before', 'balance_after', 'completed_at'])
                 
-                # Award XP bonus
-                xp_bonus = min(int(transaction.amount // Decimal('10')) * 5, 50)
-                user.xp += xp_bonus
-                user.save(update_fields=['xp'])
-                
-                logger.info(f"Payment processed successfully: "
-                          f"User {user.username} "
-                          f"Balance: ${old_balance} -> ${user.balance} "
-                          f"XP: +{xp_bonus} "
-                          f"Transaction {transaction.id} marked as completed")
+                logger.info(f"Transaction {transaction.id} successfully updated to completed status")
                 
                 return True
                 
-        except Transaction.DoesNotExist:
-            logger.error(f"No pending transaction found for payment_intent: {payment_intent_id}")
-            
-            # Debug: Try to find any transaction with this payment intent
-            from predict.models import Transaction
-            existing_transactions = Transaction.objects.filter(
-                stripe_payment_intent_id=payment_intent_id
-            )
-            
-            if existing_transactions.exists():
-                logger.info(f"Found {existing_transactions.count()} existing transactions with this payment_intent_id:")
-                for txn in existing_transactions:
-                    logger.info(f"  Transaction {txn.id}: status={txn.status}, amount=${txn.amount}, user={txn.user.username}")
-            else:
-                logger.error("No transactions found at all with this payment_intent_id")
+            except Transaction.DoesNotExist:
+                logger.error(f"No pending transaction found for payment_intent: {payment_intent_id}")
                 
-            return False
+                # Debug: check what transactions exist with this payment_intent_id
+                existing = Transaction.objects.filter(stripe_payment_intent_id=payment_intent_id)
+                for txn in existing:
+                    logger.info(f"Found existing transaction {txn.id}: status={txn.status}, type={txn.transaction_type}")
+                
+                return False
         
     except Exception as e:
-        logger.error(f"Error processing successful payment: {e}", exc_info=True)
+        logger.error(f"Error in handle_successful_payment: {e}", exc_info=True)
         return False
 
 
