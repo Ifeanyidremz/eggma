@@ -764,68 +764,97 @@ def handle_failed_payment(payment_intent):
 
 
 @login_required
-@csrf_exempt  
-def confirm_deposit(request):
-    """Confirm deposit payment and update balance immediately"""
+@csrf_protect
+def wallet_deposit(request):
+    """Handle wallet deposit via Stripe"""
     
     if request.method == 'POST':
         try:
-            data = json.loads(request.body)
-            payment_intent_id = data.get('payment_intent_id')
-            
-            if not payment_intent_id:
-                return JsonResponse({'success': False, 'error': 'Payment intent ID required'})
-            
-            # Verify payment with Stripe
-            stripe_service = StripePaymentService()
-            result = stripe_service.confirm_payment(payment_intent_id)
-            
-            if result['success']:
-                # Find and update transaction
-                try:
-                    transaction = Transaction.objects.get(
-                        stripe_payment_intent_id=payment_intent_id,
-                        user=request.user,
-                        status='pending'
-                    )
-                    
-                    # Update user balance and transaction in atomic operation
-                    from django.db import transaction as db_transaction
-                    with db_transaction.atomic():
-                        # Update user balance
-                        old_balance = request.user.balance
-                        request.user.balance += transaction.amount
-                        request.user.save(update_fields=['balance'])
-                        
-                        # Update transaction
-                        transaction.status = 'completed'
-                        transaction.balance_before = old_balance
-                        transaction.balance_after = request.user.balance
-                        transaction.save(update_fields=['status', 'balance_before', 'balance_after'])
-                        
-                        # Award XP for deposit
-                        xp_bonus = min(int(transaction.amount // Decimal('10')) * 5, 50)  # 5 XP per $10, max 50
-                        request.user.xp += xp_bonus
-                        request.user.save(update_fields=['xp'])
-                    
-                    return JsonResponse({
-                        'success': True,
-                        'message': f'Deposit confirmed! +${transaction.amount} added to your balance. +{xp_bonus} XP earned!',
-                        'new_balance': float(request.user.balance),
-                        'new_xp': request.user.xp,
-                        'xp_earned': xp_bonus
-                    })
-                    
-                except Transaction.DoesNotExist:
-                    return JsonResponse({'success': False, 'error': 'Transaction not found'})
+            # Handle both JSON and form data
+            if request.content_type == 'application/json':
+                data = json.loads(request.body)
+                amount_str = str(data.get('amount', ''))
             else:
-                return JsonResponse({'success': False, 'error': result.get('error', 'Payment confirmation failed')})
+                amount_str = request.POST.get('amount', '')
+            
+            # Clean and validate the amount string
+            amount_str = amount_str.strip()
+            if not amount_str:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Amount is required'
+                })
+            
+            # Remove any currency symbols or commas
+            amount_str = amount_str.replace('$', '').replace(',', '')
+            
+            try:
+                amount = Decimal(amount_str)
+            except (InvalidOperation, ValueError) as e:
+                return JsonResponse({
+                    'success': False,
+                    'error': f'Invalid amount format: {amount_str}'
+                })
+            
+            # Validation
+            if amount < Decimal('5.00'):
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Minimum deposit is $5.00'
+                })
+            
+            if amount > Decimal('10000.00'):
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Maximum deposit is $10,000.00'
+                })
+            
+            stripe_service = StripePaymentService()
+            payment_intent = stripe_service.create_payment_intent(
+                amount=amount,
+                user=request.user
+            )
+            
+            if payment_intent:
+                from predict.models import Transaction
+                
+                transaction = Transaction.objects.create(
+                    user=request.user,
+                    transaction_type='deposit',
+                    amount=amount,
+                    balance_before=request.user.balance,
+                    balance_after=request.user.balance,  # Will update on completion
+                    status='pending',
+                    stripe_payment_intent_id=payment_intent['id'],  # CRUCIAL: Store this exactly
+                    description=f"Wallet deposit via Stripe - ${amount}"
+                )
+                
+                logger.info(f"Created pending transaction {transaction.id} with payment_intent_id: {payment_intent['id']}")
+                
+                return JsonResponse({
+                    'success': True,
+                    'client_secret': payment_intent['client_secret'],
+                    'amount': float(amount),
+                    'transaction_id': str(transaction.id),
+                    'payment_intent_id': payment_intent['id']  # Include for debugging
+                })
+            else:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Unable to process payment. Please try again.'
+                })
                 
         except Exception as e:
-            logger.error(f"Confirm deposit error: {e}")
-            return JsonResponse({'success': False, 'error': str(e)})
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Deposit error for user {request.user.id}: {str(e)}", exc_info=True)
+            
+            return JsonResponse({
+                'success': False,
+                'error': f'Payment error: {str(e)}'
+            })
     
-    return JsonResponse({'success': False, 'error': 'Invalid request'})
+    return redirect('dashboard')
 
 
 @login_required
