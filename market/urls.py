@@ -31,6 +31,6 @@ urlpatterns = [
     path('api/user-stats/', views.api_user_stats, name='api-user-stats'),
 
     path('stripe-webhook/', views.stripe_webhook, name='stripe-webhook'),
-    path('confirm-deposit/', views.confirm_deposit, name='confirm-deposit'),
+    # path('confirm-deposit/', views.confirm_deposit, name='confirm-deposit'),
     
 ]
