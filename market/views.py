@@ -859,6 +859,8 @@ def wallet_deposit(request):
                     description=f"Wallet deposit via Stripe - ${amount}"
                 )
                 
+                import logging
+                logger = logging.getLogger(__name__)
                 logger.info(f"Created pending transaction {transaction.id} with payment_intent_id: {payment_intent['id']}")
                 
                 return JsonResponse({
