@@ -35,5 +35,7 @@ urlpatterns = [
     path('debug/webhook/', views.webhook_debug_view, name='webhook_debug_view'),
     path('debug/fix-transaction/', views.fix_transaction_view, name='fix_transaction_view'),
     path('debug/process-webhook/', views.process_webhook_manually_view, name='process_webhook_manually_view'),
+
+    path('webhooks/test/', views.test_webhook_endpoint, name='test_webhook'),
     
 ]
