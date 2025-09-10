@@ -734,30 +734,20 @@ def handle_successful_payment(payment_intent):
         return False
 
     try:
-        txn = Transaction.objects.select_for_update().get(
-            stripe_payment_intent_id=pid,
-            status="pending",
-            transaction_type="deposit"
-        )
-    except Transaction.DoesNotExist:
-        logger.warning(f"No pending deposit transaction found for payment_intent {pid}")
-        return False  # Return 400 in webhook to trigger retry
-    except Transaction.MultipleObjectsReturned:
-        txn = Transaction.objects.filter(
-            stripe_payment_intent_id=pid,
-            status="pending",
-            transaction_type="deposit"
-        ).latest("created_at")
-        logger.warning(f"Multiple transactions for {pid}, using {txn.id}")
-
-    try:
         with transaction.atomic():
+            # Use select_for_update to prevent race conditions
+            txn = Transaction.objects.select_for_update().get(
+                stripe_payment_intent_id=pid,
+                status="pending",
+                transaction_type="deposit"
+            )
+            
             amount_received = Decimal(payment_intent["amount_received"]) / 100
 
-            # Verify amount
+            # Verify amount matches
             if txn.amount != amount_received:
                 logger.error(
-                    f"Amount mismatch: DB={txn.amount} vs Stripe={amount_received}"
+                    f"Amount mismatch for {pid}: DB={txn.amount} vs Stripe={amount_received}"
                 )
                 return False
 
@@ -769,7 +759,7 @@ def handle_successful_payment(payment_intent):
             user.save(update_fields=["balance", "updated_at"])
 
             # Update transaction
-            txn.status = "completed"
+            txn.status = "completed"  # Use lowercase to match model choices
             txn.balance_before = old_balance
             txn.balance_after = user.balance
             txn.description = f"Deposit completed via Stripe {pid}"
@@ -787,8 +777,55 @@ def handle_successful_payment(payment_intent):
                 f"User {user.id} balance: {old_balance} → {user.balance}"
             )
 
-        return True
-
+            return True
+            
+    except Transaction.DoesNotExist:
+        logger.warning(f"No pending deposit transaction found for payment_intent {pid}")
+        return False  # Return 400 in webhook to trigger retry
+    except Transaction.MultipleObjectsReturned:
+        logger.warning(f"Multiple transactions found for payment_intent {pid}")
+        # Handle multiple transactions - get the latest pending one
+        try:
+            with transaction.atomic():
+                txn = Transaction.objects.select_for_update().filter(
+                    stripe_payment_intent_id=pid,
+                    status="pending",
+                    transaction_type="deposit"
+                ).latest("created_at")
+                
+                amount_received = Decimal(payment_intent["amount_received"]) / 100
+                
+                # Verify amount (handle precision differences)
+                if abs(txn.amount - amount_received) > Decimal('0.01'):  # Allow 1 cent tolerance
+                    logger.error(f"Amount mismatch for {pid}: DB={txn.amount} vs Stripe={amount_received}")
+                    return False
+                
+                user = txn.user
+                old_balance = user.balance
+                
+                user.balance += txn.amount
+                user.save(update_fields=["balance", "updated_at"])
+                
+                txn.status = "completed"
+                txn.balance_before = old_balance
+                txn.balance_after = user.balance
+                txn.description = f"Deposit completed via Stripe {pid}"
+                txn.metadata.update({
+                    "stripe_webhook_processed": timezone.now().isoformat(),
+                    "payment_intent_status": payment_intent.get("status")
+                })
+                txn.save(update_fields=[
+                    "status", "balance_before", "balance_after", 
+                    "description", "metadata", "updated_at"
+                ])
+                
+                logger.info(f"✓ Latest transaction {txn.id} marked completed")
+                return True
+                
+        except Exception as e:
+            logger.error(f"Error handling multiple transactions for {pid}: {e}", exc_info=True)
+            return False
+            
     except Exception as e:
         logger.error(f"Database update failed for payment {pid}: {e}", exc_info=True)
         return False
@@ -797,25 +834,58 @@ def handle_successful_payment(payment_intent):
 def handle_failed_payment(payment_intent):
     """Mark transaction as failed if found"""
     pid = payment_intent.get("id")
+    logger.info(f"Handling failed payment_intent {pid}")
+    
     try:
-        txn = Transaction.objects.get(reference=pid, status="pending")
-        txn.status = "Failed"
-        txn.save(update_fields=["status"])
-        logger.info(f"✗ Transaction {txn.id} marked failed for payment_intent {pid}")
+        with transaction.atomic():
+            # FIX: Use stripe_payment_intent_id instead of reference
+            txn = Transaction.objects.select_for_update().get(
+                stripe_payment_intent_id=pid, 
+                status="pending"
+            )
+            # FIX: Use lowercase 'failed' to match model choices
+            txn.status = "failed"
+            txn.description = f"Payment failed via Stripe {pid}"
+            txn.metadata.update({
+                "stripe_webhook_processed": timezone.now().isoformat(),
+                "payment_intent_status": payment_intent.get("status"),
+                "failure_reason": payment_intent.get("last_payment_error", {}).get("message", "Unknown")
+            })
+            txn.save(update_fields=["status", "description", "metadata", "updated_at"])
+            logger.info(f"✗ Transaction {txn.id} marked failed for payment_intent {pid}")
+            
     except Transaction.DoesNotExist:
         logger.warning(f"No pending transaction found for failed payment_intent {pid}")
+    except Exception as e:
+        logger.error(f"Error updating failed payment {pid}: {e}", exc_info=True)
 
 
 def handle_canceled_payment(payment_intent):
     """Mark transaction as canceled if found"""
     pid = payment_intent.get("id")
+    logger.info(f"Handling canceled payment_intent {pid}")
+    
     try:
-        txn = Transaction.objects.get(reference=pid, status="pending")
-        txn.status = "Canceled"
-        txn.save(update_fields=["status"])
-        logger.info(f"⚠ Transaction {txn.id} marked canceled for payment_intent {pid}")
+        with transaction.atomic():
+            # FIX: Use stripe_payment_intent_id instead of reference  
+            txn = Transaction.objects.select_for_update().get(
+                stripe_payment_intent_id=pid, 
+                status="pending"
+            )
+            # FIX: Use lowercase 'cancelled' to match model choices
+            txn.status = "cancelled"
+            txn.description = f"Payment cancelled via Stripe {pid}"
+            txn.metadata.update({
+                "stripe_webhook_processed": timezone.now().isoformat(),
+                "payment_intent_status": payment_intent.get("status")
+            })
+            txn.save(update_fields=["status", "description", "metadata", "updated_at"])
+            logger.info(f"⚠ Transaction {txn.id} marked cancelled for payment_intent {pid}")
+            
     except Transaction.DoesNotExist:
         logger.warning(f"No pending transaction found for canceled payment_intent {pid}")
+    except Exception as e:
+        logger.error(f"Error updating canceled payment {pid}: {e}", exc_info=True)
 
 
 @login_required
