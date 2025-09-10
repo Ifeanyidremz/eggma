@@ -19,6 +19,7 @@ from decimal import Decimal, InvalidOperation
 from django.views.decorators.csrf import csrf_protect
 from .utils import *
 from predict.models import Bet, Transaction, UserStats
+from django.db import transaction as db_transaction
 import logging
 
 logger = logging.getLogger(__name__)
