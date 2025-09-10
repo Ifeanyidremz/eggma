@@ -1269,7 +1269,7 @@ def fix_transaction_view(request):
         payment_intent_id = "pi_3S5uWQKDBFHQr38I1ZZGOjjW"
         
         try:
-            with transaction.atomic():
+            with db_transaction.atomic():
                 txn = Transaction.objects.select_for_update().get(
                     stripe_payment_intent_id=payment_intent_id
                 )
@@ -1319,7 +1319,7 @@ def process_webhook_manually_view(request):
         payment_intent_id = "pi_3S5uWQKDBFHQr38I1ZZGOjjW"
         
         try:
-            with transaction.atomic():
+            with db_transaction.atomic():
                 txn = Transaction.objects.select_for_update().get(
                     stripe_payment_intent_id=payment_intent_id,
                     status="pending",
