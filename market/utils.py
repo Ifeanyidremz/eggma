@@ -514,7 +514,7 @@ class MarketDataManager:
 
 
 class StripePaymentService:
-    """Service for handling Stripe payments"""
+    """Service for handling Stripe payments with improved error handling"""
     
     def __init__(self):
         if not stripe.api_key:
@@ -530,12 +530,13 @@ class StripePaymentService:
                     return user.stripe_customer_id
                 except stripe.error.InvalidRequestError:
                     # Customer doesn't exist, create new one
-                    pass
+                    logger.warning(f"Stripe customer {user.stripe_customer_id} not found, creating new one")
+                    user.stripe_customer_id = None
             
             # Create new customer
             customer = stripe.Customer.create(
                 email=user.email,
-                name=user.full_name,
+                name=getattr(user, 'full_name', f"{user.first_name} {user.last_name}".strip()),
                 metadata={
                     'user_id': str(user.id),
                     'username': user.username
@@ -549,19 +550,21 @@ class StripePaymentService:
             return customer.id
             
         except Exception as e:
-            logger.error(f"Error creating Stripe customer: {e}")
+            logger.error(f"Error creating Stripe customer for user {user.id}: {e}")
             return None
     
     def create_payment_intent(self, amount: Decimal, user) -> Optional[Dict]:
-        """Create payment intent for deposit"""
+        """Create payment intent for deposit with proper metadata"""
         try:
             customer_id = self.create_customer(user)
             if not customer_id:
+                logger.error(f"Failed to create/retrieve customer for user {user.id}")
                 return None
             
             # Convert to cents for Stripe
             amount_cents = int(amount * 100)
             
+            # Create payment intent with comprehensive metadata
             intent = stripe.PaymentIntent.create(
                 amount=amount_cents,
                 currency='usd',
@@ -569,47 +572,53 @@ class StripePaymentService:
                 automatic_payment_methods={'enabled': True},
                 metadata={
                     'user_id': str(user.id),
+                    'username': user.username,
                     'type': 'wallet_deposit',
-                    'amount_usd': str(amount)
+                    'amount_usd': str(amount),
+                    'created_at': timezone.now().isoformat(),
+                    'platform': 'evgxchain'
                 },
-                description=f'EVGxchain wallet deposit - ${amount}'
+                description=f'EVGxchain wallet deposit - ${amount} for user {user.username}',
+                # Add statement descriptor for user's bank statement
+                statement_descriptor='EVGXCHAIN DEPOSIT'
             )
+            
+            logger.info(f"Created payment intent {intent.id} for user {user.id}, amount ${amount}")
             
             return {
                 'id': intent.id,
                 'client_secret': intent.client_secret,
-                'amount': amount_cents
+                'amount': amount_cents,
+                'status': intent.status
             }
             
+        except stripe.error.StripeError as e:
+            logger.error(f"Stripe error creating payment intent: {e}")
+            return None
         except Exception as e:
-            logger.error(f"Error creating payment intent: {e}")
+            logger.error(f"Unexpected error creating payment intent for user {user.id}: {e}")
             return None
     
-    def confirm_payment(self, payment_intent_id: str) -> Dict:
-        """Confirm and process completed payment"""
+    def retrieve_payment_intent(self, payment_intent_id: str) -> Optional[Dict]:
+        """Retrieve and validate payment intent"""
         try:
             intent = stripe.PaymentIntent.retrieve(payment_intent_id)
             
-            if intent.status == 'succeeded':
-                return {
-                    'success': True,
-                    'amount': Decimal(str(intent.amount)) / 100,
-                    'user_id': intent.metadata.get('user_id'),
-                    'transaction_id': intent.id
-                }
-            else:
-                return {
-                    'success': False,
-                    'status': intent.status,
-                    'error': f'Payment not succeeded: {intent.status}'
-                }
-                
-        except Exception as e:
-            logger.error(f"Error confirming payment: {e}")
             return {
-                'success': False,
-                'error': str(e)
+                'id': intent.id,
+                'status': intent.status,
+                'amount': intent.amount,
+                'currency': intent.currency,
+                'metadata': intent.metadata,
+                'created': intent.created
             }
+            
+        except stripe.error.InvalidRequestError as e:
+            logger.error(f"Payment intent {payment_intent_id} not found: {e}")
+            return None
+        except Exception as e:
+            logger.error(f"Error retrieving payment intent {payment_intent_id}: {e}")
+            return None
 
 
 class WithdrawalService:
