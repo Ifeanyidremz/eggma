@@ -1368,3 +1368,72 @@ def process_webhook_manually_view(request):
             })
     
     return JsonResponse({'success': False, 'error': 'POST required'})
+
+
+def comprehensive_webhook_debug(request):
+    """
+    Comprehensive webhook debugging page
+    """
+    debug_info = {
+        'timestamp': timezone.now().isoformat(),
+        'sections': []
+    }
+    
+    # Check 1: Environment Variables
+    section1 = {
+        'title': '1. ENVIRONMENT VARIABLES',
+        'items': [],
+        'status': 'success' if check_environment_variables() else 'error'
+    }
+    
+    required_vars = ['STRIPE_SECRET_KEY', 'STRIPE_PUBLISHABLE_KEY', 'STRIPE_WEBHOOK_SECRET']
+    for var in required_vars:
+        value = os.getenv(var)
+        if value:
+            section1['items'].append(f"✅ {var}: {value[:10]}...")
+        else:
+            section1['items'].append(f"❌ {var}: NOT SET")
+    
+    debug_info['sections'].append(section1)
+    
+    # Check 2: Webhook Endpoints in Stripe
+    section2 = {
+        'title': '2. STRIPE WEBHOOK ENDPOINTS',
+        'items': [],
+        'status': 'info'
+    }
+    
+    try:
+        endpoints = check_webhook_configuration()
+        if endpoints:
+            section2['status'] = 'success'
+            for endpoint in endpoints:
+                section2['items'].extend([
+                    f"URL: {endpoint.url}",
+                    f"Status: {endpoint.status}",
+                    f"Events: {', '.join(endpoint.enabled_events)}",
+                    "---"
+                ])
+        else:
+            section2['status'] = 'error'
+            section2['items'].append("❌ No webhook endpoints found!")
+    except Exception as e:
+        section2['status'] = 'error'
+        section2['items'].append(f"❌ Error: {e}")
+    
+    debug_info['sections'].append(section2)
+    
+    # Check 3: Recent Webhook Logs (if you have logging configured)
+    section3 = {
+        'title': '3. RECENT WEBHOOK ATTEMPTS',
+        'items': [
+            "Check your server logs for webhook attempts",
+            "Look for: '=== STRIPE WEBHOOK RECEIVED ==='",
+            "If no logs found, webhooks are not reaching your server"
+        ],
+        'status': 'info'
+    }
+    
+    debug_info['sections'].append(section3)
+    
+    return render(request, 'comprehensive_webhook_debug.html', {'debug_info': debug_info})
