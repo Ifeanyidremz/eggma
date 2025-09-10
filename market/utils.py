@@ -579,8 +579,7 @@ class StripePaymentService:
                     'platform': 'evgxchain'
                 },
                 description=f'EVGxchain wallet deposit - ${amount} for user {user.username}',
-                # Add statement descriptor for user's bank statement
-                statement_descriptor='EVGXCHAIN DEPOSIT'
+                statement_descriptor_suffix='EVGXCHAIN DEPOSIT'
             )
             
             logger.info(f"Created payment intent {intent.id} for user {user.id}, amount ${amount}")
