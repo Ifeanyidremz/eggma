@@ -36,6 +36,7 @@ urlpatterns = [
     path('debug/fix-transaction/', views.fix_transaction_view, name='fix_transaction_view'),
     path('debug/process-webhook/', views.process_webhook_manually_view, name='process_webhook_manually_view'),
 
-    path('webhooks/test/', views.test_webhook_endpoint, name='test_webhook'),
+    # Add to urls.py
+    path('debug/webhook-comprehensive/', views.comprehensive_webhook_debug, name='comprehensive_webhook_debug'),
     
 ]
