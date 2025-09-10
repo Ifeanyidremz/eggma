@@ -724,55 +724,73 @@ def stripe_webhook(request):
 
 def handle_successful_payment(payment_intent):
     """
-    Process successful payment:
-    - Find matching transaction by PaymentIntent ID
-    - Update status and credit wallet
-    Returns True on success, False on failure
+    Update the Transaction once Stripe confirms payment succeeded.
     """
     pid = payment_intent.get("id")
-    metadata = payment_intent.get("metadata", {})
-    logger.info(f"Handling successful payment_intent {pid} | Metadata: {metadata}")
+    logger.info(f"Handling successful payment_intent {pid}")
 
     if not pid:
-        logger.error("No payment_intent ID found in webhook")
+        logger.error("No payment_intent ID in webhook")
         return False
 
     try:
-        txn = Transaction.objects.select_related("wallet").get(
-            reference=pid, status="pending"
+        txn = Transaction.objects.select_for_update().get(
+            stripe_payment_intent_id=pid,
+            status="pending",
+            transaction_type="deposit"
         )
     except Transaction.DoesNotExist:
-        logger.warning(f"No pending transaction found for payment_intent {pid}")
-        return False  # Stripe will retry
+        logger.warning(f"No pending deposit transaction found for payment_intent {pid}")
+        return False  # Return 400 in webhook to trigger retry
+    except Transaction.MultipleObjectsReturned:
+        txn = Transaction.objects.filter(
+            stripe_payment_intent_id=pid,
+            status="pending",
+            transaction_type="deposit"
+        ).latest("created_at")
+        logger.warning(f"Multiple transactions for {pid}, using {txn.id}")
 
     try:
         with transaction.atomic():
-            # Amount from Stripe (integer cents -> decimal)
             amount_received = Decimal(payment_intent["amount_received"]) / 100
 
-            # Safety check
+            # Verify amount
             if txn.amount != amount_received:
-                logger.warning(
-                    f"Amount mismatch for txn {txn.id}: DB={txn.amount}, Stripe={amount_received}"
+                logger.error(
+                    f"Amount mismatch: DB={txn.amount} vs Stripe={amount_received}"
                 )
-                return False  # retry later, maybe DB updated late
+                return False
+
+            user = txn.user
+            old_balance = user.balance
+
+            # Update user balance
+            user.balance += txn.amount
+            user.save(update_fields=["balance", "updated_at"])
 
             # Update transaction
-            txn.status = "Completed"
-            txn.completed_at = timezone.now()
-            txn.save(update_fields=["status", "completed_at"])
-
-            # Credit wallet
-            txn.wallet.balance = (txn.wallet.balance or Decimal("0.00")) + amount_received
-            txn.wallet.save(update_fields=["balance"])
+            txn.status = "completed"
+            txn.balance_before = old_balance
+            txn.balance_after = user.balance
+            txn.description = f"Deposit completed via Stripe {pid}"
+            txn.metadata.update({
+                "stripe_webhook_processed": timezone.now().isoformat(),
+                "payment_intent_status": payment_intent.get("status")
+            })
+            txn.save(update_fields=[
+                "status", "balance_before", "balance_after",
+                "description", "metadata", "updated_at"
+            ])
 
             logger.info(
-                f"✓ Transaction {txn.id} marked success and wallet {txn.wallet.id} credited {amount_received}"
+                f"✓ Transaction {txn.id} marked completed. "
+                f"User {user.id} balance: {old_balance} → {user.balance}"
             )
+
         return True
 
     except Exception as e:
-        logger.error(f"Error processing transaction {txn.id}: {e}", exc_info=True)
+        logger.error(f"Database update failed for payment {pid}: {e}", exc_info=True)
         return False
 
 
