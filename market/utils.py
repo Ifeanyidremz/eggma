@@ -575,7 +575,7 @@ class StripePaymentService:
                     'username': user.username,
                     'type': 'wallet_deposit',
                     'amount_usd': str(amount),
-                    'created_at': timezone.now().isoformat(),
+                    'created_at': django_timezone.now().isoformat(),
                     'platform': 'evgxchain'
                 },
                 description=f'EVGxchain wallet deposit - ${amount} for user {user.username}',
