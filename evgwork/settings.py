@@ -137,6 +137,15 @@ STRIPE_WEBHOOK_SECRET=os.getenv('STRIPE_WEBHOOK_SECRET')
 
 
 
+LOG_FILE_PATH = os.path.join(BASE_DIR, 'debug.log')
+
+
+try:
+    with open(LOG_FILE_PATH, 'a') as f:
+        f.write('')  
+except Exception as e:
+    LOG_FILE_PATH = os.path.join('/tmp', 'debug.log')
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -152,22 +161,29 @@ LOGGING = {
     },
     'handlers': {
         'file': {
-            'level': 'INFO', 
+            'level': 'DEBUG',  # Set to DEBUG to catch everything
             'class': 'logging.FileHandler',
-            'filename': 'debug.log',
+            'filename': LOG_FILE_PATH,
             'formatter': 'verbose',
+            'mode': 'a',  # Append mode
         },
         'console': {
-            'level': 'INFO',
+            'level': 'DEBUG',
             'class': 'logging.StreamHandler',
             'formatter': 'simple',
         },
     },
     'loggers': {
         '': {
-            'handlers': ['file', 'console'],  
-            'level': 'INFO', 
+            'handlers': ['file', 'console'],
+            'level': 'DEBUG',
             'propagate': True,
+        },
+        # Make sure Django logs also go to file
+        'django': {
+            'handlers': ['file', 'console'],
+            'level': 'INFO',
+            'propagate': False,
         },
     },
 }
