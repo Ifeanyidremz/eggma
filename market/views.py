@@ -1099,16 +1099,272 @@ def api_user_stats(request):
     return JsonResponse(stats)
 
 
-# Manual data sync view for admin
-@login_required
-def manual_data_sync(request):
-    """Manual trigger for data synchronization (admin only)"""
-    if not request.user.is_staff:
-        return JsonResponse({'error': 'Admin access required'}, status=403)
+def webhook_debug_view(request):
+    """Debug page to analyze webhook issues"""
+    
+    payment_intent_id = "pi_3S5uWQKDBFHQr38I1ZZGOjjW"
+    debug_info = {
+        'payment_intent_id': payment_intent_id,
+        'timestamp': timezone.now().isoformat(),
+        'sections': []
+    }
     
     try:
-        from .utils import DataSyncService
-        DataSyncService.sync_all_data()
-        return JsonResponse({'success': True, 'message': 'Data sync completed'})
+        # Section 1: Find Transaction
+        section1 = {
+            'title': '1. TRANSACTION SEARCH',
+            'items': [],
+            'status': 'info'
+        }
+        
+        try:
+            txn = Transaction.objects.get(stripe_payment_intent_id=payment_intent_id)
+            section1['items'].extend([
+                f"✅ Transaction found: {txn.id}",
+                f"User: {txn.user.username} (ID: {txn.user.id})",
+                f"Type: '{txn.transaction_type}'",
+                f"Amount: ${txn.amount}",
+                f"Status: '{txn.status}'",
+                f"Balance Before: ${txn.balance_before}",
+                f"Balance After: ${txn.balance_after}",
+                f"Created: {txn.created_at}",
+                f"Updated: {txn.updated_at}",
+                f"Description: {txn.description}"
+            ])
+            section1['status'] = 'success'
+            
+        except Transaction.DoesNotExist:
+            section1['items'].append(f"❌ No transaction found with payment_intent_id: {payment_intent_id}")
+            section1['status'] = 'error'
+            debug_info['sections'].append(section1)
+            return render(request, 'webhook_debug.html', {'debug_info': debug_info})
+            
+        debug_info['sections'].append(section1)
+        
+        # Section 2: Webhook Query Test
+        section2 = {
+            'title': '2. WEBHOOK QUERY TEST',
+            'items': [],
+            'status': 'info'
+        }
+        
+        webhook_query = Transaction.objects.filter(
+            stripe_payment_intent_id=payment_intent_id,
+            status="pending",
+            transaction_type="deposit"
+        )
+        
+        count = webhook_query.count()
+        section2['items'].extend([
+            "Query used by webhook:",
+            f"Transaction.objects.filter(",
+            f"    stripe_payment_intent_id='{payment_intent_id}',",
+            f"    status='pending',",
+            f"    transaction_type='deposit'",
+            f")",
+            f"Result: {count} transaction(s) found"
+        ])
+        
+        if count == 0:
+            section2['items'].extend([
+                "❌ WEBHOOK QUERY FAILS - This is why webhook doesn't work!",
+                "",
+                "Debugging each condition:"
+            ])
+            
+            by_payment_id = Transaction.objects.filter(stripe_payment_intent_id=payment_intent_id)
+            section2['items'].append(f"- By payment_intent_id only: {by_payment_id.count()}")
+            
+            if by_payment_id.exists():
+                t = by_payment_id.first()
+                section2['items'].extend([
+                    f"  Actual status: '{t.status}' (expected: 'pending')",
+                    f"  Actual type: '{t.transaction_type}' (expected: 'deposit')"
+                ])
+            
+            section2['status'] = 'error'
+        else:
+            section2['items'].append("✅ Webhook query works!")
+            section2['status'] = 'success'
+            
+        debug_info['sections'].append(section2)
+        
+        # Section 3: Amount Conversion Test
+        section3 = {
+            'title': '3. AMOUNT CONVERSION TEST',
+            'items': [],
+            'status': 'info'
+        }
+        
+        stripe_amount_cents = 12000  # From webhook data
+        stripe_amount_dollars = Decimal(stripe_amount_cents) / 100
+        
+        section3['items'].extend([
+            f"Stripe amount (cents): {stripe_amount_cents}",
+            f"Stripe amount (dollars): {stripe_amount_dollars}",
+            f"Database amount: {txn.amount}",
+            f"Types: {type(stripe_amount_dollars).__name__} == {type(txn.amount).__name__}",
+            f"Values equal: {stripe_amount_dollars == txn.amount}",
+            f"Difference: {abs(stripe_amount_dollars - txn.amount)}"
+        ])
+        
+        if abs(stripe_amount_dollars - txn.amount) <= Decimal('0.01'):
+            section3['items'].append("✅ Amount verification would pass")
+            section3['status'] = 'success'
+        else:
+            section3['items'].append("❌ Amount verification would fail")
+            section3['status'] = 'error'
+            
+        debug_info['sections'].append(section3)
+        
+        # Section 4: Current User Balance
+        section4 = {
+            'title': '4. USER BALANCE STATUS',
+            'items': [],
+            'status': 'info'
+        }
+        
+        user = txn.user
+        section4['items'].extend([
+            f"User: {user.username}",
+            f"Current Balance: ${user.balance}",
+            f"Expected Balance After Deposit: ${user.balance + txn.amount}",
+            f"Transaction Amount: ${txn.amount}"
+        ])
+        debug_info['sections'].append(section4)
+        
+        # Section 5: Recent Transactions
+        section5 = {
+            'title': '5. RECENT TRANSACTIONS FOR USER',
+            'items': [],
+            'status': 'info'
+        }
+        
+        recent_txns = Transaction.objects.filter(user=user).order_by('-created_at')[:5]
+        for i, recent_txn in enumerate(recent_txns, 1):
+            section5['items'].append(
+                f"{i}. {recent_txn.transaction_type} - ${recent_txn.amount} - {recent_txn.status} - {recent_txn.created_at.strftime('%Y-%m-%d %H:%M')}"
+            )
+        debug_info['sections'].append(section5)
+        
     except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
+        error_section = {
+            'title': 'ERROR',
+            'items': [
+                f"❌ Debug error: {str(e)}",
+                f"Traceback: {traceback.format_exc()}"
+            ],
+            'status': 'error'
+        }
+        debug_info['sections'].append(error_section)
+    
+    return render(request, 'webhook_debug.html', {'debug_info': debug_info})
+
+
+@csrf_exempt
+def fix_transaction_view(request):
+    """Fix the transaction via web interface"""
+    
+    if request.method == 'POST':
+        payment_intent_id = "pi_3S5uWQKDBFHQr38I1ZZGOjjW"
+        
+        try:
+            with transaction.atomic():
+                txn = Transaction.objects.select_for_update().get(
+                    stripe_payment_intent_id=payment_intent_id
+                )
+                
+                # Fix common issues
+                changes = []
+                
+                if txn.status != 'pending':
+                    old_status = txn.status
+                    txn.status = 'pending'
+                    changes.append(f"Status: '{old_status}' → 'pending'")
+                
+                if txn.transaction_type != 'deposit':
+                    old_type = txn.transaction_type
+                    txn.transaction_type = 'deposit'
+                    changes.append(f"Type: '{old_type}' → 'deposit'")
+                
+                expected_amount = Decimal('120.00')
+                if txn.amount != expected_amount:
+                    old_amount = txn.amount
+                    txn.amount = expected_amount
+                    changes.append(f"Amount: {old_amount} → {expected_amount}")
+                
+                if changes:
+                    txn.save()
+                    
+                return JsonResponse({
+                    'success': True,
+                    'message': f"Transaction fixed: {', '.join(changes)}" if changes else "Transaction was already correct",
+                    'changes': changes
+                })
+                
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            })
+    
+    return JsonResponse({'success': False, 'error': 'POST required'})
+
+ 
+@csrf_exempt
+def process_webhook_manually_view(request):
+    """Manually process the webhook"""
+    
+    if request.method == 'POST':
+        payment_intent_id = "pi_3S5uWQKDBFHQr38I1ZZGOjjW"
+        
+        try:
+            with transaction.atomic():
+                txn = Transaction.objects.select_for_update().get(
+                    stripe_payment_intent_id=payment_intent_id,
+                    status="pending",
+                    transaction_type="deposit"
+                )
+                
+                user = txn.user
+                old_balance = user.balance
+                
+                # Update user balance
+                user.balance += txn.amount
+                user.save(update_fields=['balance', 'updated_at'])
+                
+                # Complete transaction
+                txn.status = 'completed'
+                txn.balance_before = old_balance
+                txn.balance_after = user.balance
+                txn.description = f"Deposit completed manually - was stuck pending"
+                txn.metadata.update({
+                    "manually_processed": timezone.now().isoformat(),
+                    "processed_by": "web_interface"
+                })
+                txn.save(update_fields=[
+                    'status', 'balance_before', 'balance_after',
+                    'description', 'metadata', 'updated_at'
+                ])
+                
+                return JsonResponse({
+                    'success': True,
+                    'message': f'Transaction completed successfully!',
+                    'transaction_id': str(txn.id),
+                    'old_balance': float(old_balance),
+                    'new_balance': float(user.balance),
+                    'amount': float(txn.amount)
+                })
+                
+        except Transaction.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'error': 'No pending deposit transaction found'
+            })
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            })
+    
+    return JsonResponse({'success': False, 'error': 'POST required'})
