@@ -32,12 +32,5 @@ urlpatterns = [
 
     path('stripe-webhook/', views.stripe_webhook, name='stripe-webhook'),
 
-    path('debug/webhook/', views.webhook_debug_view, name='webhook_debug_view'),
-    path('debug/fix-transaction/', views.fix_transaction_view, name='fix_transaction_view'),
-    path('debug/process-webhook/', views.process_webhook_manually_view, name='process_webhook_manually_view'),
 
-    path('webhook/test/', views.webhook_test, name='webhook_test'),
-
-    path('debug/logs/', views.view_logs, name='view_logs'),
-    path('debug/webhook-status/', views.webhook_status, name='webhook_status'),
 ]
