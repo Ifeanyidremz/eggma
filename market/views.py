@@ -22,6 +22,8 @@ from predict.models import Bet, Transaction, UserStats
 from django.db import transaction as db_transaction
 import logging
 import traceback
+from dotenv import load_dotenv
+load_dotenv() 
 
 logger = logging.getLogger(__name__)
 
