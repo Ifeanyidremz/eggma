@@ -37,5 +37,7 @@ urlpatterns = [
     path('debug/process-webhook/', views.process_webhook_manually_view, name='process_webhook_manually_view'),
 
     path('webhook/test/', views.webhook_test, name='webhook_test'),
-    
+
+    path('debug/logs/', views.view_logs, name='view_logs'),
+    path('debug/webhook-status/', views.webhook_status, name='webhook_status'),
 ]
