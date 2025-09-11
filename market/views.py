@@ -672,33 +672,55 @@ def wallet_deposit(request):
 @require_POST  
 def stripe_webhook(request):
     """
-    ENHANCED Stripe webhook handler with comprehensive logging
+    Enhanced webhook with extensive debugging
     """
-    # Log every webhook attempt
-    logger.info(f"=== STRIPE WEBHOOK RECEIVED ===")
-    logger.info(f"Method: {request.method}")
-    logger.info(f"Content-Type: {request.content_type}")
-    logger.info(f"Headers: {dict(request.META)}")
+    # STEP 1: Log that webhook was hit
+    logger.info(f"=== STRIPE WEBHOOK HIT at {timezone.now()} ===")
     
+    # STEP 2: Log request details
     payload = request.body
     sig_header = request.META.get("HTTP_STRIPE_SIGNATURE", "")
     STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
-
-    logger.info(f"Payload size: {len(payload)} bytes")
-    logger.info(f"Signature header present: {bool(sig_header)}")
-    logger.info(f"Webhook secret configured: {bool(STRIPE_WEBHOOK_SECRET)}")
+    
+    logger.info(f"Request Details:")
+    logger.info(f"- Method: {request.method}")
+    logger.info(f"- Content-Type: {request.content_type}")
+    logger.info(f"- Payload size: {len(payload)} bytes")
+    logger.info(f"- Has signature header: {bool(sig_header)}")
+    logger.info(f"- Webhook secret configured: {bool(STRIPE_WEBHOOK_SECRET)}")
+    logger.info(f"- Request IP: {request.META.get('REMOTE_ADDR', 'unknown')}")
+    
+    # STEP 3: Try to log raw payload (first 500 chars for safety)
+    try:
+        payload_preview = payload.decode('utf-8')[:500]
+        logger.info(f"Payload preview: {payload_preview}")
+    except:
+        logger.info("Could not decode payload preview")
 
     if not STRIPE_WEBHOOK_SECRET:
-        logger.error("❌ STRIPE_WEBHOOK_SECRET not configured in environment")
+        logger.error("❌ STRIPE_WEBHOOK_SECRET not configured")
         return HttpResponse("Webhook secret not configured", status=500)
 
-    # Verify event signature
+    # STEP 4: Try to verify and parse the event
     try:
         event = stripe.Webhook.construct_event(payload, sig_header, STRIPE_WEBHOOK_SECRET)
-        logger.info(f"✅ Webhook verified | Type: {event['type']} | ID: {event['id']}")
+        logger.info(f"✅ Event verified successfully")
+        logger.info(f"- Event ID: {event['id']}")
+        logger.info(f"- Event Type: {event['type']}")
+        logger.info(f"- Created: {event.get('created')}")
         
-        # Log the full event for debugging
-        logger.info(f"Event data: {event}")
+        # Log the event data
+        event_data = event.get("data", {})
+        event_object = event_data.get("object", {})
+        logger.info(f"- Object ID: {event_object.get('id', 'N/A')}")
+        logger.info(f"- Object Type: {event_object.get('object', 'N/A')}")
+        
+        if event_object.get('object') == 'payment_intent':
+            logger.info(f"Payment Intent Details:")
+            logger.info(f"- Status: {event_object.get('status')}")
+            logger.info(f"- Amount: {event_object.get('amount')}")
+            logger.info(f"- Amount Received: {event_object.get('amount_received')}")
+            logger.info(f"- Currency: {event_object.get('currency')}")
         
     except ValueError as e:
         logger.error(f"❌ Invalid payload: {e}")
@@ -706,19 +728,22 @@ def stripe_webhook(request):
     except stripe.error.SignatureVerificationError as e:
         logger.error(f"❌ Signature verification failed: {e}")
         logger.error(f"Received signature: {sig_header}")
-        logger.error(f"Webhook secret (first 10 chars): {STRIPE_WEBHOOK_SECRET[:10]}...")
+        if STRIPE_WEBHOOK_SECRET:
+            logger.error(f"Expected secret (first 10 chars): {STRIPE_WEBHOOK_SECRET[:10]}...")
         return HttpResponse("Invalid signature", status=400)
     except Exception as e:
-        logger.error(f"❌ Webhook verification error: {e}", exc_info=True)
-        return HttpResponse("Webhook verification error", status=400)
+        logger.error(f"❌ Event parsing error: {e}", exc_info=True)
+        return HttpResponse("Event parsing error", status=400)
 
-    # Process event with enhanced error handling
+    # STEP 5: Process the event
     try:
-        logger.info(f"Processing event type: {event['type']}")
+        logger.info(f"🔄 Processing event: {event['type']}")
         
         if event["type"] == "payment_intent.succeeded":
-            logger.info("Processing payment_intent.succeeded")
-            success = handle_successful_payment(event["data"]["object"])
+            logger.info("Handling payment_intent.succeeded")
+            payment_intent = event["data"]["object"]
+            success = handle_successful_payment(payment_intent)
+            
             if success:
                 logger.info("✅ Payment processed successfully")
                 return HttpResponse("Payment processed successfully", status=200)
@@ -727,129 +752,157 @@ def stripe_webhook(request):
                 return HttpResponse("Processing failed", status=400)
 
         elif event["type"] == "payment_intent.payment_failed":
-            logger.info("Processing payment_intent.payment_failed")
-            handle_failed_payment(event["data"]["object"])
+            logger.info("Handling payment_intent.payment_failed")
+            payment_intent = event["data"]["object"]
+            handle_failed_payment(payment_intent)
+            logger.info("✅ Failed payment processed")
             return HttpResponse("Failed payment processed", status=200)
 
         elif event["type"] == "payment_intent.canceled":
-            logger.info("Processing payment_intent.canceled")
-            handle_canceled_payment(event["data"]["object"])
+            logger.info("Handling payment_intent.canceled")
+            payment_intent = event["data"]["object"]
+            handle_canceled_payment(payment_intent)
+            logger.info("✅ Canceled payment processed")
             return HttpResponse("Canceled payment processed", status=200)
 
         else:
-            logger.info(f"Unhandled event type: {event['type']}")
+            logger.info(f"ℹ️ Unhandled event type: {event['type']} - ignoring")
             return HttpResponse("Event received", status=200)
 
     except Exception as e:
-        logger.error(f"❌ Error processing {event.get('type')}: {e}", exc_info=True)
+        logger.error(f"❌ Critical error processing event {event.get('id')}: {e}")
         logger.error(f"Full traceback: {traceback.format_exc()}")
-        return HttpResponse("Event processing error", status=400)
+        return HttpResponse("Event processing error", status=500)
+
 
 
 def handle_successful_payment(payment_intent):
     """
-    FIXED: Handle successful payments with proper error handling and logging
+    Simplified version with extensive logging for debugging
     """
     pid = payment_intent.get("id")
-    logger.info(f"🔄 Processing successful payment_intent: {pid}")
-
+    logger.info(f"🔄 handle_successful_payment called for: {pid}")
+    
     if not pid:
-        logger.error("❌ No payment_intent ID in webhook data")
+        logger.error("❌ No payment_intent ID")
         return False
-
+    
     try:
-        # Log the payment_intent data
-        logger.info(f"Payment Intent Data:")
+        # Log payment intent details
+        logger.info(f"Payment Intent Analysis:")
         logger.info(f"- ID: {pid}")
-        logger.info(f"- Amount: {payment_intent.get('amount')}")
-        logger.info(f"- Amount Received: {payment_intent.get('amount_received')}")
         logger.info(f"- Status: {payment_intent.get('status')}")
+        logger.info(f"- Amount (cents): {payment_intent.get('amount')}")
+        logger.info(f"- Amount Received (cents): {payment_intent.get('amount_received')}")
         logger.info(f"- Currency: {payment_intent.get('currency')}")
         
+        # Calculate amount
+        stripe_amount_cents = payment_intent.get("amount_received") or payment_intent.get("amount", 0)
+        stripe_amount = Decimal(stripe_amount_cents) / 100
+        logger.info(f"- Calculated amount: ${stripe_amount}")
+        
+        # Search for transactions
+        logger.info(f"🔍 Searching for transactions with payment_intent_id: {pid}")
+        
+        all_transactions = Transaction.objects.filter(
+            stripe_payment_intent_id=pid
+        )
+        
+        logger.info(f"Found {all_transactions.count()} total transactions")
+        
+        # Log each transaction found
+        for i, txn in enumerate(all_transactions, 1):
+            logger.info(f"Transaction {i}:")
+            logger.info(f"  - ID: {txn.id}")
+            logger.info(f"  - User: {txn.user.username}")
+            logger.info(f"  - Type: {txn.transaction_type}")
+            logger.info(f"  - Amount: ${txn.amount}")
+            logger.info(f"  - Status: {txn.status}")
+            logger.info(f"  - Created: {txn.created_at}")
+        
+        if not all_transactions.exists():
+            logger.error(f"❌ No transactions found for {pid}")
+            
+            # Show recent transactions for debugging
+            recent_txns = Transaction.objects.filter(
+                created_at__gte=timezone.now() - timedelta(hours=2)
+            ).order_by('-created_at')[:5]
+            
+            logger.info(f"Recent transactions for debugging:")
+            for txn in recent_txns:
+                logger.info(f"  - {txn.id}: {txn.stripe_payment_intent_id} | {txn.status} | ${txn.amount}")
+            
+            return False
+        
+        # Find deposit transactions only
+        deposit_transactions = all_transactions.filter(transaction_type='deposit')
+        logger.info(f"Found {deposit_transactions.count()} deposit transactions")
+        
+        if not deposit_transactions.exists():
+            logger.error(f"❌ No deposit transactions found for {pid}")
+            return False
+        
+        # Check for completed transactions
+        completed = deposit_transactions.filter(status='completed')
+        if completed.exists():
+            logger.info(f"✅ Payment {pid} already completed in transaction {completed.first().id}")
+            return True
+        
+        # Find transaction to process
+        pending = deposit_transactions.filter(status='pending').first()
+        if pending:
+            target_txn = pending
+            logger.info(f"✅ Found pending transaction: {target_txn.id}")
+        else:
+            target_txn = deposit_transactions.first()
+            logger.info(f"ℹ️ No pending transaction, using: {target_txn.id} (status: {target_txn.status})")
+        
+        # Validate amount
+        if abs(target_txn.amount - stripe_amount) > Decimal('0.01'):
+            logger.error(f"❌ Amount mismatch: DB=${target_txn.amount} vs Stripe=${stripe_amount}")
+            return False
+        
+        # Process the transaction
+        logger.info(f"🔄 Processing transaction {target_txn.id}")
+        
         with db_transaction.atomic():
-            # FIXED: Look for transaction by payment_intent_id with any status, not just pending
-            transactions = Transaction.objects.filter(
-                stripe_payment_intent_id=pid,
-                transaction_type="deposit"
-            )
-            
-            logger.info(f"Found {transactions.count()} transactions for payment_intent {pid}")
-            
-            if not transactions.exists():
-                logger.error(f"❌ No transaction found for payment_intent {pid}")
-                # Log all recent transactions to help debug
-                recent_txns = Transaction.objects.filter(
-                    transaction_type="deposit",
-                    created_at__gte=timezone.now() - timedelta(hours=24)
-                ).values('id', 'stripe_payment_intent_id', 'amount', 'status', 'created_at')
-                logger.info(f"Recent deposit transactions: {list(recent_txns)}")
-                return False
-            
-            # FIXED: Get the transaction (prefer pending, but accept any status that's not already completed)
-            txn = transactions.filter(status="pending").first()
-            if not txn:
-                # Check if transaction is already completed
-                completed_txn = transactions.filter(status="completed").first()
-                if completed_txn:
-                    logger.info(f"✅ Transaction {completed_txn.id} already completed, skipping")
-                    return True
-                
-                # Take any other status (might be 'failed', 'cancelled', etc.)
-                txn = transactions.first()
-                logger.info(f"No pending transaction found, using transaction with status: {txn.status}")
-            
-            logger.info(f"Processing transaction {txn.id} (status: {txn.status})")
-            
-            # Check if already completed
-            if txn.status == "completed":
-                logger.info(f"✅ Transaction {txn.id} already completed")
-                return True
-                
-            # Verify amount
-            amount_received = Decimal(payment_intent["amount_received"]) / 100
-            logger.info(f"Amount verification: DB={txn.amount}, Stripe={amount_received}")
-            
-            if abs(txn.amount - amount_received) > Decimal('0.01'):
-                logger.error(f"❌ Amount mismatch for {pid}: DB={txn.amount} vs Stripe={amount_received}")
-                return False
-
-            # Update user balance and transaction
-            user = txn.user
+            user = target_txn.user
             old_balance = user.balance
+            new_balance = old_balance + target_txn.amount
             
-            logger.info(f"Updating user {user.id} balance: {old_balance} + {txn.amount} = {old_balance + txn.amount}")
+            logger.info(f"Balance update: {user.username} ${old_balance} + ${target_txn.amount} = ${new_balance}")
             
-            user.balance += txn.amount
-            user.save(update_fields=["balance", "updated_at"])
+            # Update user
+            user.balance = new_balance
+            user.save(update_fields=['balance', 'updated_at'])
             
-            # Complete the transaction
-            txn.status = "completed"
-            txn.balance_before = old_balance
-            txn.balance_after = user.balance
-            txn.description = f"Deposit completed via Stripe webhook {pid}"
+            # Update transaction
+            target_txn.status = 'completed'
+            target_txn.balance_before = old_balance
+            target_txn.balance_after = new_balance
+            target_txn.description = f"Deposit completed via Stripe webhook {pid}"
             
-            # Ensure metadata exists and update it
-            if not txn.metadata:
-                txn.metadata = {}
-            txn.metadata.update({
-                "stripe_webhook_processed": timezone.now().isoformat(),
-                "payment_intent_status": payment_intent.get("status"),
-                "webhook_amount_received": str(amount_received),
-                "original_stripe_amount": payment_intent.get("amount")
+            if not target_txn.metadata:
+                target_txn.metadata = {}
+            target_txn.metadata.update({
+                "webhook_processed_at": timezone.now().isoformat(),
+                "stripe_status": payment_intent.get("status"),
+                "webhook_amount": str(stripe_amount)
             })
             
-            txn.save(update_fields=[
-                "status", "balance_before", "balance_after",
-                "description", "metadata", "updated_at"
+            target_txn.save(update_fields=[
+                'status', 'balance_before', 'balance_after', 
+                'description', 'metadata', 'updated_at'
             ])
-
-            logger.info(f"✅ Transaction {txn.id} completed successfully")
-            logger.info(f"   User {user.id} balance updated: {old_balance} → {user.balance}")
+            
+            logger.info(f"✅ SUCCESS: Transaction {target_txn.id} completed")
+            logger.info(f"✅ User balance updated: ${old_balance} → ${new_balance}")
             
             return True
             
     except Exception as e:
-        logger.error(f"❌ Error processing payment {pid}: {e}", exc_info=True)
+        logger.error(f"❌ Error in handle_successful_payment: {e}")
+        logger.error(f"Full traceback: {traceback.format_exc()}")
         return False
 
 
