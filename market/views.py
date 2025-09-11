@@ -11,7 +11,6 @@ from datetime import timedelta
 import os
 import json
 import stripe
-from .payment_utils import *
 from django.views.decorators.http import require_POST
 from .models import Market, CryptocurrencyCategory, EconomicEvent
 from predict.models import NewsArticle
