@@ -974,7 +974,6 @@ def handle_canceled_payment(payment_intent):
 @login_required
 def wallet_withdraw(request):
     """Handle wallet withdrawal"""
-    from .payment_utils import WithdrawalService
     
     if request.method == 'POST':
         try:
