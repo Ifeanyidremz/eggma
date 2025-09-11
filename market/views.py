@@ -1397,3 +1397,8 @@ def process_webhook_manually_view(request):
             })
     
     return JsonResponse({'success': False, 'error': 'POST required'})
+
+@csrf_exempt
+def webhook_test(request):
+    """Simple test endpoint to verify webhook connectivity"""
+    return HttpResponse(f"Webhook endpoint is working! Time: {timezone.now()}", status=200)
