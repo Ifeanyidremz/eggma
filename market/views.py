@@ -1455,3 +1455,172 @@ def process_webhook_manually_view(request):
 def webhook_test(request):
     """Simple test endpoint to verify webhook connectivity"""
     return HttpResponse(f"Webhook endpoint is working! Time: {timezone.now()}", status=200)
+
+
+class MemoryLogHandler(logging.Handler):
+    def __init__(self):
+        super().__init__()
+        self.logs = []
+        
+    def emit(self, record):
+        log_entry = self.format(record)
+        self.logs.append({
+            'timestamp': record.created,
+            'level': record.levelname,
+            'message': log_entry,
+            'name': record.name
+        })
+        # Keep only last 100 logs
+        if len(self.logs) > 100:
+            self.logs = self.logs[-100:]
+
+# Create global memory handler
+memory_handler = MemoryLogHandler()
+memory_handler.setLevel(logging.INFO)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+memory_handler.setFormatter(formatter)
+
+# Add to your logger (put this at module level in views.py)
+logger = logging.getLogger(__name__)
+logger.addHandler(memory_handler)
+
+
+def view_logs(request):
+    """Simple endpoint to view recent logs"""
+    logs = memory_handler.logs[-50:]  # Last 50 logs
+    
+    html = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Webhook Logs</title>
+        <style>
+            body { font-family: monospace; margin: 20px; }
+            .log-entry { 
+                margin: 5px 0; 
+                padding: 10px; 
+                background: #f5f5f5; 
+                border-left: 3px solid #ccc;
+            }
+            .ERROR { border-left-color: #ff0000; background: #ffe6e6; }
+            .WARNING { border-left-color: #ff9900; background: #fff3e6; }
+            .INFO { border-left-color: #0066cc; background: #e6f3ff; }
+            button { 
+                background: #007cba; 
+                color: white; 
+                padding: 10px 20px; 
+                border: none; 
+                cursor: pointer; 
+                margin: 10px 0;
+            }
+        </style>
+        <script>
+            function refresh() {
+                location.reload();
+            }
+            // Auto-refresh every 10 seconds
+            setTimeout(refresh, 10000);
+        </script>
+    </head>
+    <body>
+        <h1>Recent Webhook Logs (Last 50 entries)</h1>
+        <button onclick="refresh()">Refresh Now</button>
+        <p><strong>Auto-refreshes every 10 seconds</strong></p>
+        <hr>
+    """
+    
+    if not logs:
+        html += "<p>No logs yet. Make a test payment to see logs appear here.</p>"
+    else:
+        for log in reversed(logs):  # Most recent first
+            timestamp = logging.Formatter().formatTime(logging.LogRecord(
+                '', 0, '', 0, '', (), None, created=log['timestamp']
+            ))
+            html += f'''
+            <div class="log-entry {log['level']}">
+                <strong>[{timestamp}] {log['level']}</strong><br>
+                {log['message'].replace('\n', '<br>')}
+            </div>
+            '''
+    
+    html += """
+        </body>
+    </html>
+    """
+    
+    return HttpResponse(html)
+
+# Add this to store webhook attempts for debugging
+webhook_attempts = []
+
+def log_webhook_attempt(event_type, payment_intent_id, success, error=None):
+    """Log webhook attempts for debugging"""
+    webhook_attempts.append({
+        'timestamp': timezone.now(),
+        'event_type': event_type,
+        'payment_intent_id': payment_intent_id,
+        'success': success,
+        'error': str(error) if error else None
+    })
+    # Keep only last 20 attempts
+    if len(webhook_attempts) > 20:
+        webhook_attempts[:] = webhook_attempts[-20:]
+
+
+def webhook_status(request):
+    """Show webhook processing status"""
+    html = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Webhook Status</title>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            .success { color: green; }
+            .error { color: red; }
+            .attempt { 
+                margin: 10px 0; 
+                padding: 10px; 
+                border: 1px solid #ccc; 
+                background: #f9f9f9;
+            }
+            button { 
+                background: #007cba; 
+                color: white; 
+                padding: 10px 20px; 
+                border: none; 
+                cursor: pointer; 
+            }
+        </style>
+        <script>
+            function refresh() { location.reload(); }
+            setTimeout(refresh, 5000); // Refresh every 5 seconds
+        </script>
+    </head>
+    <body>
+        <h1>Webhook Processing Status</h1>
+        <button onclick="refresh()">Refresh</button>
+        <p><em>Auto-refreshes every 5 seconds</em></p>
+        <hr>
+    """
+    
+    if not webhook_attempts:
+        html += "<p>No webhook attempts logged yet.</p>"
+    else:
+        for attempt in reversed(webhook_attempts):
+            status_class = "success" if attempt['success'] else "error"
+            status_text = "SUCCESS" if attempt['success'] else "FAILED"
+            
+            html += f'''
+            <div class="attempt">
+                <strong class="{status_class}">[{status_text}]</strong> 
+                {attempt['timestamp'].strftime('%H:%M:%S')} - 
+                {attempt['event_type']} - 
+                {attempt['payment_intent_id']}<br>
+            '''
+            if attempt['error']:
+                html += f'<span class="error">Error: {attempt["error"]}</span>'
+            html += '</div>'
+    
+    html += "</body></html>"
+    return HttpResponse(html)
