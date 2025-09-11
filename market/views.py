@@ -21,6 +21,7 @@ from .utils import *
 from predict.models import Bet, Transaction, UserStats
 from django.db import transaction as db_transaction
 import logging
+import traceback
 
 logger = logging.getLogger(__name__)
 
@@ -605,7 +606,7 @@ def wallet_deposit(request):
             
             payment_intent_id = payment_result['id']
             
-            # CRITICAL: Create transaction with proper atomic operation
+            # FIXED: Create transaction with proper atomic operation and ensure 'pending' status
             try:
                 with db_transaction.atomic():
                     # Check if transaction already exists (prevent duplicates)
@@ -622,20 +623,25 @@ def wallet_deposit(request):
                             'transaction_id': str(existing_transaction.id)
                         })
                     
-                    # Create new transaction
+                    # FIXED: Create new transaction with explicit 'pending' status
                     transaction = Transaction.objects.create(
                         user=request.user,
                         transaction_type='deposit',
                         amount=amount,
                         balance_before=request.user.balance,
                         balance_after=request.user.balance,  # Will update on completion
-                        status='pending',
-                        stripe_payment_intent_id=payment_intent_id,  # CRUCIAL: Store this
+                        status='pending',  # EXPLICIT: Ensure this is 'pending'
+                        stripe_payment_intent_id=payment_intent_id,
                         description=f"Wallet deposit via Stripe - ${amount}",
-                        created_at=timezone.now()
+                        created_at=timezone.now(),
+                        metadata={
+                            'stripe_payment_intent_id': payment_intent_id,
+                            'stripe_amount_cents': int(amount * 100),
+                            'created_via': 'wallet_deposit_endpoint'
+                        }
                     )
                     
-                    logger.info(f"Created transaction {transaction.id} for payment_intent {payment_intent_id}")
+                    logger.info(f"Created transaction {transaction.id} for payment_intent {payment_intent_id} with status '{transaction.status}'")
                     
                     return JsonResponse({
                         'success': True,
@@ -652,7 +658,6 @@ def wallet_deposit(request):
                 })
                 
         except Exception as e:
-            # Log the full error for debugging
             logger.error(f"Deposit error for user {request.user.id}: {str(e)}", exc_info=True)
             
             return JsonResponse({
@@ -762,7 +767,7 @@ def handle_successful_payment(payment_intent):
         logger.info(f"- Currency: {payment_intent.get('currency')}")
         
         with db_transaction.atomic():
-            # Look for transaction by payment_intent_id (any status)
+            # FIXED: Look for transaction by payment_intent_id with any status, not just pending
             transactions = Transaction.objects.filter(
                 stripe_payment_intent_id=pid,
                 transaction_type="deposit"
@@ -780,9 +785,16 @@ def handle_successful_payment(payment_intent):
                 logger.info(f"Recent deposit transactions: {list(recent_txns)}")
                 return False
             
-            # Get the transaction (prefer pending, but take any)
+            # FIXED: Get the transaction (prefer pending, but accept any status that's not already completed)
             txn = transactions.filter(status="pending").first()
             if not txn:
+                # Check if transaction is already completed
+                completed_txn = transactions.filter(status="completed").first()
+                if completed_txn:
+                    logger.info(f"✅ Transaction {completed_txn.id} already completed, skipping")
+                    return True
+                
+                # Take any other status (might be 'failed', 'cancelled', etc.)
                 txn = transactions.first()
                 logger.info(f"No pending transaction found, using transaction with status: {txn.status}")
             
@@ -838,65 +850,71 @@ def handle_successful_payment(payment_intent):
             
     except Exception as e:
         logger.error(f"❌ Error processing payment {pid}: {e}", exc_info=True)
-        logger.error(f"Full traceback: {traceback.format_exc()}")
         return False
 
 
 def handle_failed_payment(payment_intent):
-    """Mark transaction as failed if found"""
+    """FIXED: Mark transaction as failed if found"""
     pid = payment_intent.get("id")
     logger.info(f"Handling failed payment_intent {pid}")
     
     try:
-        with transaction.atomic():
-            # FIX: Use stripe_payment_intent_id instead of reference
-            txn = Transaction.objects.select_for_update().get(
-                stripe_payment_intent_id=pid, 
-                status="pending"
-            )
-            # FIX: Use lowercase 'failed' to match model choices
-            txn.status = "failed"
-            txn.description = f"Payment failed via Stripe {pid}"
-            txn.metadata.update({
-                "stripe_webhook_processed": timezone.now().isoformat(),
-                "payment_intent_status": payment_intent.get("status"),
-                "failure_reason": payment_intent.get("last_payment_error", {}).get("message", "Unknown")
-            })
-            txn.save(update_fields=["status", "description", "metadata", "updated_at"])
-            logger.info(f"✗ Transaction {txn.id} marked failed for payment_intent {pid}")
+        with db_transaction.atomic():
+            # Look for any transaction with this payment_intent_id that's not already failed
+            txn = Transaction.objects.select_for_update().filter(
+                stripe_payment_intent_id=pid
+            ).exclude(status="failed").first()
             
-    except Transaction.DoesNotExist:
-        logger.warning(f"No pending transaction found for failed payment_intent {pid}")
+            if txn:
+                txn.status = "failed"
+                txn.description = f"Payment failed via Stripe {pid}"
+                
+                if not txn.metadata:
+                    txn.metadata = {}
+                txn.metadata.update({
+                    "stripe_webhook_processed": timezone.now().isoformat(),
+                    "payment_intent_status": payment_intent.get("status"),
+                    "failure_reason": payment_intent.get("last_payment_error", {}).get("message", "Unknown")
+                })
+                txn.save(update_fields=["status", "description", "metadata", "updated_at"])
+                logger.info(f"✗ Transaction {txn.id} marked failed for payment_intent {pid}")
+            else:
+                logger.warning(f"No transaction found to mark failed for payment_intent {pid}")
+                
     except Exception as e:
         logger.error(f"Error updating failed payment {pid}: {e}", exc_info=True)
 
 
 def handle_canceled_payment(payment_intent):
-    """Mark transaction as canceled if found"""
+    """FIXED: Mark transaction as canceled if found"""
     pid = payment_intent.get("id")
     logger.info(f"Handling canceled payment_intent {pid}")
     
     try:
-        with transaction.atomic():
-            # FIX: Use stripe_payment_intent_id instead of reference  
-            txn = Transaction.objects.select_for_update().get(
-                stripe_payment_intent_id=pid, 
-                status="pending"
-            )
-            # FIX: Use lowercase 'cancelled' to match model choices
-            txn.status = "cancelled"
-            txn.description = f"Payment cancelled via Stripe {pid}"
-            txn.metadata.update({
-                "stripe_webhook_processed": timezone.now().isoformat(),
-                "payment_intent_status": payment_intent.get("status")
-            })
-            txn.save(update_fields=["status", "description", "metadata", "updated_at"])
-            logger.info(f"⚠ Transaction {txn.id} marked cancelled for payment_intent {pid}")
+        with db_transaction.atomic():
+            # Look for any transaction with this payment_intent_id that's not already cancelled
+            txn = Transaction.objects.select_for_update().filter(
+                stripe_payment_intent_id=pid
+            ).exclude(status="cancelled").first()
             
-    except Transaction.DoesNotExist:
-        logger.warning(f"No pending transaction found for canceled payment_intent {pid}")
+            if txn:
+                txn.status = "cancelled"
+                txn.description = f"Payment cancelled via Stripe {pid}"
+                
+                if not txn.metadata:
+                    txn.metadata = {}
+                txn.metadata.update({
+                    "stripe_webhook_processed": timezone.now().isoformat(),
+                    "payment_intent_status": payment_intent.get("status")
+                })
+                txn.save(update_fields=["status", "description", "metadata", "updated_at"])
+                logger.info(f"⚠ Transaction {txn.id} marked cancelled for payment_intent {pid}")
+            else:
+                logger.warning(f"No transaction found to mark cancelled for payment_intent {pid}")
+                
     except Exception as e:
         logger.error(f"Error updating canceled payment {pid}: {e}", exc_info=True)
+        
 
 
 @login_required
