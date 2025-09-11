@@ -36,6 +36,6 @@ urlpatterns = [
     path('debug/fix-transaction/', views.fix_transaction_view, name='fix_transaction_view'),
     path('debug/process-webhook/', views.process_webhook_manually_view, name='process_webhook_manually_view'),
 
-    path('webhook/test/', webhook_test, name='webhook_test'),
+    path('webhook/test/', views.webhook_test, name='webhook_test'),
     
 ]
