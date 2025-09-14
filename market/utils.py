@@ -1,6 +1,7 @@
 import os
 import requests
 import stripe
+import uuid
 from decimal import Decimal
 from datetime import datetime, timedelta
 from datetime import timezone as dt_timezone
@@ -162,6 +163,163 @@ class CryptoPanicNewsService:
         
         return stored_articles
 
+
+class CircleAPIService:
+    
+    def __init__(self):
+        self.api_key = settings.CIRCLE_API_KEY
+        self.base_url = settings.CIRCLE_API_URL  # https://api.circle.com or sandbox
+        self.master_wallet_id = settings.CIRCLE_MASTER_WALLET_ID
+        
+        self.headers = {
+            'Authorization': f'Bearer {self.api_key}',
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        }
+    
+    def get_master_wallet_balance(self) -> Dict:
+        """Get master wallet USDC balance"""
+        try:
+            url = f"{self.base_url}/v1/wallets/{self.master_wallet_id}"
+            response = requests.get(url, headers=self.headers)
+            
+            if response.status_code == 200:
+                data = response.json()
+                usdc_balance = None
+                
+                for balance in data['data']['balances']:
+                    if balance['currency'] == 'USD':
+                        usdc_balance = Decimal(balance['amount'])
+                        break
+                
+                return {
+                    'success': True,
+                    'balance': usdc_balance or Decimal('0'),
+                    'wallet_id': self.master_wallet_id
+                }
+            else:
+                logger.error(f"Circle API error: {response.status_code} - {response.text}")
+                return {'success': False, 'error': 'Failed to get wallet balance'}
+                
+        except Exception as e:
+            logger.error(f"Circle API exception: {e}")
+            return {'success': False, 'error': str(e)}
+    
+    def validate_blockchain_address(self, address: str, blockchain: str = 'ETH') -> Dict:
+        """Validate blockchain address using Circle API"""
+        try:
+            url = f"{self.base_url}/v1/addressBook/addresses"
+            
+            payload = {
+                'idempotencyKey': str(uuid.uuid4()),
+                'currency': 'USD',  # USDC
+                'chain': blockchain,
+                'address': address,
+                'description': 'Validation check'
+            }
+            
+            # Circle validates addresses when you try to add them
+            response = requests.post(url, headers=self.headers, json=payload)
+            
+            if response.status_code in [200, 201]:
+                # Address is valid
+                return {'success': True, 'valid': True}
+            elif response.status_code == 400:
+                # Check if it's an invalid address error
+                error_data = response.json()
+                if 'address' in error_data.get('message', '').lower():
+                    return {'success': True, 'valid': False, 'error': 'Invalid address format'}
+            
+            return {'success': False, 'error': 'Address validation failed'}
+            
+        except Exception as e:
+            logger.error(f"Address validation error: {e}")
+            return {'success': False, 'error': str(e)}
+    
+    def create_transfer(self, amount: Decimal, destination_address: str, 
+                       blockchain: str = 'ETH', description: str = '') -> Dict:
+        """Create a transfer to external blockchain address"""
+        try:
+            # Check if we have sufficient balance
+            wallet_info = self.get_master_wallet_balance()
+            if not wallet_info['success']:
+                return wallet_info
+            
+            if wallet_info['balance'] < amount:
+                return {
+                    'success': False,
+                    'error': f'Insufficient USDC balance. Available: {wallet_info["balance"]}, Required: {amount}'
+                }
+            
+            # Create the transfer
+            url = f"{self.base_url}/v1/transfers"
+            
+            payload = {
+                'idempotencyKey': str(uuid.uuid4()),
+                'source': {
+                    'type': 'wallet',
+                    'id': self.master_wallet_id
+                },
+                'destination': {
+                    'type': 'blockchain',
+                    'address': destination_address,
+                    'chain': blockchain
+                },
+                'amount': {
+                    'amount': str(amount),
+                    'currency': 'USD'  # USDC
+                }
+            }
+            
+            if description:
+                payload['description'] = description
+            
+            response = requests.post(url, headers=self.headers, json=payload)
+            
+            if response.status_code in [200, 201]:
+                data = response.json()['data']
+                return {
+                    'success': True,
+                    'transfer_id': data['id'],
+                    'status': data['status'],
+                    'transaction_hash': data.get('transactionHash'),
+                    'estimated_completion': data.get('createDate'),
+                    'fees': data.get('fees', [])
+                }
+            else:
+                error_data = response.json()
+                logger.error(f"Circle transfer failed: {response.status_code} - {error_data}")
+                return {
+                    'success': False,
+                    'error': error_data.get('message', 'Transfer failed')
+                }
+                
+        except Exception as e:
+            logger.error(f"Circle transfer exception: {e}")
+            return {'success': False, 'error': str(e)}
+    
+    def get_transfer_status(self, transfer_id: str) -> Dict:
+        """Check the status of a transfer"""
+        try:
+            url = f"{self.base_url}/v1/transfers/{transfer_id}"
+            response = requests.get(url, headers=self.headers)
+            
+            if response.status_code == 200:
+                data = response.json()['data']
+                return {
+                    'success': True,
+                    'status': data['status'],
+                    'transaction_hash': data.get('transactionHash'),
+                    'amount': data['amount']['amount'],
+                    'fees': data.get('fees', []),
+                    'error_code': data.get('errorCode')
+                }
+            else:
+                return {'success': False, 'error': 'Transfer not found'}
+                
+        except Exception as e:
+            logger.error(f"Transfer status check error: {e}")
+            return {'success': False, 'error': str(e)}
 
 class CryptoPriceService:
     """Service to fetch real-time crypto prices"""
@@ -621,139 +779,323 @@ class StripePaymentService:
 
 
 class WithdrawalService:
-    """Service for handling crypto withdrawals"""
-    
+    """Enhanced service for handling crypto withdrawals via Circle API"""
+
     def __init__(self):
-        # Initialize with your preferred crypto payment processor
-        # Examples: Coinbase Commerce, BitPay, or custom blockchain integration
-        pass
-    
+        self.circle_api = CircleAPIService()
+        self.min_withdrawal = Decimal('10.00')
+        self.max_withdrawal = Decimal('50000.00')
+        self.withdrawal_fee_rate = Decimal('0.02')  # 2%
+        
+        # Network configurations
+        self.network_configs = {
+            'ethereum': {
+                'name': 'Ethereum (ERC-20)',
+                'circle_chain': 'ETH',
+                'network_fee': Decimal('5.00'),
+                'min_amount': Decimal('20.00'),
+                'confirmation_time': '10-30 minutes'
+            },
+            'polygon': {
+                'name': 'Polygon (MATIC)',
+                'circle_chain': 'MATIC',
+                'network_fee': Decimal('1.00'),
+                'min_amount': Decimal('10.00'),
+                'confirmation_time': '2-10 minutes'
+            },
+            'avalanche': {
+                'name': 'Avalanche C-Chain',
+                'circle_chain': 'AVAX',
+                'network_fee': Decimal('2.00'),
+                'min_amount': Decimal('15.00'),
+                'confirmation_time': '1-5 minutes'
+            }
+        }
+
+    def validate_withdrawal_request(self, user, amount: Decimal, wallet_address: str, network: str) -> Dict:
+        """Validate withdrawal request parameters"""
+        
+        # Check network support
+        if network not in self.network_configs:
+            return {
+                'success': False,
+                'error': f'Network {network} is not supported'
+            }
+        
+        network_config = self.network_configs[network]
+        
+        # Check minimum amount including fees
+        total_fees = (amount * self.withdrawal_fee_rate) + network_config['network_fee']
+        if amount < network_config['min_amount']:
+            return {
+                'success': False,
+                'error': f'Minimum withdrawal for {network_config["name"]} is ${network_config["min_amount"]}'
+            }
+        
+        # Check maximum amount
+        if amount > self.max_withdrawal:
+            return {
+                'success': False,
+                'error': f'Maximum withdrawal amount is ${self.max_withdrawal}'
+            }
+        
+        # Check user balance
+        if user.balance < amount:
+            return {
+                'success': False,
+                'error': f'Insufficient balance. Available: ${user.balance}, Required: ${amount}'
+            }
+        
+        # Validate wallet address format
+        if not wallet_address or len(wallet_address) < 26:
+            return {
+                'success': False,
+                'error': 'Invalid wallet address format'
+            }
+        
+        # Enhanced address validation for Ethereum-based networks
+        if network in ['ethereum', 'polygon', 'avalanche']:
+            if not wallet_address.startswith('0x') or len(wallet_address) != 42:
+                return {
+                    'success': False,
+                    'error': 'Invalid Ethereum address format. Address must start with 0x and be 42 characters long'
+                }
+            
+            # Check if address contains only valid hex characters
+            try:
+                int(wallet_address[2:], 16)
+            except ValueError:
+                return {
+                    'success': False,
+                    'error': 'Invalid address format. Address contains invalid characters'
+                }
+        
+        return {'success': True}
+
+    def calculate_withdrawal_breakdown(self, amount: Decimal, network: str) -> Dict:
+        """Calculate all fees and final payout amount"""
+        network_config = self.network_configs[network]
+        
+        # Calculate fees
+        percentage_fee = amount * self.withdrawal_fee_rate
+        network_fee = network_config['network_fee']
+        total_fees = percentage_fee + network_fee
+        net_amount = amount - total_fees
+        
+        return {
+            'gross_amount': amount,
+            'percentage_fee': percentage_fee,
+            'network_fee': network_fee,
+            'total_fees': total_fees,
+            'net_amount': net_amount,
+            'network_name': network_config['name'],
+            'estimated_time': network_config['confirmation_time']
+        }
+
     def process_withdrawal(self, user, amount: Decimal, wallet_address: str, network: str = 'ethereum') -> Dict:
-        """Process withdrawal to user's crypto wallet"""
+        """Process withdrawal to user's crypto wallet via Circle API"""
         try:
-            # Validate wallet address format
-            if not self._validate_address(wallet_address, network):
+            # Validate request
+            validation_result = self.validate_withdrawal_request(user, amount, wallet_address, network)
+            if not validation_result['success']:
+                return validation_result
+            
+            # Get network configuration
+            network_config = self.network_configs[network]
+            breakdown = self.calculate_withdrawal_breakdown(amount, network)
+            
+            # Validate address with Circle API (optional but recommended)
+            address_validation = self.circle_api.validate_blockchain_address(
+                wallet_address, 
+                network_config['circle_chain']
+            )
+            
+            if not address_validation.get('success', True):
+                logger.warning(f"Address validation failed for {wallet_address}: {address_validation}")
+                # Continue anyway as validation endpoint might not be available in all regions
+            
+            # Check Circle wallet balance
+            circle_balance = self.circle_api.get_master_wallet_balance()
+            if not circle_balance['success']:
                 return {
                     'success': False,
-                    'error': 'Invalid wallet address format'
+                    'error': 'Withdrawal service temporarily unavailable. Please try again later.'
                 }
             
-            # Check minimum withdrawal amount
-            min_withdrawal = Decimal('10.00')
-            if amount < min_withdrawal:
+            if circle_balance['balance'] < breakdown['net_amount']:
+                logger.error(f"Insufficient Circle balance: {circle_balance['balance']} < {breakdown['net_amount']}")
                 return {
                     'success': False,
-                    'error': f'Minimum withdrawal is ${min_withdrawal}'
+                    'error': 'Withdrawal service temporarily unavailable due to liquidity. Please try again later.'
                 }
             
-            # Calculate fees (2% withdrawal fee)
-            fee_rate = Decimal('0.02')
-            fee_amount = amount * fee_rate
-            net_amount = amount - fee_amount
-            
-            # Check user has sufficient balance including fees
-            if user.balance < amount:
-                return {
-                    'success': False,
-                    'error': 'Insufficient balance for withdrawal'
-                }
-            
-            # Create withdrawal transaction record
+            # Create database transaction atomically
             from predict.models import Transaction
-            from django.db import transaction
             
             with transaction.atomic():
-                # Deduct from user balance
+                # Deduct from user balance first
                 user.balance -= amount
                 user.save()
                 
-                # Create transaction record
+                # Create withdrawal transaction record
                 withdrawal_tx = Transaction.objects.create(
                     user=user,
                     transaction_type='withdrawal',
-                    amount=-amount,  # Negative for withdrawal
+                    amount=-amount,
                     balance_before=user.balance + amount,
                     balance_after=user.balance,
                     status='pending',
-                    description=f'Crypto withdrawal to {wallet_address[:10]}...{wallet_address[-6:]}',
+                    description=f'USDC withdrawal to {wallet_address[:10]}...{wallet_address[-6:]} on {network_config["name"]}',
                     metadata={
                         'wallet_address': wallet_address,
                         'network': network,
-                        'fee_amount': str(fee_amount),
-                        'net_amount': str(net_amount)
+                        'circle_chain': network_config['circle_chain'],
+                        'gross_amount': str(amount),
+                        'percentage_fee': str(breakdown['percentage_fee']),
+                        'network_fee': str(breakdown['network_fee']),
+                        'net_amount': str(breakdown['net_amount']),
+                        'estimated_time': network_config['confirmation_time']
+                    }
+                )
+                
+                # Create fee transaction for platform
+                fee_tx = Transaction.objects.create(
+                    user=user,
+                    transaction_type='fee',
+                    amount=breakdown['percentage_fee'],
+                    balance_before=user.balance,
+                    balance_after=user.balance,
+                    status='completed',
+                    description=f'Withdrawal fee (2%)',
+                    metadata={
+                        'fee_type': 'withdrawal_percentage',
+                        'withdrawal_tx_id': str(withdrawal_tx.id)
                     }
                 )
             
-            # In a real implementation, you would:
-            # 1. Send the transaction to your crypto payment processor
-            # 2. Get transaction hash from blockchain
-            # 3. Update transaction status based on confirmation
+            # Execute Circle API transfer
+            transfer_result = self.circle_api.create_transfer(
+                amount=breakdown['net_amount'],
+                destination_address=wallet_address,
+                blockchain=network_config['circle_chain'],
+                description=f'Withdrawal for user {user.username}'
+            )
             
-            # For demo purposes, we'll simulate a successful submission
-            withdrawal_tx.blockchain_tx_hash = f'0x{"0" * 40}{str(withdrawal_tx.id)[:24]}'
-            withdrawal_tx.status = 'completed'  # In reality, this would be 'pending' until confirmed
-            withdrawal_tx.save()
+            if transfer_result['success']:
+                # Update transaction with Circle transfer details
+                withdrawal_tx.external_id = transfer_result['transfer_id']
+                withdrawal_tx.metadata.update({
+                    'circle_transfer_id': transfer_result['transfer_id'],
+                    'circle_status': transfer_result['status'],
+                    'transaction_hash': transfer_result.get('transaction_hash', ''),
+                    'circle_fees': transfer_result.get('fees', [])
+                })
+                
+                # Update status based on Circle response
+                if transfer_result['status'] in ['confirmed', 'complete']:
+                    withdrawal_tx.status = 'completed'
+                    withdrawal_tx.blockchain_tx_hash = transfer_result.get('transaction_hash')
+                
+                withdrawal_tx.save()
+                
+                return {
+                    'success': True,
+                    'transaction_id': str(withdrawal_tx.id),
+                    'circle_transfer_id': transfer_result['transfer_id'],
+                    'net_amount': breakdown['net_amount'],
+                    'total_fees': breakdown['total_fees'],
+                    'estimated_arrival': network_config['confirmation_time'],
+                    'status': transfer_result['status'],
+                    'transaction_hash': transfer_result.get('transaction_hash')
+                }
+            else:
+                # Circle transfer failed - refund user balance
+                with transaction.atomic():
+                    user.balance += amount
+                    user.save()
+                    
+                    withdrawal_tx.status = 'failed'
+                    withdrawal_tx.metadata['circle_error'] = transfer_result.get('error', 'Unknown error')
+                    withdrawal_tx.save()
+                    
+                    # Create refund transaction
+                    Transaction.objects.create(
+                        user=user,
+                        transaction_type='refund',
+                        amount=amount,
+                        balance_before=user.balance - amount,
+                        balance_after=user.balance,
+                        status='completed',
+                        description=f'Withdrawal refund - Circle transfer failed',
+                        metadata={
+                            'original_withdrawal_tx': str(withdrawal_tx.id),
+                            'refund_reason': 'circle_transfer_failed'
+                        }
+                    )
+                
+                logger.error(f"Circle transfer failed for user {user.username}: {transfer_result['error']}")
+                return {
+                    'success': False,
+                    'error': 'Withdrawal processing failed. Your balance has been refunded. Please try again or contact support.'
+                }
+                
+        except Exception as e:
+            logger.error(f"Error processing withdrawal for user {user.username}: {e}")
+            
+            # Ensure user balance is refunded on any error
+            try:
+                user.refresh_from_db()
+                if user.balance < (amount if 'amount' in locals() else 0):
+                    user.balance += amount
+                    user.save()
+            except:
+                pass
+            
+            return {
+                'success': False,
+                'error': 'Withdrawal processing failed. Please try again later or contact support if the issue persists.'
+            }
+
+    def get_withdrawal_status(self, transaction_id: str) -> Dict:
+        """Get the current status of a withdrawal"""
+        try:
+            from predict.models import Transaction
+            
+            tx = Transaction.objects.get(id=transaction_id, transaction_type='withdrawal')
+            
+            if tx.external_id:
+                # Check status with Circle
+                circle_status = self.circle_api.get_transfer_status(tx.external_id)
+                
+                if circle_status['success']:
+                    # Update transaction if status changed
+                    if tx.status == 'pending' and circle_status['status'] in ['confirmed', 'complete', 'failed']:
+                        tx.status = 'completed' if circle_status['status'] in ['confirmed', 'complete'] else 'failed'
+                        if circle_status.get('transaction_hash'):
+                            tx.blockchain_tx_hash = circle_status['transaction_hash']
+                        tx.save()
+                    
+                    return {
+                        'success': True,
+                        'status': tx.status,
+                        'circle_status': circle_status['status'],
+                        'transaction_hash': circle_status.get('transaction_hash'),
+                        'amount': abs(tx.amount),
+                        'created_at': tx.created_at
+                    }
             
             return {
                 'success': True,
-                'transaction_id': str(withdrawal_tx.id),
-                'net_amount': net_amount,
-                'fee_amount': fee_amount,
-                'estimated_arrival': '10-30 minutes'
+                'status': tx.status,
+                'amount': abs(tx.amount),
+                'created_at': tx.created_at
             }
             
+        except Transaction.DoesNotExist:
+            return {'success': False, 'error': 'Withdrawal not found'}
         except Exception as e:
-            logger.error(f"Error processing withdrawal: {e}")
-            return {
-                'success': False,
-                'error': 'Unable to process withdrawal. Please try again later.'
-            }
-    
-    def _validate_address(self, address: str, network: str) -> bool:
-        """Validate crypto wallet address format"""
-        try:
-            if network in ['ethereum', 'bsc', 'polygon']:
-                # Ethereum-style address validation
-                if not address.startswith('0x'):
-                    return False
-                if len(address) != 42:
-                    return False
-                # Check if hex
-                int(address[2:], 16)
-                return True
-            
-            elif network == 'bitcoin':
-                # Bitcoin address validation (simplified)
-                if len(address) < 26 or len(address) > 35:
-                    return False
-                # Basic character validation
-                valid_chars = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
-                return all(c in valid_chars for c in address)
-            
-            return False
-            
-        except ValueError:
-            return False
-        except Exception:
-            return False
-    
-    def get_withdrawal_fee(self, amount: Decimal, network: str = 'ethereum') -> Decimal:
-        """Calculate withdrawal fee"""
-        # Base percentage fee
-        base_fee_rate = Decimal('0.02')  # 2%
-        
-        # Network-specific fees
-        network_fees = {
-            'ethereum': Decimal('5.00'),    # Higher gas fees
-            'bsc': Decimal('2.00'),         # Lower fees
-            'polygon': Decimal('1.00'),     # Lowest fees
-            'bitcoin': Decimal('3.00'),     # Variable based on network congestion
-        }
-        
-        percentage_fee = amount * base_fee_rate
-        network_fee = network_fees.get(network, Decimal('5.00'))
-        
-        return percentage_fee + network_fee
+            logger.error(f"Error getting withdrawal status: {e}")
+            return {'success': False, 'error': 'Status check failed'}
 
 
 class NewsService:
