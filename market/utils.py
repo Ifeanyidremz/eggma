@@ -1,7 +1,6 @@
 import os
 import requests
 import stripe
-import uuid
 from decimal import Decimal
 from datetime import datetime, timedelta
 from datetime import timezone as dt_timezone
@@ -164,162 +163,129 @@ class CryptoPanicNewsService:
         return stored_articles
 
 
-class CircleAPIService:
+class CoinremitterWithdrawalService:
+    """Production Coinremitter withdrawal service"""
+    
+    BASE_URL = "https://coinremitter.com/api/v3"
     
     def __init__(self):
-        self.api_key = settings.CIRCLE_API_KEY
-        self.base_url = settings.CIRCLE_API_URL  # https://api.circle.com or sandbox
-        self.master_wallet_id = settings.CIRCLE_MASTER_WALLET_ID
+        self.api_key = os.getenv("COINREMITTER_API_KEY")
+        self.password = os.getenv("COINREMITTER_WALLET_PASSWORD")
+        self.coin = settings.COINREMITTER_USDT_COIN
         
-        self.headers = {
-            'Authorization': f'Bearer {self.api_key}',
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
+    def _make_request(self, endpoint: str, data: dict) -> dict:
+        """Make authenticated request to Coinremitter API"""
+        url = f"{self.BASE_URL}/{self.coin}/{endpoint}"
+        
+        # Add API key and password to data
+        data.update({
+            'api_key': self.api_key,
+            'password': self.password
+        })
+        
+        try:
+            response = requests.post(url, data=data, timeout=30)
+            response.raise_for_status()
+            
+            result = response.json()
+            logger.info(f"Coinremitter API response: {result}")
+            
+            return result
+        except requests.RequestException as e:
+            logger.error(f"Coinremitter API error: {e}")
+            return {'flag': 0, 'msg': f'API request failed: {str(e)}'}
+    
+    def validate_address(self, address: str) -> bool:
+        """Validate USDT wallet address"""
+        data = {'address': address}
+        
+        result = self._make_request('validate-address', data)
+        
+        return result.get('flag') == 1 and result.get('data', {}).get('valid', False)
+    
+    def get_wallet_balance(self) -> Optional[Decimal]:
+        """Get current wallet balance"""
+        result = self._make_request('get-balance', {})
+        
+        if result.get('flag') == 1:
+            balance = result.get('data', {}).get('balance', '0')
+            return Decimal(str(balance))
+        
+        return None
+    
+    def send_withdrawal(self, address: str, amount: Decimal, user_id: str) -> Dict:
+        """Send USDT withdrawal to user address"""
+        
+        # Validate address first
+        if not self.validate_address(address):
+            return {
+                'success': False,
+                'error': 'Invalid wallet address',
+                'tx_id': None
+            }
+        
+        # Check wallet balance
+        wallet_balance = self.get_wallet_balance()
+        if wallet_balance is None:
+            return {
+                'success': False,
+                'error': 'Unable to check wallet balance',
+                'tx_id': None
+            }
+        
+        if wallet_balance < amount:
+            logger.error(f"Insufficient wallet balance: {wallet_balance} < {amount}")
+            return {
+                'success': False,
+                'error': 'Insufficient funds in hot wallet',
+                'tx_id': None
+            }
+        
+        # Prepare withdrawal data
+        data = {
+            'address': address,
+            'amount': str(amount),
+            'custom_id': f"withdraw_{user_id}_{int(time.time())}"  # Unique identifier
         }
-    
-    def get_master_wallet_balance(self) -> Dict:
-        """Get master wallet USDC balance"""
-        try:
-            url = f"{self.base_url}/v1/wallets/{self.master_wallet_id}"
-            response = requests.get(url, headers=self.headers)
-            
-            if response.status_code == 200:
-                data = response.json()
-                usdc_balance = None
-                
-                for balance in data['data']['balances']:
-                    if balance['currency'] == 'USD':
-                        usdc_balance = Decimal(balance['amount'])
-                        break
-                
-                return {
-                    'success': True,
-                    'balance': usdc_balance or Decimal('0'),
-                    'wallet_id': self.master_wallet_id
-                }
-            else:
-                logger.error(f"Circle API error: {response.status_code} - {response.text}")
-                return {'success': False, 'error': 'Failed to get wallet balance'}
-                
-        except Exception as e:
-            logger.error(f"Circle API exception: {e}")
-            return {'success': False, 'error': str(e)}
-    
-    def validate_blockchain_address(self, address: str, blockchain: str = 'ETH') -> Dict:
-        """Validate blockchain address using Circle API"""
-        try:
-            url = f"{self.base_url}/v1/addressBook/addresses"
-            
-            payload = {
-                'idempotencyKey': str(uuid.uuid4()),
-                'currency': 'USD',  # USDC
-                'chain': blockchain,
-                'address': address,
-                'description': 'Validation check'
+        
+        result = self._make_request('withdraw', data)
+        
+        if result.get('flag') == 1:
+            tx_data = result.get('data', {})
+            return {
+                'success': True,
+                'tx_id': tx_data.get('id'),
+                'tx_hash': tx_data.get('txid'),  # Blockchain transaction hash
+                'amount': Decimal(str(tx_data.get('amount', amount))),
+                'fee': Decimal(str(tx_data.get('fee', 0))),
+                'custom_id': data['custom_id']
             }
-            
-            # Circle validates addresses when you try to add them
-            response = requests.post(url, headers=self.headers, json=payload)
-            
-            if response.status_code in [200, 201]:
-                # Address is valid
-                return {'success': True, 'valid': True}
-            elif response.status_code == 400:
-                # Check if it's an invalid address error
-                error_data = response.json()
-                if 'address' in error_data.get('message', '').lower():
-                    return {'success': True, 'valid': False, 'error': 'Invalid address format'}
-            
-            return {'success': False, 'error': 'Address validation failed'}
-            
-        except Exception as e:
-            logger.error(f"Address validation error: {e}")
-            return {'success': False, 'error': str(e)}
-    
-    def create_transfer(self, amount: Decimal, destination_address: str, 
-                       blockchain: str = 'ETH', description: str = '') -> Dict:
-        """Create a transfer to external blockchain address"""
-        try:
-            # Check if we have sufficient balance
-            wallet_info = self.get_master_wallet_balance()
-            if not wallet_info['success']:
-                return wallet_info
-            
-            if wallet_info['balance'] < amount:
-                return {
-                    'success': False,
-                    'error': f'Insufficient USDC balance. Available: {wallet_info["balance"]}, Required: {amount}'
-                }
-            
-            # Create the transfer
-            url = f"{self.base_url}/v1/transfers"
-            
-            payload = {
-                'idempotencyKey': str(uuid.uuid4()),
-                'source': {
-                    'type': 'wallet',
-                    'id': self.master_wallet_id
-                },
-                'destination': {
-                    'type': 'blockchain',
-                    'address': destination_address,
-                    'chain': blockchain
-                },
-                'amount': {
-                    'amount': str(amount),
-                    'currency': 'USD'  # USDC
-                }
+        else:
+            error_msg = result.get('msg', 'Withdrawal failed')
+            logger.error(f"Withdrawal failed: {error_msg}")
+            return {
+                'success': False,
+                'error': error_msg,
+                'tx_id': None
             }
-            
-            if description:
-                payload['description'] = description
-            
-            response = requests.post(url, headers=self.headers, json=payload)
-            
-            if response.status_code in [200, 201]:
-                data = response.json()['data']
-                return {
-                    'success': True,
-                    'transfer_id': data['id'],
-                    'status': data['status'],
-                    'transaction_hash': data.get('transactionHash'),
-                    'estimated_completion': data.get('createDate'),
-                    'fees': data.get('fees', [])
-                }
-            else:
-                error_data = response.json()
-                logger.error(f"Circle transfer failed: {response.status_code} - {error_data}")
-                return {
-                    'success': False,
-                    'error': error_data.get('message', 'Transfer failed')
-                }
-                
-        except Exception as e:
-            logger.error(f"Circle transfer exception: {e}")
-            return {'success': False, 'error': str(e)}
     
-    def get_transfer_status(self, transfer_id: str) -> Dict:
-        """Check the status of a transfer"""
-        try:
-            url = f"{self.base_url}/v1/transfers/{transfer_id}"
-            response = requests.get(url, headers=self.headers)
-            
-            if response.status_code == 200:
-                data = response.json()['data']
-                return {
-                    'success': True,
-                    'status': data['status'],
-                    'transaction_hash': data.get('transactionHash'),
-                    'amount': data['amount']['amount'],
-                    'fees': data.get('fees', []),
-                    'error_code': data.get('errorCode')
-                }
-            else:
-                return {'success': False, 'error': 'Transfer not found'}
-                
-        except Exception as e:
-            logger.error(f"Transfer status check error: {e}")
-            return {'success': False, 'error': str(e)}
+    def get_transaction_status(self, tx_id: str) -> Dict:
+        """Check transaction status"""
+        data = {'id': tx_id}
+        
+        result = self._make_request('get-transaction', data)
+        
+        if result.get('flag') == 1:
+            tx_data = result.get('data', {})
+            return {
+                'success': True,
+                'status': tx_data.get('status'),  # pending, success, failed
+                'confirmations': tx_data.get('confirmations', 0),
+                'tx_hash': tx_data.get('txid'),
+                'amount': Decimal(str(tx_data.get('amount', 0)))
+            }
+        
+        return {'success': False, 'error': result.get('msg', 'Transaction not found')}
 
 class CryptoPriceService:
     """Service to fetch real-time crypto prices"""
