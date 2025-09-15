@@ -973,20 +973,25 @@ def handle_canceled_payment(payment_intent):
 
 @login_required
 def wallet_withdraw(request):
-    """Handle wallet withdrawal"""
+    """Handle USDT withdrawal via Coinremitter"""
     
     if request.method == 'POST':
         try:
             amount = Decimal(request.POST.get('amount', 0))
             wallet_address = request.POST.get('wallet_address', '').strip()
-            network = request.POST.get('network', 'ethereum')
+            network = request.POST.get('network', 'ethereum')  # For UI only
             
             # Validation
             if amount < Decimal('10.00'):
                 messages.error(request, 'Minimum withdrawal is $10.00')
                 return redirect('dashboard')
             
-            if amount > request.user.balance:
+            # Calculate fees
+            fee_percentage = settings.WITHDRAWAL_FEE_PERCENTAGE
+            fee_amount = amount * fee_percentage
+            
+            # Check user has sufficient balance including fees
+            if request.user.balance < amount:
                 messages.error(request, 'Insufficient balance')
                 return redirect('dashboard')
             
@@ -994,22 +999,119 @@ def wallet_withdraw(request):
                 messages.error(request, 'Wallet address is required')
                 return redirect('dashboard')
             
-            # Process withdrawal
-            withdrawal_service = WithdrawalService()
-            result = withdrawal_service.process_withdrawal(
-                user=request.user,
-                amount=amount,
-                wallet_address=wallet_address,
-                network=network
-            )
+            # Initialize Coinremitter service
+            withdrawal_service = CoinremitterWithdrawalService()
             
-            if result['success']:
-                messages.success(request, 'Withdrawal request submitted successfully!')
-            else:
-                messages.error(request, result['error'])
+            # Validate address format
+            if not withdrawal_service.validate_address(wallet_address):
+                messages.error(request, 'Invalid USDT wallet address')
+                return redirect('dashboard')
+            
+            # Calculate net amount to send (amount minus platform fee)
+            # The 2% fee stays with you/platform
+            net_amount = amount - fee_amount
+            
+            with db_transaction.atomic():
+                # Deduct full amount from user balance first
+                user = request.user
+                user.balance -= amount
+                user.save()
                 
+                # Create withdrawal transaction record
+                from predict.models import Transaction
+                withdrawal_tx = Transaction.objects.create(
+                    user=user,
+                    transaction_type='withdrawal',
+                    amount=-amount,  # Negative for withdrawal
+                    balance_before=user.balance + amount,
+                    balance_after=user.balance,
+                    status='pending',
+                    description=f'USDT withdrawal to {wallet_address[:10]}...{wallet_address[-6:]}',
+                    metadata={
+                        'wallet_address': wallet_address,
+                        'network': network,
+                        'fee_amount': str(fee_amount),
+                        'net_amount': str(net_amount),
+                        'fee_percentage': str(fee_percentage)
+                    }
+                )
+                
+                # Attempt to send via Coinremitter
+                result = withdrawal_service.send_withdrawal(
+                    address=wallet_address,
+                    amount=net_amount,  # Send net amount (minus platform fee)
+                    user_id=str(user.id)
+                )
+                
+                if result['success']:
+                    # Update transaction with Coinremitter details
+                    withdrawal_tx.blockchain_tx_hash = result.get('tx_hash')
+                    withdrawal_tx.external_id = result.get('tx_id')
+                    withdrawal_tx.status = 'completed'  # Coinremitter handles the blockchain
+                    withdrawal_tx.metadata.update({
+                        'coinremitter_tx_id': result.get('tx_id'),
+                        'coinremitter_custom_id': result.get('custom_id'),
+                        'network_fee': str(result.get('fee', 0))
+                    })
+                    withdrawal_tx.save()
+                    
+                    # Create fee transaction for platform revenue
+                    Transaction.objects.create(
+                        user=user,
+                        transaction_type='fee',
+                        amount=fee_amount,
+                        balance_before=user.balance,
+                        balance_after=user.balance,  # Fee doesn't affect user balance
+                        status='completed',
+                        description=f'Withdrawal fee (2%)',
+                        metadata={
+                            'fee_type': 'withdrawal',
+                            'original_withdrawal': str(withdrawal_tx.id)
+                        }
+                    )
+                    
+                    messages.success(
+                        request, 
+                        f'Withdrawal initiated successfully! ${net_amount} USDT will be sent to your wallet. '
+                        f'Transaction ID: {result.get("tx_id", "N/A")}'
+                    )
+                    
+                    logger.info(f"Withdrawal successful for user {user.id}: {result}")
+                    
+                else:
+                    # Withdrawal failed - refund user
+                    user.balance += amount
+                    user.save()
+                    
+                    withdrawal_tx.status = 'failed'
+                    withdrawal_tx.metadata.update({
+                        'error': result.get('error', 'Unknown error'),
+                        'refunded': True
+                    })
+                    withdrawal_tx.save()
+                    
+                    # Create refund transaction
+                    Transaction.objects.create(
+                        user=user,
+                        transaction_type='refund',
+                        amount=amount,
+                        balance_before=user.balance - amount,
+                        balance_after=user.balance,
+                        status='completed',
+                        description=f'Withdrawal refund - {result.get("error", "Failed")}',
+                        metadata={'original_withdrawal': str(withdrawal_tx.id)}
+                    )
+                    
+                    error_msg = result.get('error', 'Withdrawal processing failed')
+                    messages.error(request, f'Withdrawal failed: {error_msg}. Your balance has been refunded.')
+                    
+                    logger.error(f"Withdrawal failed for user {user.id}: {result}")
+        
+        except ValueError:
+            messages.error(request, 'Invalid withdrawal amount')
         except Exception as e:
-            messages.error(request, f'Withdrawal error: {str(e)}')
+            logger.error(f"Withdrawal error for user {request.user.id}: {str(e)}")
+            messages.error(request, 'Withdrawal processing failed. Please try again later.')
     
     return redirect('dashboard')
 
