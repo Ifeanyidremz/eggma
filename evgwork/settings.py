@@ -19,6 +19,7 @@ load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 from urllib.parse import urlparse
+from decimal import Decimal
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
@@ -87,6 +88,11 @@ EMAIL_HOST_USER = os.getenv("MAILTRAP_USERNAME")
 EMAIL_HOST_PASSWORD = os.getenv("MAILTRAP_PASSWORD")
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL")
 
+
+COINREMITTER_API_KEY = os.getenv("COINREMITTER_API_KEY") 
+COINREMITTER_WALLET_PASSWORD = os.getenv("COINREMITTER_WALLET_PASSWORD")
+COINREMITTER_USDT_COIN = 'USDT' 
+WITHDRAWAL_FEE_PERCENTAGE = Decimal('0.02')
 
 
 # Site URL for email links
