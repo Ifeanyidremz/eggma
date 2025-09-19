@@ -2144,16 +2144,18 @@
 
         function animateXPBar() {
             const xpBar = document.querySelector('.xp-progress');
-            const targetWidth = parseInt(xpBar.getAttribute('data-progress')) || 75;
-            let width = 0;
-            const interval = setInterval(() => {
-                if (width >= targetWidth) {
-                    clearInterval(interval);
-                } else {
-                    width += 2;
-                    xpBar.style.width = width + '%';
-                }
-            }, 50);
+            if (xpBar) {
+                const targetWidth = parseInt(xpBar.getAttribute('data-progress')) || 75;
+                let width = 0;
+                const interval = setInterval(() => {
+                    if (width >= targetWidth) {
+                        clearInterval(interval);
+                    } else {
+                        width += 2;
+                        xpBar.style.width = width + '%';
+                    }
+                }, 50);
+            }
         }
 
         setInterval(() => {
