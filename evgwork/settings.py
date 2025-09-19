@@ -93,6 +93,10 @@ COINREMITTER_API_KEY = os.getenv("COINREMITTER_API_KEY")
 COINREMITTER_WALLET_PASSWORD = os.getenv("COINREMITTER_WALLET_PASSWORD")
 COINREMITTER_USDT_COIN = 'USDT' 
 WITHDRAWAL_FEE_PERCENTAGE = Decimal('0.02')
+if DEBUG:
+    COINREMITTER_TESTING_MODE = True  
+else:
+    COINREMITTER_TESTING_MODE = False  
 
 
 # Site URL for email links
@@ -125,15 +129,6 @@ else:
             'PORT': os.getenv('DB_PORT')
         }
     }
-
-
-CELERY_BROKER_URL = os.getenv('REDIS_URL', default='redis://localhost:6379/0')
-CELERY_RESULT_BACKEND = os.getenv('REDIS_URL', default='redis://localhost:6379/0')
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_SERIALIZER = 'json'
-CELERY_TIMEZONE = 'UTC'
-CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 
 
 
