@@ -744,324 +744,278 @@ class StripePaymentService:
             return None
 
 
-class WithdrawalService:
-    """Enhanced service for handling crypto withdrawals via Circle API"""
-
+class FlexibleCoinremitterService:
+    """
+    Flexible Coinremitter service that can switch between TCN (testing) and USDT (production)
+    Based on environment settings
+    """
+    
     def __init__(self):
-        self.circle_api = CircleAPIService()
-        self.min_withdrawal = Decimal('10.00')
-        self.max_withdrawal = Decimal('50000.00')
-        self.withdrawal_fee_rate = Decimal('0.02')  # 2%
+        self.base_url = "https://coinremitter.com/api/v3"
+        self.api_key = settings.COINREMITTER_API_KEY
+        self.password = settings.COINREMITTER_PASSWORD
         
-        # Network configurations
-        self.network_configs = {
-            'ethereum': {
-                'name': 'Ethereum (ERC-20)',
-                'circle_chain': 'ETH',
-                'network_fee': Decimal('5.00'),
-                'min_amount': Decimal('20.00'),
-                'confirmation_time': '10-30 minutes'
-            },
-            'polygon': {
-                'name': 'Polygon (MATIC)',
-                'circle_chain': 'MATIC',
+        # Environment detection
+        self.is_testing = getattr(settings, 'COINREMITTER_TESTING_MODE', True)
+        self.debug_mode = getattr(settings, 'DEBUG', True)
+        
+        # Configuration for different modes
+        self.config = self._get_environment_config()
+        
+    def _get_environment_config(self):
+        """Get configuration based on current environment"""
+        
+        if self.is_testing:
+            # Testing mode - Use TCN
+            return {
+                'mode': 'testing',
+                'coin_symbol': 'TCN',
+                'display_name': 'TCN (Test Mode)',
+                'min_amount': Decimal('0.01'),
+                'network_fee': Decimal('0.01'),
+                'network_name': 'Test Network',
+                'confirmation_time': 'Instant (Test)',
+                'supported_networks': {
+                    'tcn': {
+                        'coin_symbol': 'TCN',
+                        'name': 'TCN Test Network',
+                        'min_amount': Decimal('0.01'),
+                        'network_fee': Decimal('0.01')
+                    }
+                }
+            }
+        else:
+            # Production mode - Use USDT
+            return {
+                'mode': 'production',
+                'coin_symbol': 'USDTTRC20',  # Default to TRC20 for lower fees
+                'display_name': 'USDT',
+                'min_amount': Decimal('1.00'),
                 'network_fee': Decimal('1.00'),
-                'min_amount': Decimal('10.00'),
-                'confirmation_time': '2-10 minutes'
-            },
-            'avalanche': {
-                'name': 'Avalanche C-Chain',
-                'circle_chain': 'AVAX',
-                'network_fee': Decimal('2.00'),
-                'min_amount': Decimal('15.00'),
-                'confirmation_time': '1-5 minutes'
-            }
-        }
-
-    def validate_withdrawal_request(self, user, amount: Decimal, wallet_address: str, network: str) -> Dict:
-        """Validate withdrawal request parameters"""
-        
-        # Check network support
-        if network not in self.network_configs:
-            return {
-                'success': False,
-                'error': f'Network {network} is not supported'
-            }
-        
-        network_config = self.network_configs[network]
-        
-        # Check minimum amount including fees
-        total_fees = (amount * self.withdrawal_fee_rate) + network_config['network_fee']
-        if amount < network_config['min_amount']:
-            return {
-                'success': False,
-                'error': f'Minimum withdrawal for {network_config["name"]} is ${network_config["min_amount"]}'
-            }
-        
-        # Check maximum amount
-        if amount > self.max_withdrawal:
-            return {
-                'success': False,
-                'error': f'Maximum withdrawal amount is ${self.max_withdrawal}'
-            }
-        
-        # Check user balance
-        if user.balance < amount:
-            return {
-                'success': False,
-                'error': f'Insufficient balance. Available: ${user.balance}, Required: ${amount}'
-            }
-        
-        # Validate wallet address format
-        if not wallet_address or len(wallet_address) < 26:
-            return {
-                'success': False,
-                'error': 'Invalid wallet address format'
-            }
-        
-        # Enhanced address validation for Ethereum-based networks
-        if network in ['ethereum', 'polygon', 'avalanche']:
-            if not wallet_address.startswith('0x') or len(wallet_address) != 42:
-                return {
-                    'success': False,
-                    'error': 'Invalid Ethereum address format. Address must start with 0x and be 42 characters long'
+                'network_name': 'TRC20',
+                'confirmation_time': '1-5 minutes',
+                'supported_networks': {
+                    'trc20': {
+                        'coin_symbol': 'USDTTRC20',
+                        'name': 'USDT TRC20 (Tron)',
+                        'min_amount': Decimal('1.00'),
+                        'network_fee': Decimal('1.00')
+                    },
+                    'erc20': {
+                        'coin_symbol': 'USDTERC20',
+                        'name': 'USDT ERC20 (Ethereum)',
+                        'min_amount': Decimal('10.00'),
+                        'network_fee': Decimal('5.00')
+                    }
                 }
-            
-            # Check if address contains only valid hex characters
-            try:
-                int(wallet_address[2:], 16)
-            except ValueError:
-                return {
-                    'success': False,
-                    'error': 'Invalid address format. Address contains invalid characters'
-                }
-        
-        return {'success': True}
-
-    def calculate_withdrawal_breakdown(self, amount: Decimal, network: str) -> Dict:
-        """Calculate all fees and final payout amount"""
-        network_config = self.network_configs[network]
-        
-        # Calculate fees
-        percentage_fee = amount * self.withdrawal_fee_rate
-        network_fee = network_config['network_fee']
-        total_fees = percentage_fee + network_fee
-        net_amount = amount - total_fees
-        
+            }
+    
+    def get_current_mode_info(self) -> Dict:
+        """Get information about current operating mode"""
         return {
-            'gross_amount': amount,
-            'percentage_fee': percentage_fee,
-            'network_fee': network_fee,
-            'total_fees': total_fees,
-            'net_amount': net_amount,
-            'network_name': network_config['name'],
-            'estimated_time': network_config['confirmation_time']
+            'mode': self.config['mode'],
+            'coin_symbol': self.config['coin_symbol'],
+            'display_name': self.config['display_name'],
+            'is_testing': self.is_testing,
+            'supported_networks': list(self.config['supported_networks'].keys()),
+            'min_amount': self.config['min_amount'],
+            'network_fee': self.config['network_fee']
         }
-
-    def process_withdrawal(self, user, amount: Decimal, wallet_address: str, network: str = 'ethereum') -> Dict:
-        """Process withdrawal to user's crypto wallet via Circle API"""
+    
+    def get_network_config(self, network: Optional[str] = None) -> Dict:
+        """Get network configuration for the specified network"""
+        if self.is_testing:
+            # In testing mode, always use TCN regardless of network parameter
+            return self.config['supported_networks']['tcn']
+        else:
+            # In production mode, use specified network or default to TRC20
+            network = network or 'trc20'
+            return self.config['supported_networks'].get(network.lower())
+    
+    def validate_address(self, wallet_address: str, network: Optional[str] = None) -> bool:
+        """Validate wallet address based on current mode"""
         try:
-            # Validate request
-            validation_result = self.validate_withdrawal_request(user, amount, wallet_address, network)
-            if not validation_result['success']:
-                return validation_result
+            network_config = self.get_network_config(network)
+            if not network_config:
+                logger.error(f"Unsupported network: {network} in {self.config['mode']} mode")
+                return False
             
-            # Get network configuration
-            network_config = self.network_configs[network]
-            breakdown = self.calculate_withdrawal_breakdown(amount, network)
+            coin_symbol = network_config['coin_symbol']
             
-            # Validate address with Circle API (optional but recommended)
-            address_validation = self.circle_api.validate_blockchain_address(
-                wallet_address, 
-                network_config['circle_chain']
-            )
+            url = f"{self.base_url}/{coin_symbol}/validate-address"
+            headers = {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            }
             
-            if not address_validation.get('success', True):
-                logger.warning(f"Address validation failed for {wallet_address}: {address_validation}")
-                # Continue anyway as validation endpoint might not be available in all regions
+            data = {
+                'api_key': self.api_key,
+                'password': self.password,
+                'address': wallet_address
+            }
             
-            # Check Circle wallet balance
-            circle_balance = self.circle_api.get_master_wallet_balance()
-            if not circle_balance['success']:
-                return {
-                    'success': False,
-                    'error': 'Withdrawal service temporarily unavailable. Please try again later.'
-                }
+            mode_info = f"[{self.config['mode'].upper()}]"
+            logger.info(f"{mode_info} Validating address with {coin_symbol}")
             
-            if circle_balance['balance'] < breakdown['net_amount']:
-                logger.error(f"Insufficient Circle balance: {circle_balance['balance']} < {breakdown['net_amount']}")
-                return {
-                    'success': False,
-                    'error': 'Withdrawal service temporarily unavailable due to liquidity. Please try again later.'
-                }
+            response = requests.post(url, data=data, headers=headers, timeout=30)
             
-            # Create database transaction atomically
-            from predict.models import Transaction
-            
-            with transaction.atomic():
-                # Deduct from user balance first
-                user.balance -= amount
-                user.save()
+            if response.status_code == 200:
+                result = response.json()
+                logger.info(f"{mode_info} Address validation response: {result}")
                 
-                # Create withdrawal transaction record
-                withdrawal_tx = Transaction.objects.create(
-                    user=user,
-                    transaction_type='withdrawal',
-                    amount=-amount,
-                    balance_before=user.balance + amount,
-                    balance_after=user.balance,
-                    status='pending',
-                    description=f'USDC withdrawal to {wallet_address[:10]}...{wallet_address[-6:]} on {network_config["name"]}',
-                    metadata={
-                        'wallet_address': wallet_address,
-                        'network': network,
-                        'circle_chain': network_config['circle_chain'],
-                        'gross_amount': str(amount),
-                        'percentage_fee': str(breakdown['percentage_fee']),
-                        'network_fee': str(breakdown['network_fee']),
-                        'net_amount': str(breakdown['net_amount']),
-                        'estimated_time': network_config['confirmation_time']
-                    }
-                )
-                
-                # Create fee transaction for platform
-                fee_tx = Transaction.objects.create(
-                    user=user,
-                    transaction_type='fee',
-                    amount=breakdown['percentage_fee'],
-                    balance_before=user.balance,
-                    balance_after=user.balance,
-                    status='completed',
-                    description=f'Withdrawal fee (2%)',
-                    metadata={
-                        'fee_type': 'withdrawal_percentage',
-                        'withdrawal_tx_id': str(withdrawal_tx.id)
-                    }
-                )
-            
-            # Execute Circle API transfer
-            transfer_result = self.circle_api.create_transfer(
-                amount=breakdown['net_amount'],
-                destination_address=wallet_address,
-                blockchain=network_config['circle_chain'],
-                description=f'Withdrawal for user {user.username}'
-            )
-            
-            if transfer_result['success']:
-                # Update transaction with Circle transfer details
-                withdrawal_tx.external_id = transfer_result['transfer_id']
-                withdrawal_tx.metadata.update({
-                    'circle_transfer_id': transfer_result['transfer_id'],
-                    'circle_status': transfer_result['status'],
-                    'transaction_hash': transfer_result.get('transaction_hash', ''),
-                    'circle_fees': transfer_result.get('fees', [])
-                })
-                
-                # Update status based on Circle response
-                if transfer_result['status'] in ['confirmed', 'complete']:
-                    withdrawal_tx.status = 'completed'
-                    withdrawal_tx.blockchain_tx_hash = transfer_result.get('transaction_hash')
-                
-                withdrawal_tx.save()
-                
-                return {
-                    'success': True,
-                    'transaction_id': str(withdrawal_tx.id),
-                    'circle_transfer_id': transfer_result['transfer_id'],
-                    'net_amount': breakdown['net_amount'],
-                    'total_fees': breakdown['total_fees'],
-                    'estimated_arrival': network_config['confirmation_time'],
-                    'status': transfer_result['status'],
-                    'transaction_hash': transfer_result.get('transaction_hash')
-                }
+                if result.get('flag') == 1:
+                    return True
+                else:
+                    logger.warning(f"{mode_info} Address validation failed: {result.get('msg', 'Unknown error')}")
+                    return False
             else:
-                # Circle transfer failed - refund user balance
-                with transaction.atomic():
-                    user.balance += amount
-                    user.save()
-                    
-                    withdrawal_tx.status = 'failed'
-                    withdrawal_tx.metadata['circle_error'] = transfer_result.get('error', 'Unknown error')
-                    withdrawal_tx.save()
-                    
-                    # Create refund transaction
-                    Transaction.objects.create(
-                        user=user,
-                        transaction_type='refund',
-                        amount=amount,
-                        balance_before=user.balance - amount,
-                        balance_after=user.balance,
-                        status='completed',
-                        description=f'Withdrawal refund - Circle transfer failed',
-                        metadata={
-                            'original_withdrawal_tx': str(withdrawal_tx.id),
-                            'refund_reason': 'circle_transfer_failed'
-                        }
-                    )
+                logger.error(f"{mode_info} HTTP error {response.status_code}: {response.text}")
+                return False
                 
-                logger.error(f"Circle transfer failed for user {user.username}: {transfer_result['error']}")
+        except Exception as e:
+            logger.error(f"Address validation error in {self.config['mode']} mode: {e}")
+            return False
+    
+    def send_withdrawal(self, address: str, amount: Decimal, user_id: str, network: Optional[str] = None) -> Dict:
+        """Send withdrawal based on current mode"""
+        try:
+            network_config = self.get_network_config(network)
+            if not network_config:
                 return {
                     'success': False,
-                    'error': 'Withdrawal processing failed. Your balance has been refunded. Please try again or contact support.'
+                    'error': f'Network not supported in {self.config["mode"]} mode'
+                }
+            
+            coin_symbol = network_config['coin_symbol']
+            mode_info = f"[{self.config['mode'].upper()}]"
+            
+            # Check minimum amount
+            if amount < network_config['min_amount']:
+                return {
+                    'success': False,
+                    'error': f'Minimum withdrawal for {network_config["name"]} is ${network_config["min_amount"]}'
+                }
+            
+            url = f"{self.base_url}/{coin_symbol}/withdraw"
+            headers = {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            }
+            
+            custom_id = f"{self.config['mode']}_user_{user_id}_{int(time.time())}"
+            
+            data = {
+                'api_key': self.api_key,
+                'password': self.password,
+                'address': address,
+                'amount': str(amount),
+                'custom_id': custom_id
+            }
+            
+            logger.info(f"{mode_info} Sending withdrawal: {amount} {coin_symbol} to {address[:10]}...{address[-6:]}")
+            response = requests.post(url, data=data, headers=headers, timeout=60)
+            
+            if response.status_code == 200:
+                result = response.json()
+                logger.info(f"{mode_info} Withdrawal response: {result}")
+                
+                if result.get('flag') == 1:
+                    data_obj = result.get('data', {})
+                    
+                    success_result = {
+                        'success': True,
+                        'tx_hash': data_obj.get('txid'),
+                        'tx_id': data_obj.get('id'),
+                        'custom_id': custom_id,
+                        'fee': data_obj.get('transaction_fees', 0),
+                        'network': network_config['name'],
+                        'explorer_url': data_obj.get('explorer_url'),
+                        'mode': self.config['mode'],
+                        'coin_symbol': coin_symbol
+                    }
+                    
+                    # Add testing mode specific info
+                    if self.is_testing:
+                        success_result.update({
+                            'testing_notice': 'This is a test transaction using TCN tokens',
+                            'production_equivalent': f'In production, this would be {amount} USDT'
+                        })
+                    
+                    return success_result
+                else:
+                    error_msg = result.get('msg', 'Withdrawal failed')
+                    logger.error(f"{mode_info} Withdrawal failed: {error_msg}")
+                    return {
+                        'success': False,
+                        'error': error_msg,
+                        'mode': self.config['mode']
+                    }
+            else:
+                logger.error(f"{mode_info} HTTP error {response.status_code}: {response.text}")
+                return {
+                    'success': False,
+                    'error': f'Network error: HTTP {response.status_code}',
+                    'mode': self.config['mode']
                 }
                 
         except Exception as e:
-            logger.error(f"Error processing withdrawal for user {user.username}: {e}")
-            
-            # Ensure user balance is refunded on any error
-            try:
-                user.refresh_from_db()
-                if user.balance < (amount if 'amount' in locals() else 0):
-                    user.balance += amount
-                    user.save()
-            except:
-                pass
-            
+            logger.error(f"Withdrawal error in {self.config['mode']} mode: {e}")
             return {
                 'success': False,
-                'error': 'Withdrawal processing failed. Please try again later or contact support if the issue persists.'
+                'error': f'Processing error: {str(e)}',
+                'mode': self.config['mode']
             }
-
-    def get_withdrawal_status(self, transaction_id: str) -> Dict:
-        """Get the current status of a withdrawal"""
+    
+    def get_balance(self, network: Optional[str] = None) -> Dict:
+        """Get wallet balance for current mode"""
         try:
-            from predict.models import Transaction
+            network_config = self.get_network_config(network)
+            if not network_config:
+                return {
+                    'success': False, 
+                    'error': f'Network not supported in {self.config["mode"]} mode'
+                }
             
-            tx = Transaction.objects.get(id=transaction_id, transaction_type='withdrawal')
+            coin_symbol = network_config['coin_symbol']
+            url = f"{self.base_url}/{coin_symbol}/get-balance"
             
-            if tx.external_id:
-                # Check status with Circle
-                circle_status = self.circle_api.get_transfer_status(tx.external_id)
+            data = {
+                'api_key': self.api_key,
+                'password': self.password
+            }
+            
+            response = requests.post(url, data=data, timeout=30)
+            
+            if response.status_code == 200:
+                result = response.json()
                 
-                if circle_status['success']:
-                    # Update transaction if status changed
-                    if tx.status == 'pending' and circle_status['status'] in ['confirmed', 'complete', 'failed']:
-                        tx.status = 'completed' if circle_status['status'] in ['confirmed', 'complete'] else 'failed'
-                        if circle_status.get('transaction_hash'):
-                            tx.blockchain_tx_hash = circle_status['transaction_hash']
-                        tx.save()
-                    
+                if result.get('flag') == 1:
+                    balance_data = result.get('data', {})
                     return {
                         'success': True,
-                        'status': tx.status,
-                        'circle_status': circle_status['status'],
-                        'transaction_hash': circle_status.get('transaction_hash'),
-                        'amount': abs(tx.amount),
-                        'created_at': tx.created_at
+                        'balance': Decimal(str(balance_data.get('balance', 0))),
+                        'network': network_config['name'],
+                        'coin_symbol': coin_symbol,
+                        'mode': self.config['mode']
                     }
-            
-            return {
-                'success': True,
-                'status': tx.status,
-                'amount': abs(tx.amount),
-                'created_at': tx.created_at
-            }
-            
-        except Transaction.DoesNotExist:
-            return {'success': False, 'error': 'Withdrawal not found'}
+                else:
+                    return {
+                        'success': False,
+                        'error': result.get('msg', 'Failed to get balance'),
+                        'mode': self.config['mode']
+                    }
+            else:
+                return {
+                    'success': False,
+                    'error': f'HTTP error: {response.status_code}',
+                    'mode': self.config['mode']
+                }
+                
         except Exception as e:
-            logger.error(f"Error getting withdrawal status: {e}")
-            return {'success': False, 'error': 'Status check failed'}
+            logger.error(f"Balance check error in {self.config['mode']} mode: {e}")
+            return {
+                'success': False,
+                'error': f'Balance check failed: {str(e)}',
+                'mode': self.config['mode']
+            }
 
 
 class NewsService:
