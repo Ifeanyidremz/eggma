@@ -1960,10 +1960,10 @@
                         
                         let storedBalance = parseFloat(localStorage.getItem('pre_deposit_balance') || '0');
                         
-                        if (!storedBalance) {
+                       if (!storedBalance) {
                             const balanceElement = document.querySelector('.stat-value');
                             if (balanceElement) {
-                                storedBalance = parseFloat(balanceElement.textContent.replace(', '').replace(',', ''));
+                                storedBalance = parseFloat(balanceElement.textContent.replace('$', '').replace(',', ''));
                             }
                         }
                         
