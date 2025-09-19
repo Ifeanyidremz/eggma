@@ -973,24 +973,23 @@ def handle_canceled_payment(payment_intent):
 
 @login_required
 def wallet_withdraw(request):
-    """Handle USDT withdrawal via Coinremitter"""
+    """Handle withdrawals with automatic TCN/USDT switching"""
     
     if request.method == 'POST':
         try:
             amount = Decimal(request.POST.get('amount', 0))
             wallet_address = request.POST.get('wallet_address', '').strip()
-            network = request.POST.get('network', 'ethereum')  # For UI only
+            network = request.POST.get('network', None)  # Will be handled by service
             
-            # Validation
-            if amount < Decimal('10.00'):
-                messages.error(request, 'Minimum withdrawal is $10.00')
+            # Initialize flexible service
+            withdrawal_service = FlexibleCoinremitterService()
+            mode_info = withdrawal_service.get_current_mode_info()
+            
+            # Basic validation
+            if amount < mode_info['min_amount']:
+                messages.error(request, f'Minimum withdrawal is ${mode_info["min_amount"]} in {mode_info["mode"]} mode')
                 return redirect('dashboard')
             
-            # Calculate fees
-            fee_percentage = settings.WITHDRAWAL_FEE_PERCENTAGE
-            fee_amount = amount * fee_percentage
-            
-            # Check user has sufficient balance including fees
             if request.user.balance < amount:
                 messages.error(request, 'Insufficient balance')
                 return redirect('dashboard')
@@ -999,84 +998,127 @@ def wallet_withdraw(request):
                 messages.error(request, 'Wallet address is required')
                 return redirect('dashboard')
             
-            # Initialize Coinremitter service
-            withdrawal_service = CoinremitterWithdrawalService()
-            
-            # Validate address format
-            if not withdrawal_service.validate_address(wallet_address):
-                messages.error(request, 'Invalid USDT wallet address')
+            # Validate address
+            if not withdrawal_service.validate_address(wallet_address, network):
+                error_msg = f'Invalid wallet address for {mode_info["display_name"]}'
+                if mode_info['is_testing']:
+                    error_msg += ' (TCN test mode)'
+                messages.error(request, error_msg)
                 return redirect('dashboard')
             
-            # Calculate net amount to send (amount minus platform fee)
-            # The 2% fee stays with you/platform
-            net_amount = amount - fee_amount
+            # Calculate fees
+            fee_percentage = Decimal(str(getattr(settings, 'WITHDRAWAL_FEE_PERCENTAGE', 0.02)))
+            platform_fee = amount * fee_percentage
+            network_fee = mode_info['network_fee']
+            total_fees = platform_fee + network_fee
+            net_amount = amount - total_fees
+            
+            if net_amount <= 0:
+                messages.error(request, f'Amount too small after fees (${total_fees} total fees)')
+                return redirect('dashboard')
             
             with db_transaction.atomic():
-                # Deduct full amount from user balance first
+                # Deduct from user balance
                 user = request.user
                 user.balance -= amount
                 user.save()
                 
-                # Create withdrawal transaction record
+                # Create withdrawal transaction
                 from predict.models import Transaction
+                
+                # Create description based on mode
+                if mode_info['is_testing']:
+                    description = f'Test withdrawal: {amount} TCN to {wallet_address[:10]}...{wallet_address[-6:]} (Testing Mode)'
+                else:
+                    description = f'USDT withdrawal to {wallet_address[:10]}...{wallet_address[-6:]} via {mode_info["network_name"]}'
+                
                 withdrawal_tx = Transaction.objects.create(
                     user=user,
                     transaction_type='withdrawal',
-                    amount=-amount,  # Negative for withdrawal
+                    amount=-amount,
                     balance_before=user.balance + amount,
                     balance_after=user.balance,
                     status='pending',
-                    description=f'USDT withdrawal to {wallet_address[:10]}...{wallet_address[-6:]}',
+                    description=description,
                     metadata={
                         'wallet_address': wallet_address,
                         'network': network,
-                        'fee_amount': str(fee_amount),
+                        'mode': mode_info['mode'],
+                        'coin_symbol': mode_info['coin_symbol'],
+                        'platform_fee': str(platform_fee),
+                        'network_fee': str(network_fee),
+                        'total_fees': str(total_fees),
                         'net_amount': str(net_amount),
-                        'fee_percentage': str(fee_percentage)
+                        'is_testing': mode_info['is_testing']
                     }
                 )
                 
-                # Attempt to send via Coinremitter
+                # Process withdrawal
                 result = withdrawal_service.send_withdrawal(
                     address=wallet_address,
-                    amount=net_amount,  # Send net amount (minus platform fee)
-                    user_id=str(user.id)
+                    amount=net_amount,
+                    user_id=str(user.id),
+                    network=network
                 )
                 
                 if result['success']:
-                    # Update transaction with Coinremitter details
+                    # Update transaction with success details
                     withdrawal_tx.blockchain_tx_hash = result.get('tx_hash')
                     withdrawal_tx.external_id = result.get('tx_id')
-                    withdrawal_tx.status = 'completed'  # Coinremitter handles the blockchain
+                    withdrawal_tx.status = 'completed'
                     withdrawal_tx.metadata.update({
                         'coinremitter_tx_id': result.get('tx_id'),
                         'coinremitter_custom_id': result.get('custom_id'),
-                        'network_fee': str(result.get('fee', 0))
+                        'coinremitter_fee': str(result.get('fee', 0)),
+                        'explorer_url': result.get('explorer_url'),
+                        'withdrawal_mode': result.get('mode')
                     })
+                    
+                    # Add testing-specific metadata
+                    if result.get('testing_notice'):
+                        withdrawal_tx.metadata.update({
+                            'testing_notice': result['testing_notice'],
+                            'production_equivalent': result['production_equivalent']
+                        })
+                    
                     withdrawal_tx.save()
                     
-                    # Create fee transaction for platform revenue
+                    # Create platform fee transaction
                     Transaction.objects.create(
                         user=user,
                         transaction_type='fee',
-                        amount=fee_amount,
+                        amount=platform_fee,
                         balance_before=user.balance,
-                        balance_after=user.balance,  # Fee doesn't affect user balance
+                        balance_after=user.balance,
                         status='completed',
-                        description=f'Withdrawal fee (2%)',
+                        description=f'Withdrawal fee ({fee_percentage*100}%) - {mode_info["mode"]} mode',
                         metadata={
-                            'fee_type': 'withdrawal',
-                            'original_withdrawal': str(withdrawal_tx.id)
+                            'fee_type': 'withdrawal_platform',
+                            'original_withdrawal': str(withdrawal_tx.id),
+                            'mode': mode_info['mode']
                         }
                     )
                     
-                    messages.success(
-                        request, 
-                        f'Withdrawal initiated successfully! ${net_amount} USDT will be sent to your wallet. '
-                        f'Transaction ID: {result.get("tx_id", "N/A")}'
-                    )
+                    # Create success message based on mode
+                    if mode_info['is_testing']:
+                        success_msg = (
+                            f'🧪 TEST WITHDRAWAL SUCCESSFUL! '
+                            f'{net_amount} TCN sent to your wallet for testing. '
+                            f'In production, this would be ${net_amount} USDT. '
+                            f'TX ID: {result.get("tx_id", "N/A")}'
+                        )
+                    else:
+                        success_msg = (
+                            f'✅ Withdrawal successful! '
+                            f'${net_amount} USDT sent via {result.get("network", "blockchain")}. '
+                            f'Transaction ID: {result.get("tx_id", "N/A")}'
+                        )
+                        
+                        if result.get('explorer_url'):
+                            success_msg += f' | Track: {result.get("explorer_url")}'
                     
-                    logger.info(f"Withdrawal successful for user {user.id}: {result}")
+                    messages.success(request, success_msg)
+                    logger.info(f"Successful withdrawal for user {user.id} in {mode_info['mode']} mode: {result}")
                     
                 else:
                     # Withdrawal failed - refund user
@@ -1086,7 +1128,8 @@ def wallet_withdraw(request):
                     withdrawal_tx.status = 'failed'
                     withdrawal_tx.metadata.update({
                         'error': result.get('error', 'Unknown error'),
-                        'refunded': True
+                        'refunded': True,
+                        'failure_mode': result.get('mode')
                     })
                     withdrawal_tx.save()
                     
@@ -1098,14 +1141,16 @@ def wallet_withdraw(request):
                         balance_before=user.balance - amount,
                         balance_after=user.balance,
                         status='completed',
-                        description=f'Withdrawal refund - {result.get("error", "Failed")}',
-                        metadata={'original_withdrawal': str(withdrawal_tx.id)}
+                        description=f'Withdrawal refund ({mode_info["mode"]} mode) - {result.get("error", "Failed")}',
+                        metadata={
+                            'original_withdrawal': str(withdrawal_tx.id),
+                            'refund_mode': mode_info['mode']
+                        }
                     )
                     
-                    error_msg = result.get('error', 'Withdrawal processing failed')
-                    messages.error(request, f'Withdrawal failed: {error_msg}. Your balance has been refunded.')
-                    
-                    logger.error(f"Withdrawal failed for user {user.id}: {result}")
+                    error_msg = f'Withdrawal failed in {mode_info["mode"]} mode: {result.get("error", "Unknown error")}. Your balance has been refunded.'
+                    messages.error(request, error_msg)
+                    logger.error(f"Withdrawal failed for user {user.id} in {mode_info['mode']} mode: {result}")
         
         except ValueError:
             messages.error(request, 'Invalid withdrawal amount')
@@ -1114,7 +1159,6 @@ def wallet_withdraw(request):
             messages.error(request, 'Withdrawal processing failed. Please try again later.')
     
     return redirect('dashboard')
-
 
 # API Views for real-time data
 def api_market_data(request, market_id):
