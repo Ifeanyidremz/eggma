@@ -1677,7 +1677,7 @@
             formData.append('csrfmiddlewaretoken', getCSRFToken());
             
             try {
-                const response = await fetch('/wallet/withdraw/', {
+                const response = await fetch('/market/wallet/withdraw/', {
                     method: 'POST',
                     body: formData
                 });
@@ -1737,7 +1737,7 @@
                     throw new Error('CSRF token not found. Please refresh the page.');
                 }
 
-                const response = await fetch('/wallet/deposit/', {
+                const response = await fetch('/market/wallet/deposit/', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',
