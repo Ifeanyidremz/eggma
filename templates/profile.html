@@ -2005,7 +2005,7 @@
         function storePreDepositBalance() {
             const balanceElement = document.querySelector('.stat-value');
             if (balanceElement) {
-                const currentBalance = parseFloat(balanceElement.textContent.replace(', '').replace(',', '')));
+                const currentBalance = parseFloat(balanceElement.textContent.replace(', '').replace(',', ''))));
                 localStorage.setItem('pre_deposit_balance', currentBalance.toString());
             }
         }
