@@ -43,13 +43,13 @@
             text-decoration: none;
             display: flex;
             align-items: center;
+            padding: 5px 0; 
         }
         
         .logo img {
-            height: 40px;
+            height: 50px;
             width: auto;
             transition: transform 0.3s ease;
-            filter: brightness(1);
         }
         
         .logo:hover img {
@@ -945,7 +945,7 @@
     <nav class="navbar">
         <div class="nav-container">
             <a href="{% url 'landing-page' %}" class="logo">
-               <img src="/static/evgchain-logo.png" alt="EVGxchain" style="height: 40px; width: auto;">
+               <img src="/static/evgchain-logo.png" alt="EVGxchain" style="height: 60px; width: auto;">
            </a>
             <div class="nav-links">
                 <a href="{% url 'dashboard' %}" class="active">Dashboard</a>
