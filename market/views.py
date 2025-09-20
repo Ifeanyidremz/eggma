@@ -440,9 +440,8 @@ def userPortfolio(request):
 
 
 @login_required 
-@csrf_exempt
 def place_bet(request):
-    """Handle bet placement via AJAX"""
+    """Enhanced bet placement with predict-to-earn support"""
     if request.method != 'POST':
         return JsonResponse({'success': False, 'error': 'Invalid method'})
     
@@ -451,7 +450,8 @@ def place_bet(request):
         market_id = data.get('market_id')
         outcome = data.get('outcome')  # UP, DOWN, FLAT
         amount = Decimal(str(data.get('amount', 0)))
-        bet_type = data.get('bet_type', 'regular')  # regular or quick
+        bet_type = data.get('bet_type', 'regular')  # regular, quick_predict
+        timeframe = data.get('timeframe', '15m')  # For predict-to-earn
         
         # Validation
         if not all([market_id, outcome, amount]):
@@ -460,8 +460,17 @@ def place_bet(request):
         if outcome not in ['UP', 'DOWN', 'FLAT']:
             return JsonResponse({'success': False, 'error': 'Invalid outcome'})
         
-        if amount < Decimal('1.00'):
-            return JsonResponse({'success': False, 'error': 'Minimum bet is $1.00'})
+        # Predict-to-earn specific validations
+        if bet_type == 'quick_predict':
+            if amount != Decimal('1.00'):
+                return JsonResponse({'success': False, 'error': 'Quick predict bets must be exactly $1.00'})
+            
+            if timeframe not in ['1m', '2m', '3m']:
+                return JsonResponse({'success': False, 'error': 'Invalid predict timeframe'})
+        else:
+            # Regular bet validations
+            if amount < Decimal('1.00'):
+                return JsonResponse({'success': False, 'error': 'Minimum bet is $1.00'})
         
         if amount > request.user.balance:
             return JsonResponse({'success': False, 'error': 'Insufficient balance'})
@@ -472,23 +481,42 @@ def place_bet(request):
         except Market.DoesNotExist:
             return JsonResponse({'success': False, 'error': 'Market not found'})
         
-        # Check market is still active
-        if not market.is_active:
-            return JsonResponse({'success': False, 'error': 'Market is no longer active'})
+        # Check if user has active predict-to-earn bet (limit one at a time)
+        if bet_type == 'quick_predict':
+            existing_predict_bet = Bet.objects.filter(
+                user=request.user,
+                market=market,
+                bet_type='quick_predict',
+                status='active'
+            ).exists()
+            
+            if existing_predict_bet:
+                return JsonResponse({
+                    'success': False, 
+                    'error': 'You already have an active predict-to-earn bet on this market'
+                })
         
-        # Calculate odds based on current volume
-        if outcome == 'UP':
-            odds = market.up_odds
-        elif outcome == 'DOWN':
-            odds = market.down_odds
-        else:  # FLAT
-            odds = market.flat_odds
+        # Calculate odds and timeframe-specific multipliers
+        if bet_type == 'quick_predict':
+            # Special multipliers for predict-to-earn based on timeframe
+            multipliers = {
+                '1m': {'UP': Decimal('1.85'), 'FLAT': Decimal('4.50'), 'DOWN': Decimal('1.90')},
+                '2m': {'UP': Decimal('1.95'), 'FLAT': Decimal('3.20'), 'DOWN': Decimal('1.98')},
+                '3m': {'UP': Decimal('2.10'), 'FLAT': Decimal('2.80'), 'DOWN': Decimal('2.05')}
+            }
+            odds = multipliers.get(timeframe, multipliers['2m']).get(outcome, Decimal('2.00'))
+        else:
+            # Regular market odds
+            if outcome == 'UP':
+                odds = market.up_odds
+            elif outcome == 'DOWN':
+                odds = market.down_odds
+            else:  # FLAT
+                odds = market.flat_odds
         
         potential_payout = amount * odds
         
         # Create bet within transaction
-        from django.db import transaction as db_transaction
-        
         with db_transaction.atomic():
             # Store old balance for transaction record
             old_balance = request.user.balance
@@ -497,7 +525,17 @@ def place_bet(request):
             request.user.balance -= amount
             request.user.save(update_fields=['balance'])
             
-            # Create bet record
+            # Calculate resolution time for predict-to-earn
+            resolution_time = None
+            if bet_type == 'quick_predict':
+                timeframe_seconds = {
+                    '1m': 60,
+                    '2m': 120,
+                    '3m': 180
+                }
+                resolution_time = timezone.now() + timedelta(seconds=timeframe_seconds[timeframe])
+            
+            # Create bet record with predict-to-earn specific fields
             bet = Bet.objects.create(
                 user=request.user,
                 market=market,
@@ -508,50 +546,69 @@ def place_bet(request):
                 potential_payout=potential_payout,
                 round_number=market.current_round,
                 round_start_price=market.round_start_price,
-                status='active'
+                status='active',
+                # Predict-to-earn specific fields
+                timeframe=timeframe if bet_type == 'quick_predict' else None,
+                predict_resolution_time=resolution_time,
+                metadata={
+                    'bet_type': bet_type,
+                    'timeframe': timeframe,
+                    'created_price': str(get_current_crypto_price(market)),
+                    'is_predict_to_earn': bet_type == 'quick_predict'
+                }
             )
             
-            # Update market volume
-            market.total_volume += amount
-            if outcome == 'UP':
-                market.up_volume += amount
-            elif outcome == 'DOWN':
-                market.down_volume += amount
-            else:  # FLAT
-                market.flat_volume += amount
-            market.save()
+            # Update market volume (for regular bets)
+            if bet_type != 'quick_predict':
+                market.total_volume += amount
+                if outcome == 'UP':
+                    market.up_volume += amount
+                elif outcome == 'DOWN':
+                    market.down_volume += amount
+                else:  # FLAT
+                    market.flat_volume += amount
+                market.save()
             
-            # Create transaction record with proper balance tracking
+            # Create transaction record
+            description = f"{'Quick predict' if bet_type == 'quick_predict' else 'Bet'} placed: {outcome} on {market.title}"
+            if bet_type == 'quick_predict':
+                description += f" ({timeframe} timeframe)"
+            
             Transaction.objects.create(
                 user=request.user,
                 transaction_type='bet',
-                amount=-amount,  # Negative because it's deducted
+                amount=-amount,
                 balance_before=old_balance,
                 balance_after=request.user.balance,
                 status='completed',
                 bet=bet,
                 market=market,
-                description=f"Bet placed: {outcome} on {market.title}"
+                description=description
             )
             
-            # Award XP based on bet amount
-            xp_earned = min(int(amount), 50)  # Max 50 XP per bet
-            if bet_type == 'quick':
-                xp_earned = 25  # Fixed XP for quick bets
+            # Award XP
+            if bet_type == 'quick_predict':
+                xp_earned = 15  # Fixed XP for quick predict
+            else:
+                xp_earned = min(int(amount), 50)  # Regular bet XP
             
             request.user.xp += xp_earned
             request.user.save(update_fields=['xp'])
         
         return JsonResponse({
             'success': True,
-            'message': f'Bet placed successfully! {xp_earned} XP earned.',
+            'message': f'{"Quick predict" if bet_type == "quick_predict" else "Bet"} placed successfully! {xp_earned} XP earned.',
             'bet_id': str(bet.id),
             'new_balance': float(request.user.balance),
             'new_xp': request.user.xp,
-            'xp_earned': xp_earned
+            'xp_earned': xp_earned,
+            'resolution_time': resolution_time.isoformat() if resolution_time else None,
+            'odds': float(odds),
+            'potential_payout': float(potential_payout)
         })
         
     except Exception as e:
+        logger.error(f"Bet placement error: {e}")
         return JsonResponse({'success': False, 'error': str(e)})
 
 
