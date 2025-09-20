@@ -40,13 +40,21 @@
         }
 
         .logo {
-            font-size: 24px;
-            font-weight: 700;
-            background: linear-gradient(135deg, #f7931a 0%, #ffb84d 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
             text-decoration: none;
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo img {
+            height: 40px;
+            width: auto;
+            transition: transform 0.3s ease;
+            filter: brightness(1);
+        }
+        
+        .logo:hover img {
+            transform: scale(1.05);
+            filter: brightness(1.1);
         }
 
         .nav-links {
@@ -936,7 +944,9 @@
 
     <nav class="navbar">
         <div class="nav-container">
-            <a href="{% url 'landing-page' %}" class="logo">EVGxchain</a>
+            <a href="{% url 'landing-page' %}" class="logo">
+               <img src="/static/images/logo.png" alt="EVGxchain" style="height: 40px; width: auto;">
+           </a>
             <div class="nav-links">
                 <a href="{% url 'dashboard' %}" class="active">Dashboard</a>
                 <a href="{% url 'market-data' %}">Markets</a>
