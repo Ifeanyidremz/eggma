@@ -1310,6 +1310,138 @@ def api_crypto_ohlc(request, symbol='BTC'):
         logger.error(f"Error fetching OHLC data: {e}")
         return JsonResponse({'error': 'Unable to fetch chart data'}, status=500)
 
+@csrf_exempt
+@require_POST
+def coinremitter_webhook(request):
+    """Handle Coinremitter webhook notifications"""
+    try:
+        # Get the webhook data
+        if request.content_type == 'application/json':
+            data = json.loads(request.body)
+        else:
+            data = request.POST.dict()
+        
+        logger.info(f"Coinremitter webhook received: {data}")
+        
+        # Extract key information
+        transaction_type = data.get('type', '').lower()
+        coin_symbol = data.get('coin_symbol', '')
+        amount = data.get('amount', '')
+        txid = data.get('txid', '')
+        confirmations = data.get('confirmations', 0)
+        merchant_id = data.get('merchant_id', '')
+        
+        # Handle different transaction types
+        if transaction_type == 'send':
+            # This is a withdrawal transaction
+            handle_withdrawal_webhook(data)
+        elif transaction_type == 'receive':
+            # This is a deposit transaction (if you implement crypto deposits later)
+            handle_deposit_webhook(data)
+        
+        return JsonResponse({'status': 'success', 'message': 'Webhook processed'})
+        
+    except Exception as e:
+        logger.error(f"Webhook processing error: {e}")
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+def handle_withdrawal_webhook(data):
+    """Handle withdrawal webhook notifications"""
+    try:
+        from predict.models import Transaction
+        
+        # Extract transaction details
+        txid = data.get('txid')
+        merchant_id = data.get('merchant_id')
+        confirmations = int(data.get('confirmations', 0))
+        status = data.get('status', '').lower()
+        
+        # Find the transaction by external_id or custom_id
+        transaction = None
+        
+        # Try to find by external_id first
+        if merchant_id:
+            try:
+                transaction = Transaction.objects.get(
+                    external_id__icontains=merchant_id,
+                    transaction_type='withdrawal'
+                )
+            except Transaction.DoesNotExist:
+                pass
+        
+        # Try to find by blockchain_tx_hash
+        if not transaction and txid:
+            try:
+                transaction = Transaction.objects.get(
+                    blockchain_tx_hash=txid,
+                    transaction_type='withdrawal'
+                )
+            except Transaction.DoesNotExist:
+                pass
+        
+        if not transaction:
+            logger.warning(f"Transaction not found for webhook: {data}")
+            return
+        
+        # Update transaction status based on confirmations and status
+        old_status = transaction.status
+        
+        if status == 'success' or confirmations >= 1:
+            transaction.status = 'completed'
+        elif status == 'failed':
+            transaction.status = 'failed'
+            # Refund user if withdrawal failed after being processed
+            if old_status == 'pending':
+                refund_failed_withdrawal(transaction)
+        else:
+            transaction.status = 'pending'
+        
+        # Update transaction details
+        if txid and not transaction.blockchain_tx_hash:
+            transaction.blockchain_tx_hash = txid
+        
+        transaction.metadata.update({
+            'webhook_data': data,
+            'confirmations': confirmations,
+            'webhook_timestamp': timezone.now().isoformat()
+        })
+        
+        transaction.save()
+        
+        logger.info(f"Updated transaction {transaction.id} status: {old_status} -> {transaction.status}")
+        
+    except Exception as e:
+        logger.error(f"Error handling withdrawal webhook: {e}")
+
+def refund_failed_withdrawal(transaction):
+    """Refund user for failed withdrawal"""
+    try:
+        user = transaction.user
+        refund_amount = abs(transaction.amount)  # amount is negative for withdrawals
+        
+        # Add money back to user balance
+        user.balance += refund_amount
+        user.save()
+        
+        # Create refund transaction
+        Transaction.objects.create(
+            user=user,
+            transaction_type='refund',
+            amount=refund_amount,
+            balance_before=user.balance - refund_amount,
+            balance_after=user.balance,
+            status='completed',
+            description=f'Refund for failed withdrawal - TX: {transaction.blockchain_tx_hash or "N/A"}',
+            metadata={
+                'original_withdrawal': str(transaction.id),
+                'refund_reason': 'withdrawal_failed_on_blockchain'
+            }
+        )
+        
+        logger.info(f"Refunded ${refund_amount} to user {user.username} for failed withdrawal")
+        
+    except Exception as e:
+        logger.error(f"Error processing refund: {e}")
 
 def api_user_stats(request):
     """API endpoint for user statistics"""
