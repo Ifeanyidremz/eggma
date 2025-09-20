@@ -236,232 +236,283 @@
             font-weight: 600;
             color: #fff;
         }
+
         .predict-to-earn-widget {
-    background: rgba(20, 20, 20, 0.95);
-    border-radius: 15px;
-    padding: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    margin-bottom: 20px;
-}
+            background: rgba(20, 20, 20, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 20px;
+            position: relative;
+        }
 
-.predict-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 20px;
-}
+        .predict-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
 
-.predict-icon {
-    width: 35px;
-    height: 35px;
-    background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 16px;
-}
+        .predict-icon {
+            width: 35px;
+            height: 35px;
+            background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
 
-.predict-name {
-    font-size: 16px;
-    font-weight: 600;
-    color: white;
-}
+        .predict-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: white;
+        }
 
-.predict-pair {
-    font-size: 12px;
-    color: #888;
-}
+        .predict-pair {
+            font-size: 12px;
+            color: #888;
+        }
 
-.predict-timer-section {
-    text-align: center;
-    margin-bottom: 20px;
-}
+        .predict-timer-section {
+            text-align: center;
+            margin-bottom: 20px;
+        }
 
-.predict-timer-circle {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    background: conic-gradient(#8b5cf6 0deg, #8b5cf6 90deg, rgba(255,255,255,0.1) 90deg);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 8px;
-    font-size: 16px;
-    font-weight: 600;
-    color: white;
-}
+        .predict-timer-circle {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: conic-gradient(#8b5cf6 0deg, #8b5cf6 90deg, rgba(255,255,255,0.1) 90deg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 8px;
+            font-size: 16px;
+            font-weight: 600;
+            color: white;
+        }
 
-.predict-timer-label {
-    font-size: 12px;
-    color: #888;
-}
+        .predict-timer-label {
+            font-size: 12px;
+            color: #888;
+        }
 
-.predict-timeframes {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 15px;
-}
+        .predict-timeframes {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
 
-.predict-tf-btn {
-    flex: 1;
-    background: rgba(30, 30, 30, 0.8);
-    border: 2px solid rgba(255, 255, 255, 0.1);
-    color: #999;
-    padding: 8px;
-    border-radius: 8px;
-    font-size: 12px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
+        .predict-tf-btn {
+            flex: 1;
+            background: rgba(30, 30, 30, 0.8);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            color: #999;
+            padding: 8px;
+            border-radius: 8px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
 
-.predict-tf-btn.active,
-.predict-tf-btn:hover {
-    border-color: #8b5cf6;
-    color: #8b5cf6;
-    background: rgba(139, 92, 246, 0.1);
-}
+        .predict-tf-btn.active,
+        .predict-tf-btn:hover {
+            border-color: #8b5cf6;
+            color: #8b5cf6;
+            background: rgba(139, 92, 246, 0.1);
+        }
 
-.predict-options {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 8px;
-    margin-bottom: 15px;
-}
+        .predict-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
 
-.predict-option {
-    background: rgba(30, 30, 30, 0.8);
-    border: 2px solid rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
-    padding: 12px 8px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    text-align: center;
-    position: relative;
-}
+        .predict-options.locked {
+            opacity: 0.4;
+            pointer-events: none;
+        }
 
-.predict-option.up {
-    border-color: rgba(34, 197, 94, 0.3);
-}
+        .predict-option {
+            background: rgba(30, 30, 30, 0.8);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 12px 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            position: relative;
+        }
 
-.predict-option.up:hover,
-.predict-option.up.selected {
-    background: rgba(34, 197, 94, 0.1);
-    border-color: #22c55e;
-    box-shadow: 0 0 15px rgba(34, 197, 94, 0.3);
-}
+        .predict-option.up {
+            border-color: rgba(34, 197, 94, 0.3);
+        }
 
-.predict-option.flat {
-    border-color: rgba(249, 115, 22, 0.3);
-}
+        .predict-option.up:hover,
+        .predict-option.up.selected {
+            background: rgba(34, 197, 94, 0.1);
+            border-color: #22c55e;
+            box-shadow: 0 0 15px rgba(34, 197, 94, 0.3);
+        }
 
-.predict-option.flat:hover,
-.predict-option.flat.selected {
-    background: rgba(249, 115, 22, 0.1);
-    border-color: #f97316;
-    box-shadow: 0 0 15px rgba(249, 115, 22, 0.3);
-}
+        .predict-option.flat {
+            border-color: rgba(249, 115, 22, 0.3);
+        }
 
-.predict-option.down {
-    border-color: rgba(239, 68, 68, 0.3);
-}
+        .predict-option.flat:hover,
+        .predict-option.flat.selected {
+            background: rgba(249, 115, 22, 0.1);
+            border-color: #f97316;
+            box-shadow: 0 0 15px rgba(249, 115, 22, 0.3);
+        }
 
-.predict-option.down:hover,
-.predict-option.down.selected {
-    background: rgba(239, 68, 68, 0.1);
-    border-color: #ef4444;
-    box-shadow: 0 0 15px rgba(239, 68, 68, 0.3);
-}
+        .predict-option.down {
+            border-color: rgba(239, 68, 68, 0.3);
+        }
 
-.predict-option-label {
-    font-size: 12px;
-    font-weight: 600;
-    margin-bottom: 4px;
-}
+        .predict-option.down:hover,
+        .predict-option.down.selected {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: #ef4444;
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.3);
+        }
 
-.predict-option.up .predict-option-label {
-    color: #22c55e;
-}
+        .predict-option-label {
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
 
-.predict-option.flat .predict-option-label {
-    color: #f97316;
-}
+        .predict-option.up .predict-option-label {
+            color: #22c55e;
+        }
 
-.predict-option.down .predict-option-label {
-    color: #ef4444;
-}
+        .predict-option.flat .predict-option-label {
+            color: #f97316;
+        }
 
-.predict-multiplier {
-    font-size: 14px;
-    font-weight: 600;
-    color: white;
-}
+        .predict-option.down .predict-option-label {
+            color: #ef4444;
+        }
 
-.quick-bet-btn {
-    width: 100%;
-    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
-    color: white;
-    border: none;
-    padding: 12px;
-    border-radius: 10px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
+        .predict-multiplier {
+            font-size: 14px;
+            font-weight: 600;
+            color: white;
+        }
 
-.quick-bet-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(139, 92, 246, 0.4);
-}
+        .quick-bet-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
 
-.quick-bet-btn:disabled {
-    background: rgba(60, 60, 60, 0.5);
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: none;
-}
+        .quick-bet-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(139, 92, 246, 0.4);
+        }
 
-/* Responsive adjustments */
-@media (max-width: 1200px) {
-    .predict-options {
-        grid-template-columns: 1fr;
-        gap: 6px;
-    }
-    
-    .predict-option {
-        padding: 10px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        text-align: left;
-    }
-    
-    .predict-multiplier {
-        font-size: 16px;
-    }
-}
+        .quick-bet-btn:disabled {
+            background: rgba(60, 60, 60, 0.5);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
 
-@media (max-width: 768px) {
-    .predict-to-earn-widget {
-        padding: 15px;
-    }
-    
-    .predict-timer-circle {
-        width: 50px;
-        height: 50px;
-        font-size: 14px;
-    }
-    
-    .predict-timeframes {
-        gap: 4px;
-    }
-    
-    .predict-tf-btn {
-        padding: 6px;
-        font-size: 11px;
-    }
-}
+        .quick-bet-btn.locked {
+            background: rgba(220, 38, 38, 0.8);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .timer-lock-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(220, 38, 38, 0.1);
+            border: 2px solid rgba(220, 38, 38, 0.3);
+            border-radius: 15px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(2px);
+            z-index: 10;
+        }
+
+        .timer-lock-overlay.active {
+            display: flex;
+        }
+
+        .lock-message {
+            background: rgba(220, 38, 38, 0.9);
+            padding: 15px 20px;
+            border-radius: 10px;
+            text-align: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        .lock-icon {
+            font-size: 24px;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 1200px) {
+            .predict-options {
+                grid-template-columns: 1fr;
+                gap: 6px;
+            }
+            
+            .predict-option {
+                padding: 10px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                text-align: left;
+            }
+            
+            .predict-multiplier {
+                font-size: 16px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .predict-to-earn-widget {
+                padding: 15px;
+            }
+            
+            .predict-timer-circle {
+                width: 50px;
+                height: 50px;
+                font-size: 14px;
+            }
+            
+            .predict-timeframes {
+                gap: 4px;
+            }
+            
+            .predict-tf-btn {
+                padding: 6px;
+                font-size: 11px;
+            }
+        }
 
         .stat-label {
             font-size: 12px;
@@ -1031,6 +1082,15 @@
 
         <div class="sidebar">
             <div class="predict-to-earn-widget">
+                <!-- Timer Lock Overlay -->
+                <div class="timer-lock-overlay" id="timerLockOverlay">
+                    <div class="lock-message">
+                        <span class="lock-icon">🔒</span>
+                        <div>Betting Locked</div>
+                        <div style="font-size: 12px; margin-top: 5px;">Wait for next round</div>
+                    </div>
+                </div>
+
                 <div class="predict-header">
                     <div class="predict-icon">⚡</div>
                     <div class="predict-title">
@@ -1050,7 +1110,7 @@
                     <button class="predict-tf-btn" data-predict-tf="3m" onclick="selectPredictTimeframe('3m')">3m</button>
                 </div>
                 
-                <div class="predict-options">
+                <div class="predict-options" id="predictOptions">
                     <div class="predict-option up" id="predictUpOption" onclick="selectPredictOption('UP')">
                         <div class="predict-option-label">UP</div>
                         <div class="predict-multiplier">1.95x</div>
@@ -1069,6 +1129,7 @@
                     Quick Bet - $1
                 </button>
             </div>
+
             <div class="current-round-info">
                 <div class="round-timer">
                     <div class="timer-circle" id="timerCircle">{{ round_info.time_remaining|default:"20" }}s</div>
@@ -1129,14 +1190,23 @@
         let priceData = [];
         let animationId = null;
 
+        // Predict to Earn variables
+        let predictSelectedOption = null;
+        let predictTimeframe = '1m';
+        let predictTimeRemaining = 65; // Start with 65 seconds so first 5 seconds show timer lock
+        let isPredictLocked = true; // Start locked
+
         // Wait for DOM to load
         document.addEventListener('DOMContentLoaded', function() {
             console.log('Initializing market detail page...');
             initializeChart();
             updateBetButton();
+            updateQuickBetButton();
+            updatePredictLockStatus();
             
             // Start update intervals
             setInterval(updateTimer, 1000);
+            setInterval(updatePredictTimer, 1000);
             setInterval(updateChartData, 2000); // Update chart every 2 seconds
             setInterval(updateMarketData, 10000); // Update market data every 10 seconds
             
@@ -1152,6 +1222,213 @@
                 }, 5000);
             });
         });
+
+        function updatePredictLockStatus() {
+            const lockOverlay = document.getElementById('timerLockOverlay');
+            const predictOptions = document.getElementById('predictOptions');
+            const quickBetBtn = document.getElementById('quickBetBtn');
+            
+            if (isPredictLocked) {
+                lockOverlay.classList.add('active');
+                predictOptions.classList.add('locked');
+                quickBetBtn.classList.add('locked');
+                quickBetBtn.disabled = true;
+                quickBetBtn.textContent = 'Betting Locked - Wait for next round';
+            } else {
+                lockOverlay.classList.remove('active');
+                predictOptions.classList.remove('locked');
+                quickBetBtn.classList.remove('locked');
+                quickBetBtn.disabled = false;
+                updateQuickBetButton();
+            }
+        }
+
+        function updatePredictTimer() {
+            const timerEl = document.getElementById('predictTimer');
+            const circleEl = document.getElementById('predictTimer');
+            
+            if (predictTimeRemaining <= 0) {
+                // Reset timer based on timeframe
+                if (predictTimeframe === '1m') predictTimeRemaining = 60;
+                else if (predictTimeframe === '2m') predictTimeRemaining = 120;
+                else if (predictTimeframe === '3m') predictTimeRemaining = 180;
+            }
+            
+            // Check if we're in the lock period (last 20 seconds)
+            const wasLocked = isPredictLocked;
+            isPredictLocked = predictTimeRemaining <= 20;
+            
+            // Update lock status if it changed
+            if (wasLocked !== isPredictLocked) {
+                updatePredictLockStatus();
+                
+                if (!isPredictLocked) {
+                    // Just unlocked - show success message
+                    showMessage('Predict to Earn: Betting is now open!', 'success');
+                } else if (isPredictLocked && !wasLocked) {
+                    // Just locked - show warning message  
+                    showMessage('Predict to Earn: Betting locked - preparing for round close', 'error');
+                }
+            }
+            
+            const displayTime = predictTimeRemaining < 60 ? 
+                `${predictTimeRemaining}s` : 
+                `${Math.floor(predictTimeRemaining / 60)}m ${predictTimeRemaining % 60}s`;
+            
+            timerEl.textContent = displayTime;
+            
+            // Update circle progress and color
+            const maxTime = predictTimeframe === '1m' ? 60 : 
+                           predictTimeframe === '2m' ? 120 : 180;
+            const percentage = (predictTimeRemaining / maxTime) * 360;
+            
+            // Color changes based on lock status
+            let color;
+            if (isPredictLocked) {
+                color = '#ef4444'; // Red when locked
+            } else if (predictTimeRemaining < 30) {
+                color = '#f97316'; // Orange when approaching lock
+            } else {
+                color = '#8b5cf6'; // Purple when safe to bet
+            }
+            
+            circleEl.style.background = 
+                `conic-gradient(${color} 0deg, ${color} ${percentage}deg, rgba(255,255,255,0.1) ${percentage}deg)`;
+            
+            predictTimeRemaining--;
+        }
+
+        function selectPredictTimeframe(tf) {
+            if (isPredictLocked) {
+                showMessage('Cannot change timeframe during betting lock period', 'error');
+                return;
+            }
+            
+            predictTimeframe = tf;
+            document.querySelectorAll('.predict-tf-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`[data-predict-tf="${tf}"]`).classList.add('active');
+            
+            // Reset timer based on timeframe
+            if (tf === '1m') predictTimeRemaining = 60;
+            else if (tf === '2m') predictTimeRemaining = 120;
+            else if (tf === '3m') predictTimeRemaining = 180;
+            
+            isPredictLocked = predictTimeRemaining <= 20;
+            updatePredictLockStatus();
+        }
+
+        function selectPredictOption(option) {
+            if (isPredictLocked) {
+                showMessage('Betting is locked - wait for next round', 'error');
+                return;
+            }
+            
+            predictSelectedOption = option;
+            
+            document.querySelectorAll('.predict-option').forEach(btn => btn.classList.remove('selected'));
+            document.getElementById('predict' + option.charAt(0) + option.slice(1).toLowerCase() + 'Option').classList.add('selected');
+            
+            updateQuickBetButton();
+        }
+
+        function updateQuickBetButton() {
+            const btn = document.getElementById('quickBetBtn');
+            
+            if (isPredictLocked) {
+                btn.textContent = 'Betting Locked - Wait for next round';
+                btn.disabled = true;
+                btn.classList.add('locked');
+                return;
+            }
+            
+            {% if user.is_authenticated %}
+            if (predictSelectedOption) {
+                btn.textContent = `Quick Bet $1 - ${predictSelectedOption}`;
+                btn.disabled = false;
+                btn.classList.remove('locked');
+                
+                // Change button color based on selection
+                if (predictSelectedOption === 'UP') {
+                    btn.style.background = 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)';
+                } else if (predictSelectedOption === 'FLAT') {
+                    btn.style.background = 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)';
+                } else if (predictSelectedOption === 'DOWN') {
+                    btn.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
+                }
+            } else {
+                btn.textContent = 'Quick Bet - $1';
+                btn.disabled = false;
+                btn.classList.remove('locked');
+                btn.style.background = 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)';
+            }
+            {% else %}
+            btn.textContent = 'Login to Quick Bet';
+            btn.disabled = true;
+            btn.onclick = function() { window.location.href = "{% url 'login' %}"; };
+            {% endif %}
+        }
+
+        async function placeQuickBet() {
+            if (isPredictLocked) {
+                showMessage('Betting is locked - please wait for next round', 'error');
+                return;
+            }
+            
+            {% if user.is_authenticated %}
+            if (!predictSelectedOption) {
+                showMessage('Please select UP, FLAT, or DOWN first', 'error');
+                return;
+            }
+            
+            const btn = document.getElementById('quickBetBtn');
+            const originalText = btn.textContent;
+            btn.textContent = 'Placing...';
+            btn.disabled = true;
+            
+            try {
+                const response = await fetch('{% url "place-bet" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken,
+                    },
+                    body: JSON.stringify({
+                        market_id: marketId,
+                        outcome: predictSelectedOption,
+                        amount: 1,
+                        bet_type: 'quick_predict',
+                        timeframe: predictTimeframe
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showMessage(`Quick bet placed: ${predictSelectedOption} $1`, 'success');
+                    
+                    // Update balance display
+                    const balanceElement = document.querySelector('.balance-amount');
+                    if (balanceElement) {
+                        balanceElement.textContent = `${data.new_balance.toFixed(2)}`;
+                    }
+                    
+                    // Reset selection after successful bet
+                    predictSelectedOption = null;
+                    document.querySelectorAll('.predict-option').forEach(btn => btn.classList.remove('selected'));
+                } else {
+                    showMessage(data.error || 'Failed to place quick bet', 'error');
+                }
+            } catch (error) {
+                showMessage('Error placing quick bet. Please try again.', 'error');
+                console.error('Quick bet error:', error);
+            }
+            
+            btn.textContent = originalText;
+            updateQuickBetButton();
+            {% else %}
+            window.location.href = "{% url 'login' %}";
+            {% endif %}
+        }
 
         function initializeChart() {
             const canvas = document.getElementById('marketChart');
@@ -1671,165 +1948,19 @@
                 });
             }
         }, 2000);
-        let predictSelectedOption = null;
-let predictTimeframe = '1m';
-let predictTimeRemaining = 4;
 
-function selectPredictTimeframe(tf) {
-    predictTimeframe = tf;
-    document.querySelectorAll('.predict-tf-btn').forEach(btn => btn.classList.remove('active'));
-    document.querySelector(`[data-predict-tf="${tf}"]`).classList.add('active');
-    
-    // Reset timer based on timeframe
-    if (tf === '1m') predictTimeRemaining = 60;
-    else if (tf === '2m') predictTimeRemaining = 120;
-    else if (tf === '3m') predictTimeRemaining = 180;
-    
-    updatePredictTimer();
-}
-
-function selectPredictOption(option) {
-    predictSelectedOption = option;
-    
-    document.querySelectorAll('.predict-option').forEach(btn => btn.classList.remove('selected'));
-    document.getElementById('predict' + option.charAt(0) + option.slice(1).toLowerCase() + 'Option').classList.add('selected');
-    
-    updateQuickBetButton();
-}
-
-function updateQuickBetButton() {
-    const btn = document.getElementById('quickBetBtn');
-    
-    {% if user.is_authenticated %}
-    if (predictSelectedOption) {
-        btn.textContent = `Quick Bet $1 - ${predictSelectedOption}`;
-        btn.disabled = false;
-        
-        // Change button color based on selection
-        if (predictSelectedOption === 'UP') {
-            btn.style.background = 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)';
-        } else if (predictSelectedOption === 'FLAT') {
-            btn.style.background = 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)';
-        } else if (predictSelectedOption === 'DOWN') {
-            btn.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
-        }
-    } else {
-        btn.textContent = 'Quick Bet - $1';
-        btn.disabled = false;
-        btn.style.background = 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)';
-    }
-    {% else %}
-    btn.textContent = 'Login to Quick Bet';
-    btn.disabled = true;
-    btn.onclick = function() { window.location.href = "{% url 'login' %}"; };
-    {% endif %}
-}
-
-async function placeQuickBet() {
-    {% if user.is_authenticated %}
-    if (!predictSelectedOption) {
-        showMessage('Please select UP, FLAT, or DOWN first', 'error');
-        return;
-    }
-    
-    const btn = document.getElementById('quickBetBtn');
-    const originalText = btn.textContent;
-    btn.textContent = 'Placing...';
-    btn.disabled = true;
-    
-    try {
-        const response = await fetch('{% url "place-bet" %}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrfToken,
-            },
-            body: JSON.stringify({
-                market_id: marketId,
-                outcome: predictSelectedOption,
-                amount: 1,
-                bet_type: 'quick_predict',
-                timeframe: predictTimeframe
-            })
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            showMessage(`Quick bet placed: ${predictSelectedOption} $1`, 'success');
-            
-            // Update balance display
-            const balanceElement = document.querySelector('.balance-amount');
-            if (balanceElement) {
-                balanceElement.textContent = `$${data.new_balance.toFixed(2)}`;
+        // Update multipliers periodically for predict to earn
+        setInterval(() => {
+            if (Math.random() < 0.4) {
+                const multipliers = document.querySelectorAll('.predict-multiplier');
+                multipliers.forEach((el, index) => {
+                    const currentMult = parseFloat(el.textContent.replace('x', ''));
+                    const variation = (Math.random() - 0.5) * 0.1;
+                    const newMult = Math.max(1.1, currentMult + variation);
+                    el.textContent = `${newMult.toFixed(2)}x`;
+                });
             }
-            
-            // Reset selection after successful bet
-            predictSelectedOption = null;
-            document.querySelectorAll('.predict-option').forEach(btn => btn.classList.remove('selected'));
-        } else {
-            showMessage(data.error || 'Failed to place quick bet', 'error');
-        }
-    } catch (error) {
-        showMessage('Error placing quick bet. Please try again.', 'error');
-        console.error('Quick bet error:', error);
-    }
-    
-    btn.textContent = originalText;
-    updateQuickBetButton();
-    {% else %}
-    window.location.href = "{% url 'login' %}";
-    {% endif %}
-}
-
-function updatePredictTimer() {
-    const timerEl = document.getElementById('predictTimer');
-    const circleEl = document.getElementById('predictTimer');
-    
-    if (predictTimeRemaining <= 0) {
-        // Reset timer based on timeframe
-        if (predictTimeframe === '1m') predictTimeRemaining = 60;
-        else if (predictTimeframe === '2m') predictTimeRemaining = 120;
-        else if (predictTimeframe === '3m') predictTimeRemaining = 180;
-    }
-    
-    const displayTime = predictTimeRemaining < 60 ? 
-        `${predictTimeRemaining}s` : 
-        `${Math.floor(predictTimeRemaining / 60)}m ${predictTimeRemaining % 60}s`;
-    
-    timerEl.textContent = displayTime;
-    
-    // Update circle progress
-    const maxTime = predictTimeframe === '1m' ? 60 : 
-                   predictTimeframe === '2m' ? 120 : 180;
-    const percentage = (predictTimeRemaining / maxTime) * 360;
-    const color = predictTimeRemaining < 10 ? '#ef4444' : '#8b5cf6';
-    
-    circleEl.style.background = 
-        `conic-gradient(${color} 0deg, ${color} ${percentage}deg, rgba(255,255,255,0.1) ${percentage}deg)`;
-    
-    predictTimeRemaining--;
-}
-
-// Initialize predict to earn
-document.addEventListener('DOMContentLoaded', function() {
-    updateQuickBetButton();
-    // Start predict timer
-    setInterval(updatePredictTimer, 1000);
-});
-
-// Update multipliers periodically
-setInterval(() => {
-    if (Math.random() < 0.4) {
-        const multipliers = document.querySelectorAll('.predict-multiplier');
-        multipliers.forEach((el, index) => {
-            const currentMult = parseFloat(el.textContent.replace('x', ''));
-            const variation = (Math.random() - 0.5) * 0.1;
-            const newMult = Math.max(1.1, currentMult + variation);
-            el.textContent = `${newMult.toFixed(2)}x`;
-        });
-    }
-}, 3000);
+        }, 3000);
     </script>
 </body>
 </html>
