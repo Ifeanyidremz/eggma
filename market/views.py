@@ -300,6 +300,15 @@ def marketDetail(request, market_id=None):
         'round_info': round_info,
         'user_balance': request.user.balance if request.user.is_authenticated else Decimal('0'),
     }
+    context.update({
+        'predict_timeframes': ['1m', '2m', '3m'],
+        'predict_multipliers': {
+            'UP': Decimal('1.95'),
+            'FLAT': Decimal('3.20'), 
+            'DOWN': Decimal('1.98')
+        },
+        'quick_bet_amount': Decimal('1.00'),
+    })
     
     return render(request, 'market_detail.html', context)
 
