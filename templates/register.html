@@ -22,15 +22,15 @@
             justify-content: center;
             position: relative;
             overflow-x: hidden;
-            padding: 20px;
+            padding: 10px;
         }
 
         .background-glow {
             position: fixed;
             top: 50%;
             left: 50%;
-            width: 800px;
-            height: 800px;
+            width: clamp(400px, 80vw, 800px);
+            height: clamp(400px, 80vh, 800px);
             background: radial-gradient(circle, rgba(247, 147, 26, 0.08) 0%, transparent 70%);
             transform: translate(-50%, -50%);
             z-index: 0;
@@ -55,14 +55,14 @@
 
         .floating-coin {
             position: absolute;
-            width: 30px;
-            height: 30px;
+            width: clamp(20px, 4vw, 30px);
+            height: clamp(20px, 4vw, 30px);
             background: linear-gradient(135deg, #f7931a 0%, #ffb84d 100%);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 14px;
+            font-size: clamp(10px, 2.5vw, 14px);
             font-weight: bold;
             color: white;
             opacity: 0.4;
@@ -77,14 +77,17 @@
         }
 
         .logo {
+            position: fixed;
+            top: clamp(15px, 3vh, 30px);
+            left: clamp(15px, 3vw, 30px);
             text-decoration: none;
             display: flex;
             align-items: center;
-            padding: 5px 0; 
+            z-index: 10;
         }
         
         .logo img {
-            height: 100px;
+            height: clamp(60px, 10vw, 100px);
             width: auto;
             transition: transform 0.3s ease;
         }
@@ -96,27 +99,27 @@
 
         .register-container {
             background: rgba(45, 45, 45, 0.9);
-            border-radius: 24px;
-            padding: 60px;
+            border-radius: clamp(16px, 4vw, 24px);
+            padding: clamp(30px, 6vw, 60px);
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
             backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             width: 100%;
-            max-width: 500px;
+            max-width: min(500px, 90vw);
             position: relative;
             z-index: 5;
-            margin: 100px 20px 20px;
+            margin: clamp(80px, 15vh, 120px) auto 20px;
         }
 
         .register-header {
             text-align: center;
-            margin-bottom: 40px;
+            margin-bottom: clamp(24px, 5vw, 40px);
         }
 
         .register-title {
-            font-size: 36px;
+            font-size: clamp(24px, 6vw, 36px);
             font-weight: 700;
-            margin-bottom: 12px;
+            margin-bottom: clamp(8px, 2vw, 12px);
             background: linear-gradient(135deg, #fff 0%, #f0f0f0 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -125,31 +128,32 @@
 
         .register-subtitle {
             color: #999;
-            font-size: 16px;
+            font-size: clamp(14px, 3vw, 16px);
             line-height: 1.5;
+            padding: 0 10px;
         }
 
         .form-group {
-            margin-bottom: 24px;
+            margin-bottom: clamp(16px, 4vw, 24px);
             position: relative;
         }
 
         .form-label {
             display: block;
-            margin-bottom: 8px;
+            margin-bottom: clamp(4px, 1.5vw, 8px);
             color: #ccc;
-            font-size: 14px;
+            font-size: clamp(12px, 3vw, 14px);
             font-weight: 500;
         }
 
         .form-input {
             width: 100%;
-            padding: 16px 20px;
+            padding: clamp(12px, 3vw, 16px) clamp(14px, 3.5vw, 20px);
             background: rgba(26, 26, 26, 0.8);
             border: 2px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
+            border-radius: clamp(8px, 2vw, 12px);
             color: white;
-            font-size: 16px;
+            font-size: clamp(14px, 3.5vw, 16px);
             transition: all 0.3s ease;
             backdrop-filter: blur(10px);
         }
@@ -172,18 +176,18 @@
 
         .error-message {
             color: #ef4444;
-            font-size: 12px;
+            font-size: clamp(10px, 2.5vw, 12px);
             margin-top: 4px;
         }
 
         .password-strength {
-            margin-top: 8px;
+            margin-top: clamp(4px, 1.5vw, 8px);
             display: flex;
-            gap: 4px;
+            gap: clamp(2px, 0.5vw, 4px);
         }
 
         .strength-bar {
-            height: 4px;
+            height: clamp(3px, 0.8vw, 4px);
             flex: 1;
             background: rgba(255, 255, 255, 0.1);
             border-radius: 2px;
@@ -198,13 +202,13 @@
         .checkbox-group {
             display: flex;
             align-items: flex-start;
-            gap: 12px;
-            margin-bottom: 32px;
+            gap: clamp(8px, 2vw, 12px);
+            margin-bottom: clamp(20px, 5vw, 32px);
         }
 
         .custom-checkbox {
-            width: 20px;
-            height: 20px;
+            width: clamp(16px, 4vw, 20px);
+            height: clamp(16px, 4vw, 20px);
             background: rgba(26, 26, 26, 0.8);
             border: 2px solid rgba(255, 255, 255, 0.2);
             border-radius: 4px;
@@ -225,7 +229,7 @@
         .custom-checkbox::after {
             content: '✓';
             color: white;
-            font-size: 12px;
+            font-size: clamp(8px, 2vw, 12px);
             font-weight: bold;
             opacity: 0;
             transition: opacity 0.3s ease;
@@ -237,9 +241,10 @@
 
         .checkbox-label {
             color: #ccc;
-            font-size: 14px;
+            font-size: clamp(12px, 3vw, 14px);
             line-height: 1.4;
             cursor: pointer;
+            flex: 1;
         }
 
         .checkbox-label a {
@@ -259,16 +264,16 @@
             background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
             color: #1a1a1a;
             border: none;
-            padding: 18px;
-            border-radius: 12px;
-            font-size: 18px;
+            padding: clamp(14px, 3.5vw, 18px);
+            border-radius: clamp(8px, 2vw, 12px);
+            font-size: clamp(16px, 3.5vw, 18px);
             font-weight: 600;
             cursor: pointer;
             box-shadow: 0 10px 30px rgba(255, 215, 0, 0.3);
             transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
-            margin-bottom: 24px;
+            margin-bottom: clamp(16px, 4vw, 24px);
         }
 
         .register-btn:hover:not(:disabled) {
@@ -309,7 +314,7 @@
         .login-link {
             text-align: center;
             color: #999;
-            font-size: 14px;
+            font-size: clamp(12px, 3vw, 14px);
         }
 
         .login-link a {
@@ -326,34 +331,38 @@
         .security-features {
             display: flex;
             justify-content: space-around;
-            margin-top: 32px;
-            padding-top: 24px;
+            margin-top: clamp(20px, 5vw, 32px);
+            padding-top: clamp(16px, 4vw, 24px);
             border-top: 1px solid rgba(255, 255, 255, 0.1);
+            flex-wrap: wrap;
+            gap: clamp(10px, 2vw, 0);
         }
 
         .security-feature {
             text-align: center;
             color: #666;
-            font-size: 12px;
+            font-size: clamp(10px, 2.5vw, 12px);
+            flex: 1;
+            min-width: 70px;
         }
 
         .security-icon {
-            width: 32px;
-            height: 32px;
+            width: clamp(24px, 6vw, 32px);
+            height: clamp(24px, 6vw, 32px);
             background: rgba(247, 147, 26, 0.2);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 8px;
-            font-size: 14px;
+            margin: 0 auto clamp(4px, 2vw, 8px);
+            font-size: clamp(10px, 3vw, 14px);
         }
 
         .alert {
-            padding: 12px 16px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            font-size: 14px;
+            padding: clamp(8px, 2vw, 12px) clamp(12px, 3vw, 16px);
+            border-radius: clamp(6px, 1.5vw, 8px);
+            margin-bottom: clamp(16px, 4vw, 20px);
+            font-size: clamp(12px, 3vw, 14px);
         }
 
         .alert-success {
@@ -378,20 +387,103 @@
             background: linear-gradient(135deg, #ccc 0%, #999 100%);
         }
 
+        /* Mobile-specific adjustments */
         @media (max-width: 768px) {
-            .logo {
-                left: 20px;
-                top: 20px;
-                font-size: 20px;
+            body {
+                padding: 5px;
             }
             
             .register-container {
-                padding: 40px 30px;
-                margin: 80px 20px 20px;
+                margin: 70px auto 10px;
             }
             
-            .register-title {
-                font-size: 28px;
+            .checkbox-group {
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .custom-checkbox {
+                align-self: flex-start;
+                margin-top: 0;
+            }
+            
+            .security-features {
+                gap: 15px;
+            }
+            
+            .security-feature {
+                min-width: 60px;
+            }
+        }
+
+        /* Very small screens */
+        @media (max-width: 480px) {
+            .security-features {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .security-feature {
+                flex: none;
+            }
+            
+            .floating-coin {
+                display: none;
+            }
+        }
+
+        /* Large screens optimization */
+        @media (min-width: 1200px) {
+            .register-container {
+                max-width: 500px;
+            }
+        }
+
+        /* Landscape mobile orientation */
+        @media (max-height: 600px) and (orientation: landscape) {
+            body {
+                align-items: flex-start;
+                padding-top: 20px;
+            }
+            
+            .register-container {
+                margin: 20px auto;
+            }
+            
+            .logo {
+                position: relative;
+                top: auto;
+                left: auto;
+                margin-bottom: 20px;
+            }
+            
+            .background-glow {
+                display: none;
+            }
+        }
+
+        /* High DPI screens */
+        @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+            .form-input, .register-btn {
+                border-width: 1px;
+            }
+        }
+
+        /* Reduced motion accessibility */
+        @media (prefers-reduced-motion: reduce) {
+            .background-glow, .floating-coin {
+                animation: none;
+            }
+            
+            .form-input:focus, .register-btn:hover {
+                transform: none;
+            }
+        }
+
+        /* Dark mode enhancement for devices that support it */
+        @media (prefers-color-scheme: dark) {
+            .register-container {
+                background: rgba(30, 30, 30, 0.95);
             }
         }
     </style>
