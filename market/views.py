@@ -1523,3 +1523,19 @@ def api_user_stats(request):
     }
     
     return JsonResponse(stats)
+
+
+def get_current_crypto_price(market):
+    """Get current price for the market's crypto"""
+    try:
+        crypto_prices = CryptoPriceService.get_crypto_prices()
+        trading_pair = getattr(market, 'trading_pair', 'BTC/USDT')
+        
+        for symbol, data in crypto_prices.items():
+            if symbol.lower() in trading_pair.lower():
+                return data.get('price', 0)
+        
+        # Default prices if no real data
+        return Decimal('67432.50') if 'BTC' in trading_pair else Decimal('3421.80')
+    except:
+        return Decimal('67432.50')
