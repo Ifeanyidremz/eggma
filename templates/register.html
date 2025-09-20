@@ -77,18 +77,21 @@
         }
 
         .logo {
-            position: absolute;
-            top: 30px;
-            left: 30px;
-            font-size: 24px;
-            font-weight: 700;
-            background: linear-gradient(135deg, #f7931a 0%, #ffb84d 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            text-shadow: 0 0 30px rgba(247, 147, 26, 0.5);
-            z-index: 1000;
-            pointer-events: none;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            padding: 5px 0; 
+        }
+        
+        .logo img {
+            height: 100px;
+            width: auto;
+            transition: transform 0.3s ease;
+        }
+        
+        .logo:hover img {
+            transform: scale(1.05);
+            filter: brightness(1.1);
         }
 
         .register-container {
@@ -404,9 +407,9 @@
         <div class="floating-coin" style="left: 75%; animation-delay: 16s;">₿</div>
         <div class="floating-coin" style="left: 85%; animation-delay: 2s;">₿</div>
     </div>
-
-    <a href="{% url 'landing-page' %}" class="logo">EVGxchain</a>
-
+    <a href="{% url 'landing-page' %}" class="logo">
+        <img src="/static/evgchain-logo.png" alt="EVGxchain">
+    </a>
     <div class="register-container">
         <div class="register-header">
             <h1 class="register-title">Create Your Wallet</h1>
