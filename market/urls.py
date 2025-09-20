@@ -24,6 +24,8 @@ urlpatterns = [
     path('wallet/deposit/', views.wallet_deposit, name='wallet-deposit'),
     path('wallet/withdraw/', views.wallet_withdraw, name='wallet-withdraw'),
 
+    path('webhooks/coinremitter/', views.coinremitter_webhook, name='coinremitter_webhook'),
+
     path('api/crypto/<str:symbol>/ohlc/', views.api_crypto_ohlc, name='api-crypto-ohlc'),
     path('api/market/<str:market_id>/ohlc/', views.api_market_ohlc, name='api-market-ohlc'),
     path('api/market/<str:market_id>/', views.api_market_data, name='api-market-data'),
