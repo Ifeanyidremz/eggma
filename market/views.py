@@ -441,7 +441,7 @@ def userPortfolio(request):
 
 @login_required 
 def place_bet(request):
-    """Enhanced bet placement with predict-to-earn support"""
+    """Enhanced bet placement with predict-to-earn support (without model changes)"""
     if request.method != 'POST':
         return JsonResponse({'success': False, 'error': 'Invalid method'})
     
@@ -483,10 +483,11 @@ def place_bet(request):
         
         # Check if user has active predict-to-earn bet (limit one at a time)
         if bet_type == 'quick_predict':
+            # Use existing bet_type field - map quick_predict to 'quick'
             existing_predict_bet = Bet.objects.filter(
                 user=request.user,
                 market=market,
-                bet_type='quick_predict',
+                bet_type='quick',  # Use existing 'quick' type
                 status='active'
             ).exists()
             
@@ -516,6 +517,18 @@ def place_bet(request):
         
         potential_payout = amount * odds
         
+        # Calculate resolution time for predict-to-earn (store in description)
+        resolution_time = None
+        description_suffix = ""
+        if bet_type == 'quick_predict':
+            timeframe_seconds = {
+                '1m': 60,
+                '2m': 120,
+                '3m': 180
+            }
+            resolution_time = timezone.now() + timedelta(seconds=timeframe_seconds[timeframe])
+            description_suffix = f" (Predict-to-earn {timeframe}, resolves at {resolution_time.strftime('%H:%M:%S')})"
+        
         # Create bet within transaction
         with db_transaction.atomic():
             # Store old balance for transaction record
@@ -525,37 +538,17 @@ def place_bet(request):
             request.user.balance -= amount
             request.user.save(update_fields=['balance'])
             
-            # Calculate resolution time for predict-to-earn
-            resolution_time = None
-            if bet_type == 'quick_predict':
-                timeframe_seconds = {
-                    '1m': 60,
-                    '2m': 120,
-                    '3m': 180
-                }
-                resolution_time = timezone.now() + timedelta(seconds=timeframe_seconds[timeframe])
-            
-            # Create bet record with predict-to-earn specific fields
             bet = Bet.objects.create(
                 user=request.user,
                 market=market,
-                bet_type=bet_type,
+                bet_type='quick' if bet_type == 'quick_predict' else 'regular',  # Map to existing choices
                 outcome=outcome,
                 amount=amount,
                 odds_at_bet=odds,
                 potential_payout=potential_payout,
                 round_number=market.current_round,
                 round_start_price=market.round_start_price,
-                status='active',
-                # Predict-to-earn specific fields
-                timeframe=timeframe if bet_type == 'quick_predict' else None,
-                predict_resolution_time=resolution_time,
-                metadata={
-                    'bet_type': bet_type,
-                    'timeframe': timeframe,
-                    'created_price': str(get_current_crypto_price(market)),
-                    'is_predict_to_earn': bet_type == 'quick_predict'
-                }
+                status='active'
             )
             
             # Update market volume (for regular bets)
@@ -569,10 +562,9 @@ def place_bet(request):
                     market.flat_volume += amount
                 market.save()
             
-            # Create transaction record
+            # Create transaction record with predict-to-earn info in description
             description = f"{'Quick predict' if bet_type == 'quick_predict' else 'Bet'} placed: {outcome} on {market.title}"
-            if bet_type == 'quick_predict':
-                description += f" ({timeframe} timeframe)"
+            description += description_suffix
             
             Transaction.objects.create(
                 user=request.user,
@@ -583,7 +575,16 @@ def place_bet(request):
                 status='completed',
                 bet=bet,
                 market=market,
-                description=description
+                description=description,
+                # Store predict-to-earn data in metadata (Transaction already has this field)
+                metadata={
+                    'bet_type': bet_type,
+                    'timeframe': timeframe if bet_type == 'quick_predict' else None,
+                    'created_price': str(get_current_crypto_price(market)),
+                    'is_predict_to_earn': bet_type == 'quick_predict',
+                    'resolution_time': resolution_time.isoformat() if resolution_time else None,
+                    'predict_odds': str(odds) if bet_type == 'quick_predict' else None
+                }
             )
             
             # Award XP
@@ -594,6 +595,20 @@ def place_bet(request):
             
             request.user.xp += xp_earned
             request.user.save(update_fields=['xp'])
+            
+        
+            if bet_type == 'quick_predict':
+                from django.core.cache import cache
+                cache_key = f"predict_bet_{bet.id}_resolution"
+                cache.set(cache_key, {
+                    'bet_id': str(bet.id),
+                    'resolution_time': resolution_time.isoformat(),
+                    'timeframe': timeframe,
+                    'starting_price': str(get_current_crypto_price(market)),
+                    'outcome': outcome
+                }, timeout=60*60*24)  # Store for 24 hours
+                
+                logger.info(f"Stored predict-to-earn resolution info for bet {bet.id}")
         
         return JsonResponse({
             'success': True,
