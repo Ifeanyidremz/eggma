@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <div class="referral-header">
+        <h1>Referral Program</h1>
+        <p>Invite friends and earn rewards!</p>
+    </div>
+
+    <div class="referral-stats">
+        <div class="stat-card">
+            <div class="stat-icon">👥</div>
+            <div class="stat-value">{{ total_referrals }}</div>
+            <div class="stat-label">Total Referrals</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">💵</div>
+            <div class="stat-value">${{ total_earnings|floatformat:2 }}</div>
+            <div class="stat-label">Total Earnings</div>
+        </div>
+    </div>
+
+    <div class="referral-link-section">
+        <h2>Your Referral Link</h2>
+        <div class="referral-link-container">
+            <input type="text" id="referralLink" value="{{ referral_link }}" readonly class="form-input">
+            <button onclick="copyReferralLink()" class="btn-copy">📋 Copy</button>
+        </div>
+        <p class="referral-code">Your Code: <strong>{{ referral_code }}</strong></p>
+    </div>
+
+    <div class="referral-instructions">
+        <h3>How It Works</h3>
+        <ol>
+            <li>Share your referral link with friends</li>
+            <li>They sign up using your link and get ${{ settings.REFERRAL_SIGNUP_BONUS }}</li>
+            <li>You earn ${{ settings.REFERRAL_BONUS_AMOUNT }} when they complete registration</li>
+        </ol>
+    </div>
+
+    <div class="referral-history">
+        <h2>Your Referrals</h2>
+        <table class="referral-table">
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Joined</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for referral in referrals %}
+                <tr>
+                    <td>{{ referral.username }}</td>
+                    <td>{{ referral.date_joined|date:"M d, Y" }}</td>
+                    <td><span class="badge-success">Active</span></td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="3" class="text-center">No referrals yet. Start inviting friends!</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="earnings-history">
+        <h2>Earnings History</h2>
+        <table class="referral-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>User</th>
+                    <th>Type</th>
+                    <th>Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for transaction in referral_transactions %}
+                <tr>
+                    <td>{{ transaction.created_at|date:"M d, Y" }}</td>
+                    <td>{{ transaction.referred.username }}</td>
+                    <td>{{ transaction.get_transaction_type_display }}</td>
+                    <td class="text-success">${{ transaction.amount|floatformat:2 }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="text-center">No earnings yet</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function copyReferralLink() {
+    const linkInput = document.getElementById('referralLink');
+    linkInput.select();
+    document.execCommand('copy');
+    alert('Referral link copied to clipboard!');
+}
+</script>
+
+<style>
+.referral-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.referral-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 40px;
+}
+
+.referral-link-section {
+    background: rgba(45, 45, 45, 0.6);
+    padding: 30px;
+    border-radius: 15px;
+    margin-bottom: 30px;
+}
+
+.referral-link-container {
+    display: flex;
+    gap: 10px;
+    margin: 20px 0;
+}
+
+.btn-copy {
+    padding: 12px 24px;
+    background: #f7931a;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.referral-code {
+    text-align: center;
+    font-size: 18px;
+    color: #f7931a;
+}
+
+.referral-table {
+    width: 100%;
+    background: rgba(45, 45, 45, 0.6);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.referral-table th,
+.referral-table td {
+    padding: 15px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.referral-table th {
+    background: rgba(30, 30, 30, 0.8);
+    font-weight: 600;
+}
+</style>
+{% endblock %}
