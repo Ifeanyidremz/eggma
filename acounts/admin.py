@@ -36,3 +36,19 @@ class EmailVerificationTokenAdmin(admin.ModelAdmin):
         return obj.is_expired()
     is_expired.boolean = True
     is_expired.short_description = 'Expired'
+
+@admin.register(ReferralProfile)
+class ReferralProfileAdmin(admin.ModelAdmin):
+    list_display = ('user', 'referral_code', 'referred_by', 'total_referrals', 'total_earnings', 'created_at')
+    list_filter = ('created_at',)
+    search_fields = ('user__email', 'user__full_name', 'referral_code')
+    readonly_fields = ('referral_code', 'created_at', 'updated_at')
+    ordering = ('-total_referrals',)
+
+@admin.register(ReferralTransaction)
+class ReferralTransactionAdmin(admin.ModelAdmin):
+    list_display = ('referrer', 'referred', 'amount', 'transaction_type', 'created_at')
+    list_filter = ('transaction_type', 'created_at')
+    search_fields = ('referrer__email', 'referred__email')
+    readonly_fields = ('created_at',)
+    ordering = ('-created_at',)
