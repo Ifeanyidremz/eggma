@@ -1095,9 +1095,14 @@
                 <h2 class="section-title">🚀 Quick Actions</h2>
                 
                 <div class="wallet-actions">
-                    <button type="button" class="wallet-btn deposit" onclick="openDepositModal()">
-                        💳 Deposit Funds
-                    </button>
+                    <div class="wallet-actions">
+                        <button type="button" class="wallet-btn deposit" onclick="openCryptoDepositModal()">
+                            ₿ Deposit Crypto
+                        </button>
+                        <button type="button" class="wallet-btn" onclick="openTransferModal()" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white;">
+                            💸 Transfer Funds
+                        </button>
+                    </div>
                     <button type="button" class="wallet-btn withdraw" onclick="openWithdrawModal()">
                         💸 Withdraw USDT
                     </button>
@@ -1310,7 +1315,121 @@
             </form>
         </div>
     </div>
+    <div id="cryptoDepositModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 class="modal-title">₿ Deposit Cryptocurrency</h2>
+            <button class="close-btn" onclick="closeCryptoDepositModal()">×</button>
+        </div>
+        
+        <form id="cryptoDepositForm">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label">Amount (USD)</label>
+                <input type="number" id="cryptoDepositAmount" class="form-input" placeholder="Enter amount" min="5" step="0.01" required>
+                <div class="amount-presets">
+                    <button type="button" class="preset-btn" onclick="setCryptoDepositAmount(25)">$25</button>
+                    <button type="button" class="preset-btn" onclick="setCryptoDepositAmount(50)">$50</button>
+                    <button type="button" class="preset-btn" onclick="setCryptoDepositAmount(100)">$100</button>
+                    <button type="button" class="preset-btn" onclick="setCryptoDepositAmount(250)">$250</button>
+                </div>
+            </div>
 
+            <div class="form-group">
+                <label class="form-label">Pay With</label>
+                <select id="cryptoCurrency" class="form-select">
+                    <option value="btc">Bitcoin (BTC)</option>
+                    <option value="eth">Ethereum (ETH)</option>
+                    <option value="usdttrc20">Tether USDT (TRC20)</option>
+                    <option value="usdterc20">Tether USDT (ERC20)</option>
+                    <option value="ltc">Litecoin (LTC)</option>
+                    <option value="trx">Tron (TRX)</option>
+                </select>
+            </div>
+
+            <button type="submit" class="action-btn" id="cryptoDepositBtn">
+                <span class="loading-spinner" id="cryptoDepositSpinner"></span>
+                <span id="cryptoDepositBtnText">₿ Generate Payment Address</span>
+            </button>
+        </form>
+
+        <div id="paymentInstructions" style="display: none;">
+            <div class="payment-info" style="margin-top: 20px; padding: 20px; background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 12px;">
+                <h3 style="color: #22c55e; margin-bottom: 15px;">Payment Instructions</h3>
+                <p style="color: #ccc; margin-bottom: 15px;">Send exactly <strong id="payAmount" style="color: #f7931a;"></strong> to the address below:</p>
+                <div class="address-display" style="margin-bottom: 15px;">
+                    <div style="position: relative;">
+                        <input type="text" id="payAddress" readonly class="form-input" style="padding-right: 80px;">
+                        <button type="button" onclick="copyPayAddress()" class="paste-btn">📋 Copy</button>
+                    </div>
+                </div>
+                <div id="qrCode" style="text-align: center; margin: 20px 0;"></div>
+                <div style="background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 8px; padding: 12px; margin-top: 15px;">
+                    <p style="color: #fbbf24; font-size: 13px; margin: 0;">
+                        ⚠️ <strong>Warning:</strong> Send only <span id="payCurrency" style="font-weight: 600;"></span> to this address. Sending any other cryptocurrency will result in permanent loss of funds.
+                    </p>
+                </div>
+                <div style="color: #999; font-size: 13px; margin-top: 15px; text-align: center;">
+                    Your deposit will be credited automatically after network confirmation (usually 10-30 minutes).
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Wallet Transfer Modal -->
+<div id="transferModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 class="modal-title">💸 Transfer Funds</h2>
+            <button class="close-btn" onclick="closeTransferModal()">×</button>
+        </div>
+        
+        <form id="transferForm">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label">Recipient (Username or Email)</label>
+                <input type="text" id="transferRecipient" class="form-input" placeholder="Enter recipient username or email" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Amount</label>
+                <input type="number" id="transferAmount" class="form-input" placeholder="Enter amount" min="1" max="{{ user.balance }}" step="0.01" required>
+                <div class="amount-presets">
+                    <button type="button" class="preset-btn" onclick="setTransferAmount(10)">$10</button>
+                    <button type="button" class="preset-btn" onclick="setTransferAmount(25)">$25</button>
+                    <button type="button" class="preset-btn" onclick="setTransferAmount(50)">$50</button>
+                    <button type="button" class="preset-btn" onclick="setTransferAmount(100)">$100</button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Description (Optional)</label>
+                <input type="text" id="transferDescription" class="form-input" placeholder="What's this for?">
+            </div>
+
+            <div class="fee-info">
+                <div class="fee-row">
+                    <span class="fee-label">Transfer Amount:</span>
+                    <span class="fee-value" id="transferFeeAmount">$0.00</span>
+                </div>
+                <div class="fee-row">
+                    <span class="fee-label">Fee:</span>
+                    <span class="fee-value">$0.00</span>
+                </div>
+                <div class="fee-row">
+                    <span class="fee-label">Total:</span>
+                    <span class="fee-value" id="transferTotal">$0.00</span>
+                </div>
+            </div>
+
+            <button type="submit" class="action-btn" id="transferSubmitBtn">
+                <span class="loading-spinner" id="transferSpinner"></span>
+                <span id="transferBtnText">💸 Send Transfer</span>
+            </button>
+        </form>
+    </div>
+</div>
     <script>
         const stripe = Stripe('{{ STRIPE_PUBLISHABLE_KEY|default:"pk_test_51Rwr0cKDBFHQr38IUHFsZNoElLZBlNr8OlC9FLqSgW1zKMZ2P9s2Q4lOxurs474tMnbbKqyxzyjYNMSZQtdF2VOi00n1rdORUO" }}');
         let elements;
@@ -2220,6 +2339,150 @@
                 openWithdrawModal();
             }
         });
+        // Crypto Deposit Functions
+function openCryptoDepositModal() {
+    document.getElementById('cryptoDepositModal').classList.add('show');
+}
+
+function closeCryptoDepositModal() {
+    document.getElementById('cryptoDepositModal').classList.remove('show');
+    document.getElementById('paymentInstructions').style.display = 'none';
+}
+
+function setCryptoDepositAmount(amount) {
+    document.getElementById('cryptoDepositAmount').value = amount;
+    document.querySelectorAll('#cryptoDepositModal .preset-btn').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+}
+
+document.getElementById('cryptoDepositForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const amount = document.getElementById('cryptoDepositAmount').value;
+    const currency = document.getElementById('cryptoCurrency').value;
+    const btn = document.getElementById('cryptoDepositBtn');
+    const spinner = document.getElementById('cryptoDepositSpinner');
+    const btnText = document.getElementById('cryptoDepositBtnText');
+    
+    btn.disabled = true;
+    spinner.style.display = 'inline-block';
+    btnText.textContent = 'Generating...';
+    
+    try {
+        const response = await fetch('/market/wallet/deposit-crypto/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            },
+            body: JSON.stringify({
+                amount: amount,
+                pay_currency: currency
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Show payment instructions
+            document.getElementById('payAmount').textContent = data.pay_amount + ' ' + data.pay_currency.toUpperCase();
+            document.getElementById('payAddress').value = data.pay_address;
+            document.getElementById('payCurrency').textContent = data.pay_currency.toUpperCase();
+            document.getElementById('paymentInstructions').style.display = 'block';
+            
+            showSuccess('Payment address generated! Please send the exact amount shown.');
+        } else {
+            showError(data.error || 'Failed to generate payment address');
+        }
+    } catch (error) {
+        showError('Network error. Please try again.');
+    } finally {
+        btn.disabled = false;
+        spinner.style.display = 'none';
+        btnText.textContent = '₿ Generate Payment Address';
+    }
+});
+
+function copyPayAddress() {
+    const addressInput = document.getElementById('payAddress');
+    addressInput.select();
+    document.execCommand('copy');
+    showSuccess('Payment address copied to clipboard!');
+}
+
+// Wallet Transfer Functions
+function openTransferModal() {
+    document.getElementById('transferModal').classList.add('show');
+}
+
+function closeTransferModal() {
+    document.getElementById('transferModal').classList.remove('show');
+}
+
+function setTransferAmount(amount) {
+    document.getElementById('transferAmount').value = amount;
+    updateTransferFees();
+    document.querySelectorAll('#transferModal .preset-btn').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+}
+
+function updateTransferFees() {
+    const amount = parseFloat(document.getElementById('transferAmount').value) || 0;
+    document.getElementById('transferFeeAmount').textContent = `$${amount.toFixed(2)}`;
+    document.getElementById('transferTotal').textContent = `$${amount.toFixed(2)}`;
+}
+
+document.getElementById('transferAmount').addEventListener('input', updateTransferFees);
+
+document.getElementById('transferForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const recipient = document.getElementById('transferRecipient').value;
+    const amount = document.getElementById('transferAmount').value;
+    const description = document.getElementById('transferDescription').value;
+    const btn = document.getElementById('transferSubmitBtn');
+    const spinner = document.getElementById('transferSpinner');
+    const btnText = document.getElementById('transferBtnText');
+    
+    btn.disabled = true;
+    spinner.style.display = 'inline-block';
+    btnText.textContent = 'Processing...';
+    
+    try {
+        const response = await fetch('/market/wallet/transfer/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            },
+            body: JSON.stringify({
+                recipient: recipient,
+                amount: amount,
+                description: description
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showSuccess(data.message);
+            updateBalanceDisplay(data.sender_new_balance);
+            closeTransferModal();
+            setTimeout(() => location.reload(), 2000);
+        } else {
+            showError(data.error || 'Transfer failed');
+        }
+    } catch (error) {
+        showError('Network error. Please try again.');
+    } finally {
+        btn.disabled = false;
+        spinner.style.display = 'none';
+        btnText.textContent = '💸 Send Transfer';
+    }
+});
+
+// Update the wallet actions section buttons
+document.querySelector('.wallet-btn.deposit').onclick = openCryptoDepositModal;
     </script>
 </body>
 </html>
