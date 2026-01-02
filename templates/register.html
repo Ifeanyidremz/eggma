@@ -534,6 +534,12 @@
                 <div class="error-message" id="email-error"></div>
             </div>
 
+            <div class="form-group" id="referralGroup" style="display: none;">
+                <label class="form-label" for="referralCode">Referral Code (Optional)</label>
+                <input type="text" id="referralCode" name="referral_code" class="form-input" placeholder="Enter referral code if you have one">
+                <div class="error-message" id="referralCode-error"></div>
+            </div>
+
             <div class="form-group">
                 <label class="form-label" for="password">Password</label>
                 <input type="password" id="password" name="password1" class="form-input" placeholder="Create a strong password" required>
@@ -601,6 +607,17 @@
         const errorContainer = document.getElementById('error-container');
 
         let termsAccepted = false;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check for referral code in URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const refCode = urlParams.get('ref');
+            
+            if (refCode) {
+                document.getElementById('referralGroup').style.display = 'block';
+                document.getElementById('referralCode').value = refCode;
+            }
+        });
 
         // Clear previous error messages
         function clearErrors() {
@@ -714,6 +731,7 @@
                 email: document.getElementById('email').value.trim(),
                 password: document.getElementById('password').value,
                 confirmPassword: document.getElementById('confirmPassword').value,
+                referralCode: document.getElementById('referralCode').value.trim()
                 termsAccepted: termsAccepted
             };
 
