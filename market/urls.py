@@ -34,5 +34,11 @@ urlpatterns = [
 
     path('stripe-webhook/', views.stripe_webhook, name='stripe-webhook'),
 
+    path('wallet/deposit-crypto/', views.crypto_deposit, name='crypto-deposit'),
+    path('wallet/withdraw-crypto/', views.crypto_withdraw, name='crypto-withdraw'),
+    path('wallet/transfer/', views.wallet_transfer, name='wallet-transfer'),
+    path('wallet/nowpayments-ipn/', views.nowpayments_ipn, name='nowpayments-ipn'),
+    path('referral/dashboard/', views.referral_dashboard, name='referral-dashboard'),
+
 
 ]
