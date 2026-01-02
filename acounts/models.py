@@ -1,6 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 import uuid
+import random
 from django.utils import timezone
 from decimal import Decimal
 from django.core.validators import MinValueValidator
@@ -99,3 +100,45 @@ class EmailVerificationToken(models.Model):
     
     def __str__(self):
         return f"Token for {self.user.email}"
+
+def generate_referral_code():
+    """Generate a unique 8-character referral code"""
+    chars = string.ascii_uppercase + string.digits
+    while True:
+        code = ''.join(random.choices(chars, k=8))
+        if not ReferralProfile.objects.filter(referral_code=code).exists():
+            return code
+
+class ReferralProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='referral_profile')
+    referral_code = models.CharField(max_length=20, unique=True, default=generate_referral_code)
+    referred_by = models.ForeignKey(
+        User, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name='referrals'
+    )
+    total_referrals = models.IntegerField(default=0)
+    total_earnings = models.DecimalField(max_digits=20, decimal_places=6, default=Decimal('0.000000'))
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.referral_code}"
+
+class ReferralTransaction(models.Model):
+    referrer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='referrer_transactions')
+    referred = models.ForeignKey(User, on_delete=models.CASCADE, related_name='referred_transactions')
+    amount = models.DecimalField(max_digits=20, decimal_places=6)
+    transaction_type = models.CharField(max_length=20, choices=[
+        ('signup', 'Signup Bonus'),
+        ('commission', 'Referral Commission')
+    ])
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.referrer.username} -> {self.referred.username}: ${self.amount}"
