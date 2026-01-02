@@ -1,0 +1,98 @@
+from django.db import transaction as db_transaction
+from django.contrib.auth import get_user_model
+from predict.models import Transaction
+from decimal import Decimal
+import logging
+
+User = get_user_model()
+logger = logging.getLogger(__name__)
+
+class WalletTransferService:
+    
+    @staticmethod
+    def transfer_funds(sender, recipient_identifier, amount, description=''):
+        """
+        Transfer funds from sender to recipient
+        recipient_identifier can be username or email
+        """
+        try:
+            amount = Decimal(str(amount))
+            
+            # Validate amount
+            if amount <= 0:
+                return {'success': False, 'error': 'Invalid amount'}
+            
+            # Check sender balance
+            if sender.balance < amount:
+                return {'success': False, 'error': 'Insufficient balance'}
+            
+            # Find recipient
+            try:
+                recipient = User.objects.get(
+                    models.Q(username=recipient_identifier) | 
+                    models.Q(email=recipient_identifier)
+                )
+            except User.DoesNotExist:
+                return {'success': False, 'error': 'Recipient not found'}
+            
+            # Prevent self-transfer
+            if sender.id == recipient.id:
+                return {'success': False, 'error': 'Cannot transfer to yourself'}
+            
+            # Perform transfer in atomic transaction
+            with db_transaction.atomic():
+                # Lock both accounts
+                sender_locked = User.objects.select_for_update().get(id=sender.id)
+                recipient_locked = User.objects.select_for_update().get(id=recipient.id)
+                
+                sender_old_balance = sender_locked.balance
+                recipient_old_balance = recipient_locked.balance
+                
+                # Update balances
+                sender_locked.balance -= amount
+                recipient_locked.balance += amount
+                
+                sender_locked.save()
+                recipient_locked.save()
+                
+                # Create transaction records
+                Transaction.objects.create(
+                    user=sender_locked,
+                    transaction_type='transfer',
+                    amount=-amount,
+                    balance_before=sender_old_balance,
+                    balance_after=sender_locked.balance,
+                    status='completed',
+                    description=f'Transfer to {recipient.username}: {description}',
+                    metadata={
+                        'recipient_id': recipient.id,
+                        'recipient_username': recipient.username
+                    }
+                )
+                
+                Transaction.objects.create(
+                    user=recipient_locked,
+                    transaction_type='transfer',
+                    amount=amount,
+                    balance_before=recipient_old_balance,
+                    balance_after=recipient_locked.balance,
+                    status='completed',
+                    description=f'Transfer from {sender.username}: {description}',
+                    metadata={
+                        'sender_id': sender.id,
+                        'sender_username': sender.username
+                    }
+                )
+                
+                logger.info(f"Transfer successful: {sender.username} -> {recipient.username}: ${amount}")
+                
+                return {
+                    'success': True,
+                    'message': f'Successfully transferred ${amount} to {recipient.username}',
+                    'sender_new_balance': float(sender_locked.balance),
+                    'recipient_username': recipient.username
+                }
+                
+        except Exception as e:
+            logger.error(f"Transfer error: {str(e)}")
+            return {'success': False, 'error': str(e)}
