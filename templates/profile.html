@@ -1096,18 +1096,17 @@
                 <h2 class="section-title">🚀 Quick Actions</h2>
                 
                 <div class="wallet-actions">
-                    <div class="wallet-actions">
-                        <button type="button" class="wallet-btn deposit" onclick="openCryptoDepositModal()">
-                            ₿ Deposit Crypto
-                        </button>
-                        <button type="button" class="wallet-btn" onclick="openTransferModal()" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white;">
-                            💸 Transfer Funds
-                        </button>
-                    </div>
-                    <button type="button" class="wallet-btn withdraw" onclick="openWithdrawModal()">
-                        💸 Withdraw USDT
+                    <button type="button" class="wallet-btn deposit" onclick="openCryptoDepositModal()">
+                        ₿ Deposit Crypto
+                    </button>
+                    <button type="button" class="wallet-btn" onclick="openTransferModal()" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white;">
+                        💸 Transfer Funds
                     </button>
                 </div>
+
+                <button type="button" class="wallet-btn withdraw" onclick="openWithdrawModal()" style="width: 100%; margin-top: 10px;">
+                    💸 Withdraw USDT
+                </button>
 
                 <a href="{% url 'market-data' %}" class="action-btn">
                     🎯 Browse Markets

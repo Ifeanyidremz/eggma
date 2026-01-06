@@ -592,290 +592,325 @@
     </div>
 
     <script>
-        // Get CSRF token
-        function getCSRFToken() {
-            return document.querySelector('[name=csrfmiddlewaretoken]').value;
-        }
+    // Get CSRF token
+    function getCSRFToken() {
+        return document.querySelector('[name=csrfmiddlewaretoken]').value;
+    }
 
-        // Form validation and interaction
-        const form = document.getElementById('registerForm');
-        const termsCheckbox = document.getElementById('termsCheckbox');
-        const registerButton = document.getElementById('registerButton');
-        const passwordInput = document.getElementById('password');
-        const confirmPasswordInput = document.getElementById('confirmPassword');
-        const strengthBars = document.querySelectorAll('.strength-bar');
-        const errorContainer = document.getElementById('error-container');
+    // Form validation and interaction
+    const form = document.getElementById('registerForm');
+    const termsCheckbox = document.getElementById('termsCheckbox');
+    const registerButton = document.getElementById('registerButton');
+    const passwordInput = document.getElementById('password');
+    const confirmPasswordInput = document.getElementById('confirmPassword');
+    const strengthBars = document.querySelectorAll('.strength-bar');
+    const errorContainer = document.getElementById('error-container');
 
-        let termsAccepted = false;
+    let termsAccepted = false;
 
-        document.addEventListener('DOMContentLoaded', function() {
-            // Check for referral code in URL
-            const urlParams = new URLSearchParams(window.location.search);
-            const refCode = urlParams.get('ref');
+    document.addEventListener('DOMContentLoaded', function() {
+        // Check for referral code in URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const refCode = urlParams.get('ref');
+        
+        if (refCode) {
+            const referralGroup = document.getElementById('referralGroup');
+            const referralInput = document.getElementById('referralCode');
             
-            if (refCode) {
-                document.getElementById('referralGroup').style.display = 'block';
-                document.getElementById('referralCode').value = refCode;
-            }
-        });
-
-        // Clear previous error messages
-        function clearErrors() {
-            const errorMessages = document.querySelectorAll('.error-message');
-            const inputs = document.querySelectorAll('.form-input');
+            referralGroup.style.display = 'block';
+            referralInput.value = refCode;
             
-            errorMessages.forEach(error => error.textContent = '');
-            inputs.forEach(input => input.classList.remove('error'));
-            errorContainer.innerHTML = '';
-        }
-
-        // Display error message
-        function showError(fieldId, message) {
-            const errorElement = document.getElementById(fieldId + '-error');
-            const inputElement = document.getElementById(fieldId);
+            // Highlight that referral code is applied
+            referralGroup.style.background = 'rgba(34, 197, 94, 0.05)';
+            referralGroup.style.border = '1px solid rgba(34, 197, 94, 0.2)';
+            referralGroup.style.padding = '15px';
+            referralGroup.style.borderRadius = '10px';
+            referralInput.style.borderColor = '#22c55e';
             
-            if (errorElement) {
-                errorElement.textContent = message;
-            }
-            if (inputElement) {
-                inputElement.classList.add('error');
-            }
+            // Show success message
+            const referralLabel = referralGroup.querySelector('.form-label');
+            referralLabel.innerHTML = `
+                🎁 Referral Code Applied! 
+                <span style="color: #22c55e; font-size: 12px; margin-left: 8px;">
+                    You'll get $5 bonus on signup
+                </span>
+            `;
+        }
+    });
+
+    // Clear previous error messages
+    function clearErrors() {
+        const errorMessages = document.querySelectorAll('.error-message');
+        const inputs = document.querySelectorAll('.form-input');
+        
+        errorMessages.forEach(error => error.textContent = '');
+        inputs.forEach(input => input.classList.remove('error'));
+        errorContainer.innerHTML = '';
+    }
+
+    // Display error message
+    function showError(fieldId, message) {
+        const errorElement = document.getElementById(fieldId + '-error');
+        const inputElement = document.getElementById(fieldId);
+        
+        if (errorElement) {
+            errorElement.textContent = message;
+        }
+        if (inputElement) {
+            inputElement.classList.add('error');
+        }
+    }
+
+    // Display general error
+    function showGeneralError(message) {
+        errorContainer.innerHTML = `<div class="alert alert-error">${message}</div>`;
+        // Scroll to error
+        errorContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    // Display success message
+    function showSuccess(message) {
+        errorContainer.innerHTML = `<div class="alert alert-success">${message}</div>`;
+    }
+
+    // Terms checkbox toggle
+    termsCheckbox.addEventListener('click', function() {
+        termsAccepted = !termsAccepted;
+        this.classList.toggle('checked', termsAccepted);
+        updateRegisterButton();
+    });
+
+    // Password strength indicator
+    passwordInput.addEventListener('input', function() {
+        const password = this.value;
+        const strength = calculatePasswordStrength(password);
+        updateStrengthBars(strength);
+        updateRegisterButton();
+    });
+
+    // Confirm password validation
+    confirmPasswordInput.addEventListener('input', function() {
+        updateRegisterButton();
+    });
+
+    // Email validation
+    document.getElementById('email').addEventListener('input', function() {
+        updateRegisterButton();
+    });
+
+    // Full name validation
+    document.getElementById('fullName').addEventListener('input', function() {
+        updateRegisterButton();
+    });
+
+    function calculatePasswordStrength(password) {
+        let strength = 0;
+        
+        if (password.length >= 8) strength++;
+        if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
+        if (/\d/.test(password)) strength++;
+        if (/[^a-zA-Z0-9]/.test(password)) strength++;
+        
+        return strength;
+    }
+
+    function updateStrengthBars(strength) {
+        strengthBars.forEach((bar, index) => {
+            bar.classList.toggle('active', index < strength);
+        });
+    }
+
+    function updateRegisterButton() {
+        const fullName = document.getElementById('fullName').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const password = passwordInput.value;
+        const confirmPassword = confirmPasswordInput.value;
+        const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        const passwordStrength = calculatePasswordStrength(password);
+        const passwordsMatch = password === confirmPassword && password.length > 0;
+
+        const isValid = fullName.length > 0 && 
+                       emailValid && 
+                       passwordStrength >= 2 && 
+                       passwordsMatch && 
+                       termsAccepted;
+
+        registerButton.disabled = !isValid;
+    }
+
+    // Form submission
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        handleRegistration();
+    });
+
+    function handleRegistration() {
+        clearErrors();
+        
+        const formData = {
+            fullName: document.getElementById('fullName').value.trim(),
+            email: document.getElementById('email').value.trim(),
+            password: document.getElementById('password').value,
+            confirmPassword: document.getElementById('confirmPassword').value,
+            referralCode: document.getElementById('referralCode').value.trim(),  // ✅ COMMA ADDED
+            termsAccepted: termsAccepted
+        };
+
+        // Client-side validation
+        if (!formData.termsAccepted) {
+            showGeneralError('Please accept the terms and conditions');
+            return;
         }
 
-        // Display general error
-        function showGeneralError(message) {
-            errorContainer.innerHTML = `<div class="alert alert-error">${message}</div>`;
+        if (formData.password !== formData.confirmPassword) {
+            showError('confirmPassword', 'Passwords do not match');
+            return;
         }
 
-        // Display success message
-        function showSuccess(message) {
-            errorContainer.innerHTML = `<div class="alert alert-success">${message}</div>`;
-        }
+        // Show loading state
+        const container = document.querySelector('.register-container');
+        const button = registerButton;
+        const originalText = button.textContent;
+        
+        container.classList.add('loading');
+        button.textContent = 'Creating Account...';
+        button.disabled = true;
 
-        // Terms checkbox toggle
-        termsCheckbox.addEventListener('click', function() {
-            termsAccepted = !termsAccepted;
-            this.classList.toggle('checked', termsAccepted);
-            updateRegisterButton();
-        });
-
-        // Password strength indicator
-        passwordInput.addEventListener('input', function() {
-            const password = this.value;
-            const strength = calculatePasswordStrength(password);
-            updateStrengthBars(strength);
-            updateRegisterButton();
-        });
-
-        // Confirm password validation
-        confirmPasswordInput.addEventListener('input', function() {
-            updateRegisterButton();
-        });
-
-        // Email validation
-        document.getElementById('email').addEventListener('input', function() {
-            updateRegisterButton();
-        });
-
-        // Full name validation
-        document.getElementById('fullName').addEventListener('input', function() {
-            updateRegisterButton();
-        });
-
-        function calculatePasswordStrength(password) {
-            let strength = 0;
+        // Send AJAX request
+        fetch('{% url "ajax-register" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            container.classList.remove('loading');
             
-            if (password.length >= 8) strength++;
-            if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
-            if (/\d/.test(password)) strength++;
-            if (/[^a-zA-Z0-9]/.test(password)) strength++;
-            
-            return strength;
-        }
-
-        function updateStrengthBars(strength) {
-            strengthBars.forEach((bar, index) => {
-                bar.classList.toggle('active', index < strength);
-            });
-        }
-
-        function updateRegisterButton() {
-            const fullName = document.getElementById('fullName').value.trim();
-            const email = document.getElementById('email').value.trim();
-            const password = passwordInput.value;
-            const confirmPassword = confirmPasswordInput.value;
-            const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-            const passwordStrength = calculatePasswordStrength(password);
-            const passwordsMatch = password === confirmPassword && password.length > 0;
-
-            const isValid = fullName.length > 0 && 
-                           emailValid && 
-                           passwordStrength >= 2 && 
-                           passwordsMatch && 
-                           termsAccepted;
-
-            registerButton.disabled = !isValid;
-        }
-
-        // Form submission
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-            handleRegistration();
-        });
-
-        function handleRegistration() {
-            clearErrors();
-            
-            const formData = {
-                fullName: document.getElementById('fullName').value.trim(),
-                email: document.getElementById('email').value.trim(),
-                password: document.getElementById('password').value,
-                confirmPassword: document.getElementById('confirmPassword').value,
-                referralCode: document.getElementById('referralCode').value.trim()
-                termsAccepted: termsAccepted
-            };
-
-            // Show loading state
-            const container = document.querySelector('.register-container');
-            const button = registerButton;
-            const originalText = button.textContent;
-            
-            container.classList.add('loading');
-            button.textContent = 'Creating...';
-
-            // Send AJAX request
-            fetch('{% url "ajax-register" %}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCSRFToken()
-                },
-                body: JSON.stringify(formData)
-            })
-            .then(response => response.json())
-            .then(data => {
-                container.classList.remove('loading');
+            if (data.success) {
+                button.textContent = 'Welcome! 🎉';
+                button.style.background = 'linear-gradient(135deg, #4ade80 0%, #22c55e 100%)';
                 
-                if (data.success) {
-                    button.textContent = 'Welcome! 🎉';
-                    button.style.background = 'linear-gradient(135deg, #4ade80 0%, #22c55e 100%)';
-                    
-                    showSuccess(data.message);
-                    createSuccessAnimation();
-                    
-                    setTimeout(() => {
-                        if (data.redirect_url) {
-                            window.location.href = data.redirect_url;
-                        }
-                    }, 2000);
-                } else {
-                    button.textContent = originalText;
-                    showGeneralError(data.message);
-                }
-            })
-            .catch(error => {
-                container.classList.remove('loading');
-                button.textContent = originalText;
-                showGeneralError('Network error. Please check your connection and try again.');
-                console.error('Registration error:', error);
-            });
-        }
-
-        function createSuccessAnimation() {
-            const container = document.querySelector('.register-container');
-            for (let i = 0; i < 12; i++) {
-                const coin = document.createElement('div');
-                coin.style.position = 'absolute';
-                coin.style.width = '30px';
-                coin.style.height = '30px';
-                coin.style.background = 'linear-gradient(135deg, #f7931a 0%, #ffb84d 100%)';
-                coin.style.borderRadius = '50%';
-                coin.style.display = 'flex';
-                coin.style.alignItems = 'center';
-                coin.style.justifyContent = 'center';
-                coin.style.color = 'white';
-                coin.style.fontWeight = 'bold';
-                coin.style.fontSize = '14px';
-                coin.textContent = '₿';
-                coin.style.left = '50%';
-                coin.style.top = '50%';
-                coin.style.transform = 'translate(-50%, -50%)';
-                coin.style.zIndex = '1000';
-                coin.style.pointerEvents = 'none';
+                showSuccess(data.message);
+                createSuccessAnimation();
                 
-                const angle = (i / 12) * 360;
-                const distance = 100 + Math.random() * 50;
-                
-                coin.style.animation = `successBurst${i} 1.5s ease-out forwards`;
-                
-                const style = document.createElement('style');
-                style.textContent = `
-                    @keyframes successBurst${i} {
-                        0% { 
-                            transform: translate(-50%, -50%) scale(1) rotate(0deg); 
-                            opacity: 1; 
-                        }
-                        100% { 
-                            transform: translate(-50%, -50%) 
-                                      translateX(${Math.cos(angle * Math.PI / 180) * distance}px)
-                                      translateY(${Math.sin(angle * Math.PI / 180) * distance}px)
-                                      scale(0.3) rotate(720deg); 
-                            opacity: 0; 
-                        }
+                setTimeout(() => {
+                    if (data.redirect_url) {
+                        window.location.href = data.redirect_url;
+                    } else {
+                        window.location.href = '/email-verification-sent/';
                     }
-                `;
-                document.head.appendChild(style);
-                
-                container.appendChild(coin);
-                
-                setTimeout(() => {
-                    coin.remove();
-                    style.remove();
-                }, 1500);
+                }, 2000);
+            } else {
+                button.textContent = originalText;
+                button.disabled = false;
+                showGeneralError(data.message || 'Registration failed. Please try again.');
             }
-        }
+        })
+        .catch(error => {
+            container.classList.remove('loading');
+            button.textContent = originalText;
+            button.disabled = false;
+            showGeneralError('Network error. Please check your connection and try again.');
+            console.error('Registration error:', error);
+        });
+    }
 
-        // Add random floating coins periodically
-        setInterval(() => {
-            if (Math.random() < 0.2) {
-                const container = document.querySelector('.floating-coins');
-                const coin = document.createElement('div');
-                coin.className = 'floating-coin';
-                coin.textContent = '₿';
-                coin.style.left = Math.random() * 100 + '%';
-                coin.style.animationDelay = '0s';
-                coin.style.animationDuration = (15 + Math.random() * 10) + 's';
-                container.appendChild(coin);
-                
-                setTimeout(() => {
-                    coin.remove();
-                }, 25000);
-            }
-        }, 3000);
-
-        // Input focus animations
-        document.querySelectorAll('.form-input').forEach(input => {
-            input.addEventListener('focus', function() {
-                this.parentElement.style.transform = 'translateY(-2px)';
-            });
+    function createSuccessAnimation() {
+        const container = document.querySelector('.register-container');
+        for (let i = 0; i < 12; i++) {
+            const coin = document.createElement('div');
+            coin.style.position = 'absolute';
+            coin.style.width = '30px';
+            coin.style.height = '30px';
+            coin.style.background = 'linear-gradient(135deg, #f7931a 0%, #ffb84d 100%)';
+            coin.style.borderRadius = '50%';
+            coin.style.display = 'flex';
+            coin.style.alignItems = 'center';
+            coin.style.justifyContent = 'center';
+            coin.style.color = 'white';
+            coin.style.fontWeight = 'bold';
+            coin.style.fontSize = '14px';
+            coin.textContent = '₿';
+            coin.style.left = '50%';
+            coin.style.top = '50%';
+            coin.style.transform = 'translate(-50%, -50%)';
+            coin.style.zIndex = '1000';
+            coin.style.pointerEvents = 'none';
             
-            input.addEventListener('blur', function() {
-                this.parentElement.style.transform = 'translateY(0)';
-            });
-        });
+            const angle = (i / 12) * 360;
+            const distance = 100 + Math.random() * 50;
+            
+            coin.style.animation = `successBurst${i} 1.5s ease-out forwards`;
+            
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes successBurst${i} {
+                    0% { 
+                        transform: translate(-50%, -50%) scale(1) rotate(0deg); 
+                        opacity: 1; 
+                    }
+                    100% { 
+                        transform: translate(-50%, -50%) 
+                                  translateX(${Math.cos(angle * Math.PI / 180) * distance}px)
+                                  translateY(${Math.sin(angle * Math.PI / 180) * distance}px)
+                                  scale(0.3) rotate(720deg); 
+                        opacity: 0; 
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            container.appendChild(coin);
+            
+            setTimeout(() => {
+                coin.remove();
+                style.remove();
+            }, 1500);
+        }
+    }
 
-        // Terms and Privacy links (you can implement modals or redirect to separate pages)
-        document.getElementById('termsLink').addEventListener('click', function(e) {
-            e.preventDefault();
-            // Implement terms modal or redirect
-            alert('Terms of Service would be displayed here');
-        });
+    // Add random floating coins periodically
+    setInterval(() => {
+        if (Math.random() < 0.2) {
+            const container = document.querySelector('.floating-coins');
+            const coin = document.createElement('div');
+            coin.className = 'floating-coin';
+            coin.textContent = '₿';
+            coin.style.left = Math.random() * 100 + '%';
+            coin.style.animationDelay = '0s';
+            coin.style.animationDuration = (15 + Math.random() * 10) + 's';
+            container.appendChild(coin);
+            
+            setTimeout(() => {
+                coin.remove();
+            }, 25000);
+        }
+    }, 3000);
 
-        document.getElementById('privacyLink').addEventListener('click', function(e) {
-            e.preventDefault();
-            // Implement privacy modal or redirect
-            alert('Privacy Policy would be displayed here');
+    // Input focus animations
+    document.querySelectorAll('.form-input').forEach(input => {
+        input.addEventListener('focus', function() {
+            this.parentElement.style.transform = 'translateY(-2px)';
         });
-    </script>
+        
+        input.addEventListener('blur', function() {
+            this.parentElement.style.transform = 'translateY(0)';
+        });
+    });
+
+    // Terms and Privacy links
+    document.getElementById('termsLink').addEventListener('click', function(e) {
+        e.preventDefault();
+        alert('Terms of Service would be displayed here');
+    });
+
+    document.getElementById('privacyLink').addEventListener('click', function(e) {
+        e.preventDefault();
+        alert('Privacy Policy would be displayed here');
+    });
+</script>
 </body>
 </html>

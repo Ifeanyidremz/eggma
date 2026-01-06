@@ -21,8 +21,8 @@ urlpatterns = [
     path('api/user-stats/', views.api_user_stats, name='api-user-stats'),
     
     # Wallet management
-    # path('wallet/deposit/', views.wallet_deposit, name='wallet-deposit'),
-    # path('wallet/withdraw/', views.wallet_withdraw, name='wallet-withdraw'),
+    path('wallet/deposit/', views.wallet_deposit, name='wallet-deposit'),
+    path('wallet/withdraw/', views.wallet_withdraw, name='wallet-withdraw'),
 
     # path('webhooks/coinremitter/', views.coinremitter_webhook, name='coinremitter_webhook'),
 
@@ -34,10 +34,10 @@ urlpatterns = [
 
     path('stripe-webhook/', views.stripe_webhook, name='stripe-webhook'),
 
-    # path('wallet/deposit-crypto/', views.crypto_deposit, name='crypto-deposit'),
-    # path('wallet/withdraw-crypto/', views.crypto_withdraw, name='crypto-withdraw'),
-    # path('wallet/transfer/', views.wallet_transfer, name='wallet-transfer'),
-    # path('wallet/nowpayments-ipn/', views.nowpayments_ipn, name='nowpayments-ipn'),
+    path('wallet/deposit-crypto/', views.crypto_deposit, name='crypto-deposit'),
+    path('wallet/withdraw-crypto/', views.crypto_withdraw, name='crypto-withdraw'),
+    path('wallet/transfer/', views.wallet_transfer, name='wallet-transfer'),
+    path('wallet/nowpayments-ipn/', views.nowpayments_ipn, name='nowpayments-ipn'),
     path('referral/dashboard/', views.referral_dashboard, name='referral-dashboard'),
 
 

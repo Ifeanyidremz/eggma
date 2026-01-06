@@ -3,8 +3,8 @@ from django.contrib.auth import get_user_model
 from predict.models import Transaction
 from decimal import Decimal
 import logging
-
-User = get_user_model()
+from django.db import models
+from acounts.models import CustomUser
 logger = logging.getLogger(__name__)
 
 class WalletTransferService:
@@ -28,11 +28,11 @@ class WalletTransferService:
             
             # Find recipient
             try:
-                recipient = User.objects.get(
+                recipient = CustomUser.objects.get(
                     models.Q(username=recipient_identifier) | 
                     models.Q(email=recipient_identifier)
                 )
-            except User.DoesNotExist:
+            except CustomUser.DoesNotExist:
                 return {'success': False, 'error': 'Recipient not found'}
             
             # Prevent self-transfer
@@ -42,8 +42,8 @@ class WalletTransferService:
             # Perform transfer in atomic transaction
             with db_transaction.atomic():
                 # Lock both accounts
-                sender_locked = User.objects.select_for_update().get(id=sender.id)
-                recipient_locked = User.objects.select_for_update().get(id=recipient.id)
+                sender_locked = CustomUser.objects.select_for_update().get(id=sender.id)
+                recipient_locked = CustomUser.objects.select_for_update().get(id=recipient.id)
                 
                 sender_old_balance = sender_locked.balance
                 recipient_old_balance = recipient_locked.balance

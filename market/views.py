@@ -20,6 +20,8 @@ from django.views.decorators.csrf import csrf_protect
 from .utils import *
 from predict.models import Bet, Transaction, UserStats
 from django.db import transaction as db_transaction
+from .nowpayment_service import NowPaymentsService
+from .wallet_service import WalletTransferService
 import logging
 import traceback
 from dotenv import load_dotenv
@@ -1573,3 +1575,259 @@ def referral_dashboard(request):
     }
     
     return render(request, 'referral_dashboard.html', context)
+
+
+
+
+@login_required
+@csrf_protect
+def crypto_deposit(request):
+    """Handle crypto deposits via NowPayments"""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Invalid method'})
+    
+    try:
+        data = json.loads(request.body)
+        amount = Decimal(str(data.get('amount', 0)))
+        pay_currency = data.get('pay_currency', 'btc').lower()
+        
+        # Validation
+        if amount < Decimal('5.00'):
+            return JsonResponse({'success': False, 'error': 'Minimum deposit is $5.00'})
+        
+        # Create NowPayments payment
+        nowpayments = NowPaymentsService()
+        ipn_url = request.build_absolute_uri('/market/wallet/nowpayments-ipn/')
+        
+        payment_result = nowpayments.create_payment(
+            price_amount=amount,
+            price_currency='usd',
+            pay_currency=pay_currency,
+            order_id=f"deposit_{request.user.id}_{int(timezone.now().timestamp())}",
+            ipn_callback_url=ipn_url
+        )
+        
+        # Create pending transaction
+        with db_transaction.atomic():
+            transaction = Transaction.objects.create(
+                user=request.user,
+                transaction_type='deposit',
+                amount=amount,
+                balance_before=request.user.balance,
+                balance_after=request.user.balance,
+                status='pending',
+                description=f'Crypto deposit via NowPayments - {pay_currency.upper()}',
+                metadata={
+                    'payment_id': payment_result.get('payment_id'),
+                    'pay_address': payment_result.get('pay_address'),
+                    'pay_amount': payment_result.get('pay_amount'),
+                    'pay_currency': pay_currency
+                }
+            )
+        
+        return JsonResponse({
+            'success': True,
+            'payment_id': payment_result.get('payment_id'),
+            'pay_address': payment_result.get('pay_address'),
+            'pay_amount': payment_result.get('pay_amount'),
+            'pay_currency': pay_currency.upper(),
+            'transaction_id': str(transaction.id)
+        })
+        
+    except Exception as e:
+        logger.error(f"Crypto deposit error: {str(e)}")
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
+@login_required
+@csrf_protect
+def crypto_withdraw(request):
+    """Handle crypto withdrawals via NowPayments"""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Invalid method'})
+    
+    try:
+        data = json.loads(request.body)
+        amount = Decimal(str(data.get('amount', 0)))
+        address = data.get('address', '').strip()
+        currency = data.get('currency', 'usdt').lower()
+        
+        # Validation
+        if amount < Decimal('10.00'):
+            return JsonResponse({'success': False, 'error': 'Minimum withdrawal is $10.00'})
+        
+        if request.user.balance < amount:
+            return JsonResponse({'success': False, 'error': 'Insufficient balance'})
+        
+        if not address:
+            return JsonResponse({'success': False, 'error': 'Wallet address required'})
+        
+        # Calculate fees (2% + $1)
+        platform_fee = amount * Decimal('0.02')
+        network_fee = Decimal('1.00')
+        total_fees = platform_fee + network_fee
+        net_amount = amount - total_fees
+        
+        if net_amount <= 0:
+            return JsonResponse({'success': False, 'error': 'Amount too small after fees'})
+        
+        with db_transaction.atomic():
+            # Deduct from user
+            user = request.user
+            user.balance -= amount
+            user.save()
+            
+            # Create pending transaction
+            withdrawal_tx = Transaction.objects.create(
+                user=user,
+                transaction_type='withdrawal',
+                amount=-amount,
+                balance_before=user.balance + amount,
+                balance_after=user.balance,
+                status='pending',
+                description=f'Crypto withdrawal to {address[:10]}...{address[-6:]}',
+                metadata={
+                    'address': address,
+                    'currency': currency,
+                    'gross_amount': str(amount),
+                    'platform_fee': str(platform_fee),
+                    'network_fee': str(network_fee),
+                    'net_amount': str(net_amount)
+                }
+            )
+            
+            # Process NowPayments payout
+            try:
+                nowpayments = NowPaymentsService()
+                ipn_url = request.build_absolute_uri('/market/wallet/nowpayments-ipn/')
+                
+                payout_result = nowpayments.create_payout(
+                    address=address,
+                    amount=net_amount,
+                    currency=currency,
+                    ipn_callback_url=ipn_url
+                )
+                
+                # Update transaction with payout info
+                withdrawal_tx.external_id = payout_result.get('id')
+                withdrawal_tx.blockchain_tx_hash = payout_result.get('batch_withdrawal_id')
+                withdrawal_tx.status = 'completed'
+                withdrawal_tx.save()
+                
+                return JsonResponse({
+                    'success': True,
+                    'message': f'Withdrawal of ${net_amount} initiated successfully',
+                    'transaction_id': str(withdrawal_tx.id)
+                })
+                
+            except Exception as payout_error:
+                # Refund user if payout fails
+                user.balance += amount
+                user.save()
+                
+                withdrawal_tx.status = 'failed'
+                withdrawal_tx.metadata['error'] = str(payout_error)
+                withdrawal_tx.save()
+                
+                return JsonResponse({
+                    'success': False,
+                    'error': f'Payout failed: {str(payout_error)}'
+                })
+        
+    except Exception as e:
+        logger.error(f"Crypto withdrawal error: {str(e)}")
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
+@login_required
+@csrf_protect
+def wallet_transfer(request):
+    """Handle wallet-to-wallet transfers"""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Invalid method'})
+    
+    try:
+        data = json.loads(request.body)
+        recipient = data.get('recipient', '').strip()
+        amount = Decimal(str(data.get('amount', 0)))
+        description = data.get('description', '').strip()
+        
+        # Use transfer service
+        result = WalletTransferService.transfer_funds(
+            sender=request.user,
+            recipient_identifier=recipient,
+            amount=amount,
+            description=description
+        )
+        
+        return JsonResponse(result)
+        
+    except Exception as e:
+        logger.error(f"Wallet transfer error: {str(e)}")
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
+@csrf_exempt
+@require_POST
+def nowpayments_ipn(request):
+    """Handle NowPayments IPN callbacks"""
+    try:
+        # Get signature
+        signature = request.headers.get('x-nowpayments-sig', '')
+        
+        # Parse body
+        if request.content_type == 'application/json':
+            data = json.loads(request.body)
+        else:
+            data = request.POST.dict()
+        
+        # Verify signature
+        nowpayments = NowPaymentsService()
+        if not nowpayments.verify_ipn(data, signature):
+            logger.error("Invalid NowPayments IPN signature")
+            return HttpResponse("Invalid signature", status=400)
+        
+        # Process IPN
+        payment_status = data.get('payment_status')
+        payment_id = data.get('payment_id')
+        
+        if payment_status == 'finished':
+            # Find transaction and credit user
+            try:
+                transaction = Transaction.objects.get(
+                    metadata__payment_id=payment_id,
+                    transaction_type='deposit',
+                    status='pending'
+                )
+                
+                with db_transaction.atomic():
+                    user = transaction.user
+                    user.balance += transaction.amount
+                    user.save()
+                    
+                    transaction.status = 'completed'
+                    transaction.balance_after = user.balance
+                    transaction.save()
+                    
+                    logger.info(f"Credited ${transaction.amount} to user {user.username}")
+                    
+            except Transaction.DoesNotExist:
+                logger.warning(f"Transaction not found for payment_id: {payment_id}")
+        
+        elif payment_status == 'failed':
+            # Mark transaction as failed
+            try:
+                transaction = Transaction.objects.get(
+                    metadata__payment_id=payment_id,
+                    status='pending'
+                )
+                transaction.status = 'failed'
+                transaction.save()
+            except Transaction.DoesNotExist:
+                pass
+        
+        return HttpResponse("IPN processed", status=200)
+        
+    except Exception as e:
+        logger.error(f"NowPayments IPN error: {str(e)}")
+        return HttpResponse("IPN processing error", status=500)

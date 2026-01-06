@@ -1,3 +1,12 @@
+from django.conf import settings
+import requests
+import logging
+import json
+import hmac
+import hashlib
+
+logger = logging.getLogger(__name__)
+
 class NowPaymentsService:
     def __init__(self):
         self.api_key = settings.NOWPAYMENTS_API_KEY
