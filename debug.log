@@ -1,1 +1,58 @@
 
+INFO 2026-01-02 14:17:30,205 autoreload 21200 16332 Watching for file changes with StatReloader
+INFO 2026-01-02 14:24:37,919 autoreload 10200 1548 Watching for file changes with StatReloader
+INFO 2026-01-02 14:28:01,749 autoreload 14616 14396 Watching for file changes with StatReloader
+INFO 2026-01-02 14:35:53,402 autoreload 14616 14396 C:\Users\HP\OneDrive\Documents\2026PROJECTS\evgchain\eggma\evgwork\settings.py changed, reloading.
+INFO 2026-01-02 14:35:56,430 autoreload 26660 26956 Watching for file changes with StatReloader
+ERROR 2026-01-02 14:36:15,675 log 26660 13648 Invalid HTTP_HOST header: '127.0.0.1:8000'. You may need to add '127.0.0.1' to ALLOWED_HOSTS.
+Traceback (most recent call last):
+  File "C:\Users\HP\OneDrive\Documents\2026PROJECTS\evgchain\eggma\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\HP\OneDrive\Documents\2026PROJECTS\evgchain\eggma\venv\Lib\site-packages\django\utils\deprecation.py", line 119, in __call__
+    response = self.process_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\HP\OneDrive\Documents\2026PROJECTS\evgchain\eggma\venv\Lib\site-packages\django\middleware\common.py", line 48, in process_request
+    host = request.get_host()
+           ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\HP\OneDrive\Documents\2026PROJECTS\evgchain\eggma\venv\Lib\site-packages\django\http\request.py", line 202, in get_host
+    raise DisallowedHost(msg)
+django.core.exceptions.DisallowedHost: Invalid HTTP_HOST header: '127.0.0.1:8000'. You may need to add '127.0.0.1' to ALLOWED_HOSTS.
+WARNING 2026-01-02 14:36:15,680 basehttp 26660 13648 "GET / HTTP/1.1" 400 86878
+INFO 2026-01-02 14:41:15,228 autoreload 26660 26956 C:\Users\HP\OneDrive\Documents\2026PROJECTS\evgchain\eggma\evgwork\settings.py changed, reloading.
+INFO 2026-01-02 14:41:18,362 autoreload 13508 19776 Watching for file changes with StatReloader
+ERROR 2026-01-02 14:41:33,117 log 13508 15736 Invalid HTTP_HOST header: '127.0.0.1:8000'. You may need to add '127.0.0.1' to ALLOWED_HOSTS.
+Traceback (most recent call last):
+  File "C:\Users\HP\OneDrive\Documents\2026PROJECTS\evgchain\eggma\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\HP\OneDrive\Documents\2026PROJECTS\evgchain\eggma\venv\Lib\site-packages\django\utils\deprecation.py", line 119, in __call__
+    response = self.process_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\HP\OneDrive\Documents\2026PROJECTS\evgchain\eggma\venv\Lib\site-packages\django\middleware\common.py", line 48, in process_request
+    host = request.get_host()
+           ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\HP\OneDrive\Documents\2026PROJECTS\evgchain\eggma\venv\Lib\site-packages\django\http\request.py", line 202, in get_host
+    raise DisallowedHost(msg)
+django.core.exceptions.DisallowedHost: Invalid HTTP_HOST header: '127.0.0.1:8000'. You may need to add '127.0.0.1' to ALLOWED_HOSTS.
+WARNING 2026-01-02 14:41:33,127 basehttp 13508 15736 "GET / HTTP/1.1" 400 86790
+ERROR 2026-01-02 14:41:41,443 log 13508 15532 Invalid HTTP_HOST header: '127.0.0.1:8000'. You may need to add '127.0.0.1' to ALLOWED_HOSTS.
+Traceback (most recent call last):
+  File "C:\Users\HP\OneDrive\Documents\2026PROJECTS\evgchain\eggma\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\HP\OneDrive\Documents\2026PROJECTS\evgchain\eggma\venv\Lib\site-packages\django\utils\deprecation.py", line 119, in __call__
+    response = self.process_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\HP\OneDrive\Documents\2026PROJECTS\evgchain\eggma\venv\Lib\site-packages\django\middleware\common.py", line 48, in process_request
+    host = request.get_host()
+           ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\HP\OneDrive\Documents\2026PROJECTS\evgchain\eggma\venv\Lib\site-packages\django\http\request.py", line 202, in get_host
+    raise DisallowedHost(msg)
+django.core.exceptions.DisallowedHost: Invalid HTTP_HOST header: '127.0.0.1:8000'. You may need to add '127.0.0.1' to ALLOWED_HOSTS.
+WARNING 2026-01-02 14:41:41,469 basehttp 13508 15532 "GET / HTTP/1.1" 400 86318
+INFO 2026-01-02 14:41:53,130 autoreload 13508 19776 C:\Users\HP\OneDrive\Documents\2026PROJECTS\evgchain\eggma\evgwork\settings.py changed, reloading.
+INFO 2026-01-02 14:41:55,927 autoreload 23044 16048 Watching for file changes with StatReloader
+INFO 2026-01-02 14:42:07,678 basehttp 23044 23612 "GET / HTTP/1.1" 200 16943
+INFO 2026-01-02 14:42:13,312 basehttp 23044 23612 "GET /register/ HTTP/1.1" 200 28962
+WARNING 2026-01-02 14:42:13,412 basehttp 23044 23612 "GET /static/evgchain-logo.png HTTP/1.1" 404 1865
