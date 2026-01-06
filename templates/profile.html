@@ -909,6 +909,114 @@
             .nav-links {
                 display: none;
             }
+            .mobile-menu-btn {
+                display: none;
+                background: none;
+                border: none;
+                color: #ccc;
+                font-size: 28px;
+                cursor: pointer;
+                padding: 8px;
+                transition: color 0.3s ease;
+                z-index: 101;
+            }
+
+            .mobile-menu-btn:hover {
+                color: #f7931a;
+            }
+
+            /* Mobile Navigation Overlay */
+            .mobile-nav-overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.7);
+                z-index: 2999;
+                backdrop-filter: blur(2px);
+            }
+
+            .mobile-nav-overlay.show {
+                display: block;
+            }
+
+            /* Mobile Navigation Drawer */
+            .mobile-nav {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: -100%;
+                width: 280px;
+                height: 100vh;
+                background: rgba(45, 45, 45, 0.98);
+                backdrop-filter: blur(20px);
+                border-right: 1px solid rgba(255, 255, 255, 0.1);
+                z-index: 3000;
+                transition: left 0.3s ease;
+                overflow-y: auto;
+            }
+
+            .mobile-nav.show {
+                left: 0;
+            }
+
+            .mobile-nav-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 20px;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            }
+
+            .mobile-nav-logo {
+                font-size: 20px;
+                font-weight: 700;
+                color: #f7931a;
+            }
+
+            .mobile-nav-close {
+                background: none;
+                border: none;
+                color: #ccc;
+                font-size: 30px;
+                cursor: pointer;
+                padding: 0;
+                width: 35px;
+                height: 35px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: color 0.3s ease;
+            }
+
+            .mobile-nav-close:hover {
+                color: #f7931a;
+            }
+
+            .mobile-nav-links {
+                padding: 20px 0;
+            }
+
+            .mobile-nav-links a {
+                display: flex;
+                align-items: center;
+                padding: 15px 20px;
+                color: #ccc;
+                text-decoration: none;
+                font-weight: 500;
+                font-size: 16px;
+                transition: all 0.3s ease;
+                border-left: 3px solid transparent;
+            }
+
+            .mobile-nav-links a:hover,
+            .mobile-nav-links a.active {
+                color: #f7931a;
+                background: rgba(247, 147, 26, 0.1);
+                border-left-color: #f7931a;
+            }
 
             .user-profile {
                 padding: 5px 10px;
@@ -1226,6 +1334,13 @@
 
         /* Landscape orientation fixes */
         @media (max-width: 768px) and (orientation: landscape) {
+            .mobile-menu-btn {
+                display: block;
+            }
+            
+            .mobile-nav {
+                display: block;
+            }
             .modal-content {
                 max-height: 95vh;
                 overflow-y: auto;
@@ -1266,6 +1381,18 @@
     </style>
 </head>
    <body>
+    <div class="mobile-nav-overlay" id="mobileNavOverlay" onclick="closeMobileNav()"></div>
+    <div class="mobile-nav" id="mobileNav">
+        <div class="mobile-nav-header">
+            <span class="mobile-nav-logo">EVGxchain</span>
+            <button class="mobile-nav-close" onclick="closeMobileNav()">×</button>
+        </div>
+        <div class="mobile-nav-links">
+            <a href="{% url 'dashboard' %}" class="active">📊 Dashboard</a>
+            <a href="{% url 'market-data' %}">📈 Markets</a>
+            <a href="{% url 'referral-dashboard' %}">🤝 Referrals</a>
+        </div>
+    </div>
     <div class="floating-coins">
         <div class="floating-coin" style="left: 10%; animation-delay: 0s;">₿</div>
         <div class="floating-coin" style="left: 30%; animation-delay: 5s;">₿</div>
@@ -1294,6 +1421,7 @@
                 <a href="{% url 'market-data' %}">Markets</a>
                 <a href="{% url 'referral-dashboard' %}">Referrals</a>
             </div>
+            <button class="mobile-menu-btn" id="mobileMenuBtn" onclick="toggleMobileNav()">☰</button>
             <div class="user-profile" onclick="toggleProfileMenu()">
                 <div class="user-avatar">
                     {% if user.full_name %}
@@ -1776,7 +1904,40 @@
         const stripe = Stripe('{{ STRIPE_PUBLISHABLE_KEY|default:"pk_test_51Rwr0cKDBFHQr38IUHFsZNoElLZBlNr8OlC9FLqSgW1zKMZ2P9s2Q4lOxurs474tMnbbKqyxzyjYNMSZQtdF2VOi00n1rdORUO" }}');
         let elements;
         let card;
+        function toggleMobileNav() {
+            const mobileNav = document.getElementById('mobileNav');
+            const overlay = document.getElementById('mobileNavOverlay');
+            const menuBtn = document.getElementById('mobileMenuBtn');
+            
+            mobileNav.classList.toggle('show');
+            overlay.classList.toggle('show');
+            
+            if (mobileNav.classList.contains('show')) {
+                menuBtn.innerHTML = '×';
+                document.body.style.overflow = 'hidden';
+            } else {
+                menuBtn.innerHTML = '☰';
+                document.body.style.overflow = '';
+            }
+        }
 
+        function closeMobileNav() {
+            const mobileNav = document.getElementById('mobileNav');
+            const overlay = document.getElementById('mobileNavOverlay');
+            const menuBtn = document.getElementById('mobileMenuBtn');
+            
+            mobileNav.classList.remove('show');
+            overlay.classList.remove('show');
+            menuBtn.innerHTML = '☰';
+            document.body.style.overflow = '';
+        }
+
+        // Close mobile nav when clicking on a link
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.mobile-nav-links a').forEach(link => {
+                link.addEventListener('click', closeMobileNav);
+            });
+        });
         function getCSRFToken() {
             let token = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
             if (!token) {
