@@ -14,6 +14,7 @@ import stripe
 from django.views.decorators.http import require_POST
 from .models import Market, CryptocurrencyCategory, EconomicEvent
 from acounts.models import CustomUser, ReferralProfile, ReferralTransaction
+from acounts.referral_service import ReferralService
 from predict.models import NewsArticle
 from decimal import Decimal, InvalidOperation
 from django.views.decorators.csrf import csrf_protect
@@ -1421,7 +1422,8 @@ def coinremitter_webhook(request):
             handle_withdrawal_webhook(data)
         elif transaction_type == 'receive':
             # This is a deposit transaction (if you implement crypto deposits later)
-            handle_deposit_webhook(data)
+            # handle_deposit_webhook(data)
+            pass
         
         return JsonResponse({'status': 'success', 'message': 'Webhook processed'})
         
@@ -1466,15 +1468,13 @@ def handle_withdrawal_webhook(data):
         if not transaction:
             logger.warning(f"Transaction not found for webhook: {data}")
             return
-        
-        # Update transaction status based on confirmations and status
+    
         old_status = transaction.status
         
         if status == 'success' or confirmations >= 1:
             transaction.status = 'completed'
         elif status == 'failed':
             transaction.status = 'failed'
-            # Refund user if withdrawal failed after being processed
             if old_status == 'pending':
                 refund_failed_withdrawal(transaction)
         else:
@@ -1558,20 +1558,51 @@ def get_current_crypto_price(market):
     except:
         return Decimal('67432.50')
 
+
 @login_required
 def referral_dashboard(request):
+    """Enhanced referral dashboard with tier system"""
+    
     profile, created = ReferralProfile.objects.get_or_create(user=request.user)
     
+    # Get tier configuration
+    config = profile.get_tier_config()
+    xp_progress = 0
+    active_progress = 0
+    
+    if config['next_tier']:
+        xp_progress = (profile.tier_xp / config['xp_needed']) * 100 if config['xp_needed'] > 0 else 100
+        active_progress = (profile.active_referrals / config['active_needed']) * 100 if config['active_needed'] > 0 else 100
+    
+    # Get referrals
     referrals = CustomUser.objects.filter(referral_profile__referred_by=request.user)
-    referral_transactions = ReferralTransaction.objects.filter(referrer=request.user)
+    
+    # Get recent transactions
+    referral_transactions = ReferralTransaction.objects.filter(referrer=request.user)[:20]
+    earnings_breakdown = {
+        'signup': profile.signup_earnings,
+        'deposit': profile.deposit_earnings,
+        'withdrawal': profile.withdrawal_earnings,
+        'trading': profile.trading_earnings,
+    }
     
     context = {
+        'profile': profile,
         'referral_code': profile.referral_code,
+        'tier': profile.tier,
+        'tier_config': config,
         'total_referrals': profile.total_referrals,
+        'active_referrals': profile.active_referrals,
         'total_earnings': profile.total_earnings,
+        'tier_xp': profile.tier_xp,
+        'total_xp': profile.total_xp,
+        'xp_progress': xp_progress,
+        'active_progress': active_progress,
         'referrals': referrals,
         'referral_transactions': referral_transactions,
-        'referral_link': request.build_absolute_uri(f'/register/?ref={profile.referral_code}')
+        'earnings_breakdown': earnings_breakdown,
+        'referral_link': request.build_absolute_uri(f'/register/?ref={profile.referral_code}'),
+        'settings': settings,
     }
     
     return render(request, 'referral_dashboard.html', context)
@@ -1642,7 +1673,6 @@ def crypto_deposit(request):
 @login_required
 @csrf_protect
 def crypto_withdraw(request):
-    """Handle crypto withdrawals via NowPayments"""
     if request.method != 'POST':
         return JsonResponse({'success': False, 'error': 'Invalid method'})
     
@@ -1695,8 +1725,12 @@ def crypto_withdraw(request):
                     'net_amount': str(net_amount)
                 }
             )
-            
-            # Process NowPayments payout
+            if withdrawal_tx['success']:
+                withdrawal_tx.status = 'completed'
+                withdrawal_tx.save()
+                
+                ReferralService.process_withdrawal(request.user, net_amount)
+                
             try:
                 nowpayments = NowPaymentsService()
                 ipn_url = request.build_absolute_uri('/market/wallet/nowpayments-ipn/')

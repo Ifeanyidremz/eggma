@@ -13,10 +13,12 @@ from django.utils.crypto import get_random_string
 from datetime import timedelta
 from django.utils import timezone
 from django.views.generic import View
+from django.db import transaction as db_transaction
 from django.contrib.auth import get_user_model
 from django.contrib.auth import authenticate, login, logout
 import json
 import hashlib
+from acounts.referral_service import ReferralService
 import hmac
 from acounts.models import ReferralProfile, ReferralTransaction
 from predict.models import Transaction
@@ -117,10 +119,10 @@ class RegisterView(View):
                                 transaction_type='signup'
                             )
                             
-                            logger.info(f"✅ Referral processed: {referrer.username} referred {user.username}")
+                            logger.info(f"Referral processed: {referrer.username} referred {user.username}")
                             
                         except ReferralProfile.DoesNotExist:
-                            logger.warning(f"⚠️ Invalid referral code: {referral_code}")
+                            logger.warning(f"Invalid referral code: {referral_code}")
                 
                 # Send verification email (outside transaction)
                 if send_verification_email(user, request):
@@ -139,7 +141,7 @@ class RegisterView(View):
                     user.delete()
                     
             except Exception as e:
-                logger.error(f"❌ Registration error: {str(e)}", exc_info=True)
+                logger.error(f"Registration error: {str(e)}", exc_info=True)
                 messages.error(request, 'An error occurred during registration. Please try again.')
         
         return render(request, self.template_name, {'form': form})
@@ -147,13 +149,13 @@ class RegisterView(View):
 
 @method_decorator(csrf_exempt, name='dispatch')
 class AjaxRegisterView(View):
-    """AJAX endpoint for the existing HTML form"""
+    """AJAX endpoint with full referral tier system"""
     
     def post(self, request):
         try:
             data = json.loads(request.body)
             
-            # Extract data from AJAX request
+            # Extract data
             full_name = data.get('fullName', '').strip()
             email = data.get('email', '').strip()
             password = data.get('password', '')
@@ -161,7 +163,7 @@ class AjaxRegisterView(View):
             terms_accepted = data.get('termsAccepted', False)
             referral_code = data.get('referralCode', '').strip()
             
-            # Basic validation
+            # Validation
             if not all([full_name, email, password, confirm_password]):
                 return JsonResponse({
                     'success': False,
@@ -186,8 +188,7 @@ class AjaxRegisterView(View):
                     'message': 'A user with this email already exists.'
                 }, status=400)
             
-            from django.db import transaction as db_transaction
-            
+            # Create user with referral handling
             with db_transaction.atomic():
                 # Create user
                 user = User.objects.create_user(
@@ -198,10 +199,11 @@ class AjaxRegisterView(View):
                     is_active=False 
                 )
                 
-                # Create referral profile for new user
+                # Create referral profile
                 referral_profile = ReferralProfile.objects.create(user=user)
                 
-                # Handle referral code if provided
+                # Process referral if code provided
+                referrer_found = False
                 if referral_code:
                     try:
                         referrer_profile = ReferralProfile.objects.get(referral_code=referral_code)
@@ -211,68 +213,21 @@ class AjaxRegisterView(View):
                         referral_profile.referred_by = referrer
                         referral_profile.save()
                         
-                        # Give signup bonus to new user
-                        signup_bonus = Decimal(str(settings.REFERRAL_SIGNUP_BONUS))
-                        user.balance += signup_bonus
-                        user.save()
+                        # Process signup bonuses through service
+                        ReferralService.process_signup(referrer, user)
                         
-                        # Record signup bonus transaction
-                        Transaction.objects.create(
-                            user=user,
-                            transaction_type='bonus',
-                            amount=signup_bonus,
-                            balance_before=Decimal('0'),
-                            balance_after=user.balance,
-                            status='completed',
-                            description=f'Signup bonus from referral code {referral_code}'
-                        )
-                        
-                        # Give referral bonus to referrer
-                        referral_bonus = Decimal(str(settings.REFERRAL_BONUS_AMOUNT))
-                        referrer.balance += referral_bonus
-                        referrer.save()
-                        
-                        # Update referrer stats
-                        referrer_profile.total_referrals += 1
-                        referrer_profile.total_earnings += referral_bonus
-                        referrer_profile.save()
-                        
-                        # Record referral bonus transaction
-                        Transaction.objects.create(
-                            user=referrer,
-                            transaction_type='bonus',
-                            amount=referral_bonus,
-                            balance_before=referrer.balance - referral_bonus,
-                            balance_after=referrer.balance,
-                            status='completed',
-                            description=f'Referral bonus for {user.username} signup'
-                        )
-                        
-                        # Record referral transaction
-                        ReferralTransaction.objects.create(
-                            referrer=referrer,
-                            referred=user,
-                            amount=referral_bonus,
-                            transaction_type='signup'
-                        )
-                        
-                        logger.info(f"✅ Referral processed: {referrer.username} referred {user.username}")
+                        referrer_found = True
+                        logger.info(f"Referral: {referrer.username} referred {user.username}")
                         
                     except ReferralProfile.DoesNotExist:
-                        logger.warning(f"⚠️ Invalid referral code: {referral_code}")
+                        logger.warning(f"Invalid referral code: {referral_code}")
             
-            # Send verification email (outside transaction)
+            # Send verification email
             if send_verification_email(user, request):
                 success_message = f'Account created successfully! Please check your email ({email}) for verification instructions.'
                 
-                # Add referral bonus info to message if applicable
-                if referral_code:
-                    try:
-                        # Check if referral was actually processed
-                        if ReferralProfile.objects.filter(user=user, referred_by__isnull=False).exists():
-                            success_message += f'You received ${settings.REFERRAL_SIGNUP_BONUS} signup bonus!'
-                    except:
-                        pass
+                if referrer_found:
+                    success_message += 'You received $5.00 signup bonus!'
                 
                 return JsonResponse({
                     'success': True,
@@ -280,7 +235,6 @@ class AjaxRegisterView(View):
                     'redirect_url': '/email-verification-sent/'
                 })
             else:
-                # If email fails, delete the user and all related data (transaction rollback)
                 user.delete()
                 return JsonResponse({
                     'success': False,
@@ -293,7 +247,7 @@ class AjaxRegisterView(View):
                 'message': 'Invalid JSON data.'
             }, status=400)
         except Exception as e:
-            logger.error(f"❌ Registration error: {str(e)}", exc_info=True)
+            logger.error(f"Registration error: {str(e)}", exc_info=True)
             return JsonResponse({
                 'success': False,
                 'message': 'An error occurred during registration. Please try again.'
@@ -317,7 +271,7 @@ class VerifyEmailView(View):
             # Check if user is already verified
             if verification_token.user.is_email_verified:
                 messages.info(request, 'Your email is already verified! You can log in.')
-                return redirect('login-page')  # ✅ CORRECT URL name
+                return redirect('login-page') 
             
             # Check if token is already used
             if verification_token.is_used:

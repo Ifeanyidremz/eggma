@@ -890,21 +890,84 @@
             border-bottom: none;
         }
 
+        /* ==================== MOBILE RESPONSIVE STYLES ==================== */
+        
         @media (max-width: 768px) {
+            /* Navigation */
+            .navbar {
+                padding: 10px 0;
+            }
+
+            .nav-container {
+                padding: 0 15px;
+            }
+
+            .logo img {
+                height: 60px;
+            }
+
             .nav-links {
                 display: none;
             }
 
-            .main-content {
-                grid-template-columns: 1fr;
+            .user-profile {
+                padding: 5px 10px;
+                gap: 10px;
             }
 
+            .user-avatar {
+                width: 35px;
+                height: 35px;
+                font-size: 14px;
+            }
+
+            .user-profile > div {
+                display: none;
+            }
+
+            /* Welcome Section */
+            .welcome-section {
+                padding: 20px;
+                margin-bottom: 20px;
+            }
+
+            .welcome-title {
+                font-size: 22px;
+            }
+
+            .welcome-subtitle {
+                font-size: 14px;
+            }
+
+            /* Stats Grid */
             .quick-stats {
                 grid-template-columns: repeat(2, 1fr);
+                gap: 15px;
             }
 
-            .container {
+            .stat-card {
                 padding: 20px 15px;
+            }
+
+            .stat-icon {
+                width: 40px;
+                height: 40px;
+                font-size: 18px;
+                margin-bottom: 10px;
+            }
+
+            .stat-value {
+                font-size: 20px;
+            }
+
+            .stat-label {
+                font-size: 12px;
+            }
+
+            /* Level System */
+            .level-system {
+                padding: 20px;
+                margin-bottom: 20px;
             }
 
             .level-header {
@@ -913,17 +976,296 @@
                 align-items: flex-start;
             }
 
+            .level-title {
+                font-size: 18px;
+            }
+
+            .level-badge {
+                font-size: 12px;
+                padding: 6px 12px;
+            }
+
+            .xp-text {
+                font-size: 13px;
+            }
+
+            /* Main Content */
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .active-predictions,
+            .quick-actions {
+                padding: 20px;
+            }
+
+            .section-title {
+                font-size: 18px;
+            }
+
+            .prediction-item {
+                padding: 15px;
+            }
+
+            .prediction-title {
+                font-size: 15px;
+            }
+
+            .prediction-details {
+                font-size: 13px;
+            }
+
+            /* Wallet Actions */
             .wallet-actions {
                 grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            .wallet-btn {
+                padding: 12px;
+                font-size: 14px;
+            }
+
+            /* Action Buttons */
+            .action-btn {
+                padding: 12px;
+                font-size: 15px;
+            }
+
+            /* Crypto Widget */
+            .crypto-widget {
+                padding: 15px;
+            }
+
+            .crypto-item {
+                padding: 8px 0;
+            }
+
+            .crypto-name {
+                font-size: 14px;
+            }
+
+            .crypto-price {
+                font-size: 15px;
+            }
+
+            /* Performance Metrics */
+            .performance-metrics {
+                padding: 15px;
+            }
+
+            .metric-row {
+                padding: 6px 0;
+            }
+
+            .metric-label,
+            .metric-value {
+                font-size: 13px;
+            }
+
+            /* Modals */
+            .modal-content {
+                width: 95%;
+                padding: 20px;
+                max-height: 90vh;
+            }
+
+            .modal-title {
+                font-size: 20px;
+            }
+
+            .form-input,
+            .form-select {
+                font-size: 15px;
+                padding: 10px 14px;
+            }
+
+            .amount-presets {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8px;
+            }
+
+            .preset-btn {
+                padding: 8px;
+                font-size: 13px;
+            }
+
+            /* Fee Info */
+            .fee-info {
+                padding: 12px;
+            }
+
+            .fee-label,
+            .fee-value {
+                font-size: 13px;
+            }
+
+            /* Network Info */
+            .network-info {
+                padding: 12px;
+            }
+
+            .network-name {
+                font-size: 14px;
+            }
+
+            .network-details {
+                font-size: 13px;
+            }
+
+            /* Withdrawal Warning */
+            .withdrawal-warning {
+                padding: 12px;
+            }
+
+            .withdrawal-warning-title {
+                font-size: 14px;
+            }
+
+            .withdrawal-warning-text {
+                font-size: 12px;
+            }
+
+            /* Messages */
+            .messages {
+                padding: 0 15px;
+            }
+
+            .message {
+                font-size: 13px;
+                padding: 10px 14px;
+            }
+
+            /* Container */
+            .container {
+                padding: 20px 15px;
+            }
+
+            /* Payment Instructions */
+            .payment-info {
+                padding: 15px;
+            }
+
+            .payment-info h3 {
+                font-size: 16px;
+            }
+
+            .payment-info p {
+                font-size: 13px;
+            }
+
+            /* Profile Dropdown */
+            .profile-dropdown {
+                right: -10px;
+                min-width: 180px;
+            }
+
+            .dropdown-item {
+                padding: 10px 15px;
+                font-size: 13px;
+            }
+
+            /* Floating Coins - reduce on mobile */
+            .floating-coin {
+                width: 20px;
+                height: 20px;
+                font-size: 10px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            /* Extra small devices */
+            .logo img {
+                height: 50px;
+            }
+
+            .welcome-title {
+                font-size: 20px;
+            }
+
+            .quick-stats {
+                grid-template-columns: 1fr;
+            }
+
+            .stat-card {
+                display: flex;
+                align-items: center;
+                gap: 15px;
+                text-align: left;
+            }
+
+            .stat-icon {
+                margin: 0;
+                flex-shrink: 0;
+            }
+
+            .modal-content {
+                padding: 15px;
+            }
+
+            .modal-title {
+                font-size: 18px;
             }
 
             .amount-presets {
                 grid-template-columns: repeat(2, 1fr);
             }
+
+            .action-btn {
+                font-size: 14px;
+                padding: 10px;
+            }
+
+            .prediction-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
+            }
+        }
+
+        /* Landscape orientation fixes */
+        @media (max-width: 768px) and (orientation: landscape) {
+            .modal-content {
+                max-height: 95vh;
+                overflow-y: auto;
+            }
+
+            .navbar {
+                padding: 8px 0;
+            }
+
+            .logo img {
+                height: 50px;
+            }
+        }
+
+        /* Touch-friendly improvements */
+        @media (hover: none) and (pointer: coarse) {
+            .action-btn,
+            .wallet-btn,
+            .preset-btn {
+                min-height: 44px;
+            }
+
+            .form-input,
+            .form-select {
+                min-height: 44px;
+            }
+
+            .dropdown-item {
+                min-height: 44px;
+                display: flex;
+                align-items: center;
+            }
+
+            .user-profile {
+                min-height: 44px;
+            }
         }
     </style>
 </head>
-<body>
+   <body>
     <div class="floating-coins">
         <div class="floating-coin" style="left: 10%; animation-delay: 0s;">₿</div>
         <div class="floating-coin" style="left: 30%; animation-delay: 5s;">₿</div>
