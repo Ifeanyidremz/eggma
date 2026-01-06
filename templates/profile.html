@@ -1280,6 +1280,37 @@
         height: 20px;
         font-size: 10px;
     }
+    
+    .nav-container {
+        padding: 0 15px;
+        display: flex;
+        justify-content: space-between;  /* Make sure this is set */
+        align-items: center;
+    }
+
+    .logo {
+        flex: 0 0 auto;  /* Don't let logo grow */
+    }
+
+    .logo img {
+        height: 60px;
+    }
+
+    .nav-links {
+        display: none;
+    }
+
+    .mobile-menu-btn {
+        display: block;
+        margin-left: auto;  
+        order: 3;  
+    }
+
+    .user-profile {
+        padding: 5px 10px;
+        gap: 10px;
+        order: 2; 
+    }
 }
   
         @media (max-width: 480px) {
