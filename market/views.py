@@ -1558,7 +1558,6 @@ def get_current_crypto_price(market):
 
 @login_required
 def referral_dashboard(request):
-    """Referral dashboard"""
     profile, created = ReferralProfile.objects.get_or_create(user=request.user)
     
     referrals = CustomUser.objects.filter(referral_profile__referred_by=request.user)
