@@ -51,69 +51,78 @@ class RegisterView(View):
         
         if form.is_valid():
             try:
-                user = form.save()
-                referral_code = request.POST.get('referral_code', '').strip() or request.GET.get('ref', '').strip()
-                referral_profile = ReferralProfile.objects.create(user=user)
-                if referral_code:
-                    try:
-                        referrer_profile = ReferralProfile.objects.get(referral_code=referral_code)
-                        referrer = referrer_profile.user
-                        
-                        # Set referrer
-                        referral_profile.referred_by = referrer
-                        referral_profile.save()
-                        
-                        # Give signup bonus to new user
-                        signup_bonus = Decimal(str(settings.REFERRAL_SIGNUP_BONUS))
-                        user.balance += signup_bonus
-                        user.save()
-                        
-                        # Record signup bonus
-                        Transaction.objects.create(
-                            user=user,
-                            transaction_type='bonus',
-                            amount=signup_bonus,
-                            balance_before=Decimal('0'),
-                            balance_after=user.balance,
-                            status='completed',
-                            description=f'Signup bonus from referral code {referral_code}'
-                        )
-                        
-                        # Give referral bonus to referrer
-                        referral_bonus = Decimal(str(settings.REFERRAL_BONUS_AMOUNT))
-                        referrer.balance += referral_bonus
-                        referrer.save()
-                        
-                        # Update referrer stats
-                        referrer_profile.total_referrals += 1
-                        referrer_profile.total_earnings += referral_bonus
-                        referrer_profile.save()
-                        
-                        # Record referral bonus
-                        Transaction.objects.create(
-                            user=referrer,
-                            transaction_type='bonus',
-                            amount=referral_bonus,
-                            balance_before=referrer.balance - referral_bonus,
-                            balance_after=referrer.balance,
-                            status='completed',
-                            description=f'Referral bonus for {user.username} signup'
-                        )
-                        
-                        # Record referral transaction
-                        ReferralTransaction.objects.create(
-                            referrer=referrer,
-                            referred=user,
-                            amount=referral_bonus,
-                            transaction_type='signup'
-                        )
-                        
-                        logger.info(f"Referral processed: {referrer.username} referred {user.username}")
-                        
-                    except ReferralProfile.DoesNotExist:
-                        logger.warning(f"Invalid referral code: {referral_code}")
+                from django.db import transaction as db_transaction
                 
-                # Send verification email
+                with db_transaction.atomic():
+                    user = form.save()
+                    
+                    # Get referral code from POST or GET
+                    referral_code = request.POST.get('referral_code', '').strip() or request.GET.get('ref', '').strip()
+                    
+                    # Create referral profile
+                    referral_profile = ReferralProfile.objects.create(user=user)
+                    
+                    # Handle referral if code provided
+                    if referral_code:
+                        try:
+                            referrer_profile = ReferralProfile.objects.get(referral_code=referral_code)
+                            referrer = referrer_profile.user
+                            
+                            # Set referrer
+                            referral_profile.referred_by = referrer
+                            referral_profile.save()
+                            
+                            # Give signup bonus to new user
+                            signup_bonus = Decimal(str(settings.REFERRAL_SIGNUP_BONUS))
+                            user.balance += signup_bonus
+                            user.save()
+                            
+                            # Record signup bonus
+                            Transaction.objects.create(
+                                user=user,
+                                transaction_type='bonus',
+                                amount=signup_bonus,
+                                balance_before=Decimal('0'),
+                                balance_after=user.balance,
+                                status='completed',
+                                description=f'Signup bonus from referral code {referral_code}'
+                            )
+                            
+                            # Give referral bonus to referrer
+                            referral_bonus = Decimal(str(settings.REFERRAL_BONUS_AMOUNT))
+                            referrer.balance += referral_bonus
+                            referrer.save()
+                            
+                            # Update referrer stats
+                            referrer_profile.total_referrals += 1
+                            referrer_profile.total_earnings += referral_bonus
+                            referrer_profile.save()
+                            
+                            # Record referral bonus
+                            Transaction.objects.create(
+                                user=referrer,
+                                transaction_type='bonus',
+                                amount=referral_bonus,
+                                balance_before=referrer.balance - referral_bonus,
+                                balance_after=referrer.balance,
+                                status='completed',
+                                description=f'Referral bonus for {user.username} signup'
+                            )
+                            
+                            # Record referral transaction
+                            ReferralTransaction.objects.create(
+                                referrer=referrer,
+                                referred=user,
+                                amount=referral_bonus,
+                                transaction_type='signup'
+                            )
+                            
+                            logger.info(f"✅ Referral processed: {referrer.username} referred {user.username}")
+                            
+                        except ReferralProfile.DoesNotExist:
+                            logger.warning(f"⚠️ Invalid referral code: {referral_code}")
+                
+                # Send verification email (outside transaction)
                 if send_verification_email(user, request):
                     messages.success(
                         request, 
@@ -130,10 +139,11 @@ class RegisterView(View):
                     user.delete()
                     
             except Exception as e:
-                # logger.error(f"Registration error: {str(e)}")
+                logger.error(f"❌ Registration error: {str(e)}", exc_info=True)
                 messages.error(request, 'An error occurred during registration. Please try again.')
         
         return render(request, self.template_name, {'form': form})
+
 
 @method_decorator(csrf_exempt, name='dispatch')
 class AjaxRegisterView(View):
@@ -149,6 +159,7 @@ class AjaxRegisterView(View):
             password = data.get('password', '')
             confirm_password = data.get('confirmPassword', '')
             terms_accepted = data.get('termsAccepted', False)
+            referral_code = data.get('referralCode', '').strip()
             
             # Basic validation
             if not all([full_name, email, password, confirm_password]):
@@ -175,83 +186,101 @@ class AjaxRegisterView(View):
                     'message': 'A user with this email already exists.'
                 }, status=400)
             
-            # Create user
-            user = User.objects.create_user(
-                username=email,
-                email=email,
-                password=password,
-                full_name=full_name,
-                is_active=False 
-            )
-            referral_code = request.POST.get('referral_code', '').strip() or request.GET.get('ref', '').strip()
-            referral_profile = ReferralProfile.objects.create(user=user)
-            if referral_code:
-                try:
-                    referrer_profile = ReferralProfile.objects.get(referral_code=referral_code)
-                    referrer = referrer_profile.user
-                    
-                    # Set referrer
-                    referral_profile.referred_by = referrer
-                    referral_profile.save()
-                    
-                    # Give signup bonus to new user
-                    signup_bonus = Decimal(str(settings.REFERRAL_SIGNUP_BONUS))
-                    user.balance += signup_bonus
-                    user.save()
-                    
-                    # Record signup bonus
-                    Transaction.objects.create(
-                        user=user,
-                        transaction_type='bonus',
-                        amount=signup_bonus,
-                        balance_before=Decimal('0'),
-                        balance_after=user.balance,
-                        status='completed',
-                        description=f'Signup bonus from referral code {referral_code}'
-                    )
-                    
-                    # Give referral bonus to referrer
-                    referral_bonus = Decimal(str(settings.REFERRAL_BONUS_AMOUNT))
-                    referrer.balance += referral_bonus
-                    referrer.save()
-                    
-                    # Update referrer stats
-                    referrer_profile.total_referrals += 1
-                    referrer_profile.total_earnings += referral_bonus
-                    referrer_profile.save()
-                    
-                    # Record referral bonus
-                    Transaction.objects.create(
-                        user=referrer,
-                        transaction_type='bonus',
-                        amount=referral_bonus,
-                        balance_before=referrer.balance - referral_bonus,
-                        balance_after=referrer.balance,
-                        status='completed',
-                        description=f'Referral bonus for {user.username} signup'
-                    )
-                    
-                    # Record referral transaction
-                    ReferralTransaction.objects.create(
-                        referrer=referrer,
-                        referred=user,
-                        amount=referral_bonus,
-                        transaction_type='signup'
-                    )
-                    
-                    logger.info(f"Referral processed: {referrer.username} referred {user.username}")
-                    
-                except ReferralProfile.DoesNotExist:
-                    logger.warning(f"Invalid referral code: {referral_code}")
+            from django.db import transaction as db_transaction
             
-            # Send verification email
+            with db_transaction.atomic():
+                # Create user
+                user = User.objects.create_user(
+                    username=email,
+                    email=email,
+                    password=password,
+                    full_name=full_name,
+                    is_active=False 
+                )
+                
+                # Create referral profile for new user
+                referral_profile = ReferralProfile.objects.create(user=user)
+                
+                # Handle referral code if provided
+                if referral_code:
+                    try:
+                        referrer_profile = ReferralProfile.objects.get(referral_code=referral_code)
+                        referrer = referrer_profile.user
+                        
+                        # Set referrer
+                        referral_profile.referred_by = referrer
+                        referral_profile.save()
+                        
+                        # Give signup bonus to new user
+                        signup_bonus = Decimal(str(settings.REFERRAL_SIGNUP_BONUS))
+                        user.balance += signup_bonus
+                        user.save()
+                        
+                        # Record signup bonus transaction
+                        Transaction.objects.create(
+                            user=user,
+                            transaction_type='bonus',
+                            amount=signup_bonus,
+                            balance_before=Decimal('0'),
+                            balance_after=user.balance,
+                            status='completed',
+                            description=f'Signup bonus from referral code {referral_code}'
+                        )
+                        
+                        # Give referral bonus to referrer
+                        referral_bonus = Decimal(str(settings.REFERRAL_BONUS_AMOUNT))
+                        referrer.balance += referral_bonus
+                        referrer.save()
+                        
+                        # Update referrer stats
+                        referrer_profile.total_referrals += 1
+                        referrer_profile.total_earnings += referral_bonus
+                        referrer_profile.save()
+                        
+                        # Record referral bonus transaction
+                        Transaction.objects.create(
+                            user=referrer,
+                            transaction_type='bonus',
+                            amount=referral_bonus,
+                            balance_before=referrer.balance - referral_bonus,
+                            balance_after=referrer.balance,
+                            status='completed',
+                            description=f'Referral bonus for {user.username} signup'
+                        )
+                        
+                        # Record referral transaction
+                        ReferralTransaction.objects.create(
+                            referrer=referrer,
+                            referred=user,
+                            amount=referral_bonus,
+                            transaction_type='signup'
+                        )
+                        
+                        logger.info(f"✅ Referral processed: {referrer.username} referred {user.username}")
+                        
+                    except ReferralProfile.DoesNotExist:
+                        logger.warning(f"⚠️ Invalid referral code: {referral_code}")
+            
+            # Send verification email (outside transaction)
             if send_verification_email(user, request):
+                success_message = f'Account created successfully! Please check your email ({email}) for verification instructions.'
+                
+                # Add referral bonus info to message if applicable
+                if referral_code:
+                    try:
+                        # Check if referral was actually processed
+                        if ReferralProfile.objects.filter(user=user, referred_by__isnull=False).exists():
+                            success_message += f'You received ${settings.REFERRAL_SIGNUP_BONUS} signup bonus!'
+                    except:
+                        pass
+                
                 return JsonResponse({
                     'success': True,
-                    'message': f'Account created successfully! Please check your email ({email}) for verification instructions.',
+                    'message': success_message,
                     'redirect_url': '/email-verification-sent/'
                 })
             else:
+                # If email fails, delete the user and all related data (transaction rollback)
                 user.delete()
                 return JsonResponse({
                     'success': False,
@@ -264,6 +293,7 @@ class AjaxRegisterView(View):
                 'message': 'Invalid JSON data.'
             }, status=400)
         except Exception as e:
+            logger.error(f"❌ Registration error: {str(e)}", exc_info=True)
             return JsonResponse({
                 'success': False,
                 'message': 'An error occurred during registration. Please try again.'
