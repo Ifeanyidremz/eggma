@@ -13,6 +13,7 @@ import json
 import stripe
 from django.views.decorators.http import require_POST
 from .models import Market, CryptocurrencyCategory, EconomicEvent
+from acounts.models import CustomUser, ReferralProfile, ReferralTransaction
 from predict.models import NewsArticle
 from decimal import Decimal, InvalidOperation
 from django.views.decorators.csrf import csrf_protect
@@ -1554,3 +1555,22 @@ def get_current_crypto_price(market):
         return Decimal('67432.50') if 'BTC' in trading_pair else Decimal('3421.80')
     except:
         return Decimal('67432.50')
+
+@login_required
+def referral_dashboard(request):
+    """Referral dashboard"""
+    profile, created = ReferralProfile.objects.get_or_create(user=request.user)
+    
+    referrals = CustomUser.objects.filter(referral_profile__referred_by=request.user)
+    referral_transactions = ReferralTransaction.objects.filter(referrer=request.user)
+    
+    context = {
+        'referral_code': profile.referral_code,
+        'total_referrals': profile.total_referrals,
+        'total_earnings': profile.total_earnings,
+        'referrals': referrals,
+        'referral_transactions': referral_transactions,
+        'referral_link': request.build_absolute_uri(f'/register/?ref={profile.referral_code}')
+    }
+    
+    return render(request, 'referral_dashboard.html', context)

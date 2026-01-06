@@ -12,3 +12,4 @@ work/*
 /main.html
 work.zip
 env/
+venv/
