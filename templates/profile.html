@@ -889,399 +889,399 @@
         .history-item:last-child {
             border-bottom: none;
         }
-
-        /* ==================== MOBILE RESPONSIVE STYLES ==================== */
         
-        @media (max-width: 768px) {
-            /* Navigation */
-            .navbar {
-                padding: 10px 0;
-            }
-
-            .nav-container {
-                padding: 0 15px;
-            }
-
-            .logo img {
-                height: 60px;
-            }
-
-            .nav-links {
-                display: none;
-            }
-            .mobile-menu-btn {
-                display: none;
-                background: none;
-                border: none;
-                color: #ccc;
-                font-size: 28px;
-                cursor: pointer;
-                padding: 8px;
-                transition: color 0.3s ease;
-                z-index: 101;
-            }
-
-            .mobile-menu-btn:hover {
-                color: #f7931a;
-            }
-
-            /* Mobile Navigation Overlay */
-            .mobile-nav-overlay {
-                display: none;
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0, 0, 0, 0.7);
-                z-index: 2999;
-                backdrop-filter: blur(2px);
-            }
-
-            .mobile-nav-overlay.show {
-                display: block;
-            }
-
-            /* Mobile Navigation Drawer */
-            .mobile-nav {
-                display: none;
-                position: fixed;
-                top: 0;
-                left: -100%;
-                width: 280px;
-                height: 100vh;
-                background: rgba(45, 45, 45, 0.98);
-                backdrop-filter: blur(20px);
-                border-right: 1px solid rgba(255, 255, 255, 0.1);
-                z-index: 3000;
-                transition: left 0.3s ease;
-                overflow-y: auto;
-            }
-
-            .mobile-nav.show {
-                left: 0;
-            }
-
-            .mobile-nav-header {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 20px;
-                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            }
-
-            .mobile-nav-logo {
-                font-size: 20px;
-                font-weight: 700;
-                color: #f7931a;
-            }
-
-            .mobile-nav-close {
-                background: none;
-                border: none;
-                color: #ccc;
-                font-size: 30px;
-                cursor: pointer;
-                padding: 0;
-                width: 35px;
-                height: 35px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                transition: color 0.3s ease;
-            }
-
-            .mobile-nav-close:hover {
-                color: #f7931a;
-            }
-
-            .mobile-nav-links {
-                padding: 20px 0;
-            }
-
-            .mobile-nav-links a {
-                display: flex;
-                align-items: center;
-                padding: 15px 20px;
-                color: #ccc;
-                text-decoration: none;
-                font-weight: 500;
-                font-size: 16px;
-                transition: all 0.3s ease;
-                border-left: 3px solid transparent;
-            }
-
-            .mobile-nav-links a:hover,
-            .mobile-nav-links a.active {
-                color: #f7931a;
-                background: rgba(247, 147, 26, 0.1);
-                border-left-color: #f7931a;
-            }
-
-            .user-profile {
-                padding: 5px 10px;
-                gap: 10px;
-            }
-
-            .user-avatar {
-                width: 35px;
-                height: 35px;
-                font-size: 14px;
-            }
-
-            .user-profile > div {
-                display: none;
-            }
-
-            /* Welcome Section */
-            .welcome-section {
-                padding: 20px;
-                margin-bottom: 20px;
-            }
-
-            .welcome-title {
-                font-size: 22px;
-            }
-
-            .welcome-subtitle {
-                font-size: 14px;
-            }
-
-            /* Stats Grid */
-            .quick-stats {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 15px;
-            }
-
-            .stat-card {
-                padding: 20px 15px;
-            }
-
-            .stat-icon {
-                width: 40px;
-                height: 40px;
-                font-size: 18px;
-                margin-bottom: 10px;
-            }
-
-            .stat-value {
-                font-size: 20px;
-            }
-
-            .stat-label {
-                font-size: 12px;
-            }
-
-            /* Level System */
-            .level-system {
-                padding: 20px;
-                margin-bottom: 20px;
-            }
-
-            .level-header {
-                flex-direction: column;
-                gap: 10px;
-                align-items: flex-start;
-            }
-
-            .level-title {
-                font-size: 18px;
-            }
-
-            .level-badge {
-                font-size: 12px;
-                padding: 6px 12px;
-            }
-
-            .xp-text {
-                font-size: 13px;
-            }
-
-            /* Main Content */
-            .main-content {
-                grid-template-columns: 1fr;
-                gap: 20px;
-            }
-
-            .active-predictions,
-            .quick-actions {
-                padding: 20px;
-            }
-
-            .section-title {
-                font-size: 18px;
-            }
-
-            .prediction-item {
-                padding: 15px;
-            }
-
-            .prediction-title {
-                font-size: 15px;
-            }
-
-            .prediction-details {
-                font-size: 13px;
-            }
-
-            /* Wallet Actions */
-            .wallet-actions {
-                grid-template-columns: 1fr;
-                gap: 10px;
-            }
-
-            .wallet-btn {
-                padding: 12px;
-                font-size: 14px;
-            }
-
-            /* Action Buttons */
-            .action-btn {
-                padding: 12px;
-                font-size: 15px;
-            }
-
-            /* Crypto Widget */
-            .crypto-widget {
-                padding: 15px;
-            }
-
-            .crypto-item {
-                padding: 8px 0;
-            }
-
-            .crypto-name {
-                font-size: 14px;
-            }
-
-            .crypto-price {
-                font-size: 15px;
-            }
-
-            /* Performance Metrics */
-            .performance-metrics {
-                padding: 15px;
-            }
-
-            .metric-row {
-                padding: 6px 0;
-            }
-
-            .metric-label,
-            .metric-value {
-                font-size: 13px;
-            }
-
-            /* Modals */
-            .modal-content {
-                width: 95%;
-                padding: 20px;
-                max-height: 90vh;
-            }
-
-            .modal-title {
-                font-size: 20px;
-            }
-
-            .form-input,
-            .form-select {
-                font-size: 15px;
-                padding: 10px 14px;
-            }
-
-            .amount-presets {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 8px;
-            }
-
-            .preset-btn {
-                padding: 8px;
-                font-size: 13px;
-            }
-
-            /* Fee Info */
-            .fee-info {
-                padding: 12px;
-            }
-
-            .fee-label,
-            .fee-value {
-                font-size: 13px;
-            }
-
-            /* Network Info */
-            .network-info {
-                padding: 12px;
-            }
-
-            .network-name {
-                font-size: 14px;
-            }
-
-            .network-details {
-                font-size: 13px;
-            }
-
-            /* Withdrawal Warning */
-            .withdrawal-warning {
-                padding: 12px;
-            }
-
-            .withdrawal-warning-title {
-                font-size: 14px;
-            }
-
-            .withdrawal-warning-text {
-                font-size: 12px;
-            }
-
-            /* Messages */
-            .messages {
-                padding: 0 15px;
-            }
-
-            .message {
-                font-size: 13px;
-                padding: 10px 14px;
-            }
-
-            /* Container */
-            .container {
-                padding: 20px 15px;
-            }
-
-            /* Payment Instructions */
-            .payment-info {
-                padding: 15px;
-            }
-
-            .payment-info h3 {
-                font-size: 16px;
-            }
-
-            .payment-info p {
-                font-size: 13px;
-            }
-
-            /* Profile Dropdown */
-            .profile-dropdown {
-                right: -10px;
-                min-width: 180px;
-            }
-
-            .dropdown-item {
-                padding: 10px 15px;
-                font-size: 13px;
-            }
-
-            /* Floating Coins - reduce on mobile */
-            .floating-coin {
-                width: 20px;
-                height: 20px;
-                font-size: 10px;
-            }
+        /* ==================== MOBILE MENU STYLES ==================== */
+
+
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: #ccc;
+            font-size: 28px;
+            cursor: pointer;
+            padding: 8px;
+            transition: color 0.3s ease;
+            z-index: 101;
         }
 
+        .mobile-menu-btn:hover {
+            color: #f7931a;
+        }
+
+        /* Mobile Navigation Overlay */
+        .mobile-nav-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 2999;
+            backdrop-filter: blur(2px);
+        }
+
+        .mobile-nav-overlay.show {
+            display: block;
+        }
+
+        /* Mobile Navigation Drawer */
+        .mobile-nav {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: -100%;
+            width: 280px;
+            height: 100vh;
+            background: rgba(45, 45, 45, 0.98);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 3000;
+            transition: left 0.3s ease;
+            overflow-y: auto;
+        }
+
+        .mobile-nav.show {
+            left: 0;
+        }
+
+        .mobile-nav-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .mobile-nav-logo {
+            font-size: 20px;
+            font-weight: 700;
+            color: #f7931a;
+        }
+
+        .mobile-nav-close {
+            background: none;
+            border: none;
+            color: #ccc;
+            font-size: 30px;
+            cursor: pointer;
+            padding: 0;
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.3s ease;
+        }
+
+        .mobile-nav-close:hover {
+            color: #f7931a;
+        }
+
+        .mobile-nav-links {
+            padding: 20px 0;
+        }
+
+        .mobile-nav-links a {
+            display: flex;
+            align-items: center;
+            padding: 15px 20px;
+            color: #ccc;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .mobile-nav-links a:hover,
+        .mobile-nav-links a.active {
+            color: #f7931a;
+            background: rgba(247, 147, 26, 0.1);
+            border-left-color: #f7931a;
+        }
+        
+        /* ==================== MOBILE RESPONSIVE STYLES ==================== */
+
+@media (max-width: 768px) {
+    /* Show mobile menu elements */
+    .mobile-menu-btn {
+        display: block;
+    }
+    
+    .mobile-nav {
+        display: block;
+    }
+
+    /* Navigation */
+    .navbar {
+        padding: 10px 0;
+    }
+
+    .nav-container {
+        padding: 0 15px;
+    }
+
+    .logo img {
+        height: 60px;
+    }
+
+    .nav-links {
+        display: none;
+    }
+
+    .user-profile {
+        padding: 5px 10px;
+        gap: 10px;
+    }
+
+    .user-avatar {
+        width: 35px;
+        height: 35px;
+        font-size: 14px;
+    }
+
+    .user-profile > div {
+        display: none;
+    }
+
+    /* Welcome Section */
+    .welcome-section {
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+
+    .welcome-title {
+        font-size: 22px;
+    }
+
+    .welcome-subtitle {
+        font-size: 14px;
+    }
+
+    /* Stats Grid */
+    .quick-stats {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+    }
+
+    .stat-card {
+        padding: 20px 15px;
+    }
+
+    .stat-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 18px;
+        margin-bottom: 10px;
+    }
+
+    .stat-value {
+        font-size: 20px;
+    }
+
+    .stat-label {
+        font-size: 12px;
+    }
+
+    /* Level System */
+    .level-system {
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+
+    .level-header {
+        flex-direction: column;
+        gap: 10px;
+        align-items: flex-start;
+    }
+
+    .level-title {
+        font-size: 18px;
+    }
+
+    .level-badge {
+        font-size: 12px;
+        padding: 6px 12px;
+    }
+
+    .xp-text {
+        font-size: 13px;
+    }
+
+    /* Main Content */
+    .main-content {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .active-predictions,
+    .quick-actions {
+        padding: 20px;
+    }
+
+    .section-title {
+        font-size: 18px;
+    }
+
+    .prediction-item {
+        padding: 15px;
+    }
+
+    .prediction-title {
+        font-size: 15px;
+    }
+
+    .prediction-details {
+        font-size: 13px;
+    }
+
+    /* Wallet Actions */
+    .wallet-actions {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .wallet-btn {
+        padding: 12px;
+        font-size: 14px;
+    }
+
+    /* Action Buttons */
+    .action-btn {
+        padding: 12px;
+        font-size: 15px;
+    }
+
+    /* Crypto Widget */
+    .crypto-widget {
+        padding: 15px;
+    }
+
+    .crypto-item {
+        padding: 8px 0;
+    }
+
+    .crypto-name {
+        font-size: 14px;
+    }
+
+    .crypto-price {
+        font-size: 15px;
+    }
+
+    /* Performance Metrics */
+    .performance-metrics {
+        padding: 15px;
+    }
+
+    .metric-row {
+        padding: 6px 0;
+    }
+
+    .metric-label,
+    .metric-value {
+        font-size: 13px;
+    }
+
+    /* Modals */
+    .modal-content {
+        width: 95%;
+        padding: 20px;
+        max-height: 90vh;
+    }
+
+    .modal-title {
+        font-size: 20px;
+    }
+
+    .form-input,
+    .form-select {
+        font-size: 15px;
+        padding: 10px 14px;
+    }
+
+    .amount-presets {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+    }
+
+    .preset-btn {
+        padding: 8px;
+        font-size: 13px;
+    }
+
+    /* Fee Info */
+    .fee-info {
+        padding: 12px;
+    }
+
+    .fee-label,
+    .fee-value {
+        font-size: 13px;
+    }
+
+    /* Network Info */
+    .network-info {
+        padding: 12px;
+    }
+
+    .network-name {
+        font-size: 14px;
+    }
+
+    .network-details {
+        font-size: 13px;
+    }
+
+    /* Withdrawal Warning */
+    .withdrawal-warning {
+        padding: 12px;
+    }
+
+    .withdrawal-warning-title {
+        font-size: 14px;
+    }
+
+    .withdrawal-warning-text {
+        font-size: 12px;
+    }
+
+    /* Messages */
+    .messages {
+        padding: 0 15px;
+    }
+
+    .message {
+        font-size: 13px;
+        padding: 10px 14px;
+    }
+
+    /* Container */
+    .container {
+        padding: 20px 15px;
+    }
+
+    /* Profile Dropdown */
+    .profile-dropdown {
+        right: -10px;
+        min-width: 180px;
+    }
+
+    .dropdown-item {
+        padding: 10px 15px;
+        font-size: 13px;
+    }
+
+    /* Floating Coins */
+    .floating-coin {
+        width: 20px;
+        height: 20px;
+        font-size: 10px;
+    }
+}
+  
         @media (max-width: 480px) {
             /* Extra small devices */
             .logo img {
