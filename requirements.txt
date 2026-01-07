@@ -3,7 +3,7 @@ aiohttp==3.12.15
 aiosignal==1.4.0
 amqp==5.3.1
 annotated-types==0.7.0
-# APScheduler==3.10.0
+APScheduler==3.10.0
 asgiref==3.9.1
 attrs==25.3.0
 billiard==4.2.1
@@ -46,7 +46,6 @@ pydantic_core==2.33.2
 python-dateutil==2.9.0.post0
 python-dotenv==1.0.1
 pyunormalize==16.0.0
-pywin32==311
 redis==6.4.0
 regex==2025.9.1
 requests==2.32.5
