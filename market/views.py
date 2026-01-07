@@ -1707,7 +1707,6 @@ def crypto_withdraw(request):
             user.balance -= amount
             user.save()
             
-            # Create pending transaction
             withdrawal_tx = Transaction.objects.create(
                 user=user,
                 transaction_type='withdrawal',
@@ -1725,16 +1724,12 @@ def crypto_withdraw(request):
                     'net_amount': str(net_amount)
                 }
             )
-            if withdrawal_tx['success']:
-                withdrawal_tx.status = 'completed'
-                withdrawal_tx.save()
-                
-                ReferralService.process_withdrawal(request.user, net_amount)
-                
+            
             try:
                 nowpayments = NowPaymentsService()
                 ipn_url = request.build_absolute_uri('/market/wallet/nowpayments-ipn/')
                 
+                # Create payout via NowPayments
                 payout_result = nowpayments.create_payout(
                     address=address,
                     amount=net_amount,
@@ -1742,26 +1737,50 @@ def crypto_withdraw(request):
                     ipn_callback_url=ipn_url
                 )
                 
-                # Update transaction with payout info
-                withdrawal_tx.external_id = payout_result.get('id')
-                withdrawal_tx.blockchain_tx_hash = payout_result.get('batch_withdrawal_id')
-                withdrawal_tx.status = 'completed'
-                withdrawal_tx.save()
+                if payout_result.get('id'):  # NowPayments returns payout ID
+                    withdrawal_tx.external_id = payout_result.get('id')
+                    withdrawal_tx.blockchain_tx_hash = payout_result.get('batch_withdrawal_id')
+                    withdrawal_tx.status = 'completed'
+                    withdrawal_tx.metadata.update({
+                        'nowpayments_payout_id': payout_result.get('id'),
+                        'batch_withdrawal_id': payout_result.get('batch_withdrawal_id')
+                    })
+                    withdrawal_tx.save()
                 
-                return JsonResponse({
-                    'success': True,
-                    'message': f'Withdrawal of ${net_amount} initiated successfully',
-                    'transaction_id': str(withdrawal_tx.id)
-                })
+                    ReferralService.process_withdrawal(request.user, net_amount)
+                    
+                    return JsonResponse({
+                        'success': True,
+                        'message': f'Withdrawal of ${net_amount} initiated successfully',
+                        'transaction_id': str(withdrawal_tx.id),
+                        'payout_id': payout_result.get('id')
+                    })
+                else:
+                    # Payout creation failed
+                    raise Exception(f"NowPayments payout failed: {payout_result}")
                 
             except Exception as payout_error:
-                # Refund user if payout fails
+                logger.error(f"NowPayments payout error: {payout_error}")
+                
                 user.balance += amount
                 user.save()
                 
                 withdrawal_tx.status = 'failed'
                 withdrawal_tx.metadata['error'] = str(payout_error)
+                withdrawal_tx.metadata['refunded'] = True
                 withdrawal_tx.save()
+                
+               
+                Transaction.objects.create(
+                    user=user,
+                    transaction_type='refund',
+                    amount=amount,
+                    balance_before=user.balance - amount,
+                    balance_after=user.balance,
+                    status='completed',
+                    description=f'Refund for failed crypto withdrawal',
+                    metadata={'original_withdrawal': str(withdrawal_tx.id)}
+                )
                 
                 return JsonResponse({
                     'success': False,
