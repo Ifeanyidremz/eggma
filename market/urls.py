@@ -26,6 +26,8 @@ urlpatterns = [
 
     # path('webhooks/coinremitter/', views.coinremitter_webhook, name='coinremitter_webhook'),
 
+    path('target-market/create/', views.create_price_target_market, name='create-target-market'),
+
     path('api/crypto/<str:symbol>/ohlc/', views.api_crypto_ohlc, name='api-crypto-ohlc'),
     path('api/market/<str:market_id>/ohlc/', views.api_market_ohlc, name='api-market-ohlc'),
     path('api/market/<str:market_id>/', views.api_market_data, name='api-market-data'),

@@ -1794,6 +1794,131 @@ def crypto_withdraw(request):
 
 @login_required
 @csrf_protect
+def place_target_bet(request):
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Invalid method'})
+    
+    try:
+        data = json.loads(request.body)
+        market_id = data.get('market_id')
+        prediction = data.get('prediction')
+        amount = Decimal(str(data.get('amount', 0)))
+        
+        # Validation
+        if prediction not in ['YES', 'NO']:
+            return JsonResponse({'success': False, 'error': 'Invalid prediction. Must be YES or NO.'})
+        
+        if amount < Decimal('1.00'):
+            return JsonResponse({'success': False, 'error': 'Minimum bet is $1.00'})
+        
+        if amount > request.user.balance:
+            return JsonResponse({
+                'success': False, 
+                'error': f'Insufficient balance. You have ${request.user.balance:.2f}'
+            })
+        
+        # Get market
+        try:
+            market = Market.objects.get(id=market_id, market_type='target', status='active')
+        except Market.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Market not found or closed'})
+        
+        # Check deadline
+        if timezone.now() >= market.resolution_date:
+            return JsonResponse({'success': False, 'error': 'Market has closed (deadline passed)'})
+        
+        outcome = 'UP' if prediction == 'YES' else 'DOWN'
+        
+        # Calculate odds based on current volume
+        if outcome == 'UP':
+            odds = market.up_odds  # YES odds
+        else:
+            odds = market.down_odds  # NO odds
+        
+        potential_payout = amount * odds
+        
+        # Place bet within atomic transaction
+        with db_transaction.atomic():
+            # Lock user for update
+            user = CustomUser.objects.select_for_update().get(id=request.user.id)
+            
+            # Double-check balance
+            if user.balance < amount:
+                return JsonResponse({'success': False, 'error': 'Insufficient balance'})
+            
+            # Deduct from user
+            old_balance = user.balance
+            user.balance -= amount
+            user.save()
+            
+            # Create bet
+            bet = Bet.objects.create(
+                user=user,
+                market=market,
+                bet_type='regular',
+                outcome=outcome,
+                amount=amount,
+                odds_at_bet=odds,
+                potential_payout=potential_payout,
+                round_number=1,
+                round_start_price=market.round_start_price,
+                status='active'
+            )
+            
+            # Update market volume
+            market.total_volume += amount
+            if outcome == 'UP':  # YES
+                market.up_volume += amount
+            else:  # NO
+                market.down_volume += amount
+            market.save()
+            
+            # Create transaction record
+            Transaction.objects.create(
+                user=user,
+                transaction_type='bet',
+                amount=-amount,
+                balance_before=old_balance,
+                balance_after=user.balance,
+                status='completed',
+                bet=bet,
+                market=market,
+                description=f'{prediction} bet on {market.title[:50]}...',
+                metadata={
+                    'prediction': prediction,
+                    'market_type': 'target',
+                    'target_price': str(market.target_price)
+                }
+            )
+            
+            # Award XP
+            xp_earned = min(int(amount), 50)
+            user.xp += xp_earned
+            user.save()
+        
+        logger.info(
+            f"Target bet placed: User {user.username} bet ${amount} {prediction} "
+            f"on market {market.id}"
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'{prediction} bet placed successfully! +{xp_earned} XP',
+            'bet_id': str(bet.id),
+            'new_balance': float(user.balance),
+            'odds': float(odds),
+            'potential_payout': float(potential_payout),
+            'xp_earned': xp_earned
+        })
+        
+    except Market.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Market not found'})
+    except Exception as e:
+        logger.error(f"Target bet error: {str(e)}", exc_info=True)
+        return JsonResponse({'success': False, 'error': f'Error placing bet: {str(e)}'})
+    
+@login_required
+@csrf_protect
 def wallet_transfer(request):
     """Handle wallet-to-wallet transfers"""
     if request.method != 'POST':
@@ -1819,6 +1944,66 @@ def wallet_transfer(request):
         logger.error(f"Wallet transfer error: {str(e)}")
         return JsonResponse({'success': False, 'error': str(e)})
 
+
+@login_required
+def create_price_target_market(request):
+    if request.method == 'POST':
+        try:
+            crypto_symbol = request.POST.get('crypto_symbol', 'BTC').upper()
+            target_price = Decimal(request.POST.get('target_price', 0))
+            
+            # Validation
+            if target_price <= 0:
+                messages.error(request, 'Invalid target price')
+                return redirect('create-target-market')
+            
+            # Optional: custom end date
+            end_date_str = request.POST.get('end_date', '')
+            end_date = None
+            if end_date_str:
+                try:
+                    end_date = timezone.datetime.fromisoformat(end_date_str)
+                except:
+                    messages.error(request, 'Invalid date format')
+                    return redirect('create-target-market')
+            
+            # Create market
+            from market.utils import PriceTargetMarketService
+            market = PriceTargetMarketService.create_target_market(
+                creator=request.user,
+                crypto_symbol=crypto_symbol,
+                target_price=target_price,
+                end_date=end_date
+            )
+            
+            messages.success(
+                request,
+                f'✅ Price target market created successfully: {market.title}'
+            )
+            return redirect('market-detail', market_id=market.id)
+            
+        except ValueError as e:
+            messages.error(request, f'Error: {str(e)}')
+        except Exception as e:
+            logger.error(f"Error creating target market: {str(e)}", exc_info=True)
+            messages.error(request, 'An error occurred while creating the market')
+    
+   
+    crypto_prices = CryptoPriceService.get_crypto_prices()
+    
+    context = {
+        'crypto_prices': crypto_prices,
+        'suggested_targets': {
+            'BTC': [75000, 80000, 90000, 100000, 110000, 120000],
+            'ETH': [3000, 3500, 4000, 4500, 5000, 5500]
+        },
+        'current_prices': {
+            'BTC': crypto_prices.get('BTC', {}).get('price', 67432),
+            'ETH': crypto_prices.get('ETH', {}).get('price', 3421)
+        }
+    }
+    
+    return render(request, 'create_target_market.html', context)
 
 @csrf_exempt
 @require_POST

@@ -202,6 +202,25 @@ LOGGING = {
     },
 }
 
+SCHEDULER_CONFIG = {
+    'apscheduler.jobstores.default': {
+        'type': 'memory'
+    },
+    'apscheduler.executors.default': {
+        'class': 'apscheduler.executors.pool:ThreadPoolExecutor',
+        'max_workers': '5'
+    },
+    'apscheduler.executors.processpool': {
+        'type': 'processpool',
+        'max_workers': '3'
+    },
+    'apscheduler.job_defaults.coalesce': 'false',
+    'apscheduler.job_defaults.max_instances': '1',
+    'apscheduler.timezone': 'UTC',
+}
+
+SCHEDULER_AUTOSTART = True
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators

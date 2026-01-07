@@ -56,3 +56,16 @@ INFO 2026-01-02 14:41:55,927 autoreload 23044 16048 Watching for file changes wi
 INFO 2026-01-02 14:42:07,678 basehttp 23044 23612 "GET / HTTP/1.1" 200 16943
 INFO 2026-01-02 14:42:13,312 basehttp 23044 23612 "GET /register/ HTTP/1.1" 200 28962
 WARNING 2026-01-02 14:42:13,412 basehttp 23044 23612 "GET /static/evgchain-logo.png HTTP/1.1" 404 1865
+INFO 2026-01-07 14:05:18,805 base 17688 2616 Adding job tentatively -- it will be properly scheduled when the scheduler starts
+INFO 2026-01-07 14:05:18,806 base 17688 2616 Added job "monitor_price_targets" to job store "default"
+INFO 2026-01-07 14:05:18,806 base 17688 2616 Scheduler started
+DEBUG 2026-01-07 14:05:18,808 base 17688 19356 Looking for jobs to run
+INFO 2026-01-07 14:05:18,808 scheduler 17688 2616 Scheduler started successfully
+DEBUG 2026-01-07 14:05:18,808 base 17688 19356 Next wakeup is due at 2026-01-07 13:10:18.805897+00:00 (in 299.997004 seconds)
+INFO 2026-01-07 14:05:27,451 base 26924 22612 Adding job tentatively -- it will be properly scheduled when the scheduler starts
+INFO 2026-01-07 14:05:27,452 base 26924 22612 Added job "monitor_price_targets" to job store "default"
+INFO 2026-01-07 14:05:27,452 base 26924 22612 Scheduler started
+DEBUG 2026-01-07 14:05:27,453 base 26924 13744 Looking for jobs to run
+INFO 2026-01-07 14:05:27,454 scheduler 26924 22612 Scheduler started successfully
+DEBUG 2026-01-07 14:05:27,454 base 26924 13744 Next wakeup is due at 2026-01-07 13:10:27.450897+00:00 (in 299.996002 seconds)
+INFO 2026-01-07 14:05:27,565 autoreload 26924 22612 Watching for file changes with StatReloader

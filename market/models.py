@@ -59,6 +59,7 @@ class Market(models.Model):
         ('event', 'Economic Event'),
         ('price', 'Price Prediction'),
         ('quick', 'Quick Predict'),
+        ('target', 'Price Target'),
     ]
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

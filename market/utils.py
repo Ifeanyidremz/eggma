@@ -10,6 +10,11 @@ from django.db import models
 from django.utils import timezone as django_timezone
 from typing import Dict, List, Optional
 import logging
+import time
+from market.models import Market, CryptocurrencyCategory
+from django.utils import timezone
+from datetime import timedelta
+from decimal import Decimal
 from dotenv import load_dotenv
 load_dotenv()  
 
@@ -1427,3 +1432,258 @@ class MarketDataService:
         except Exception as e:
             logger.error(f"Error calculating volatility: {e}")
             return 0.0
+
+class PriceTargetMarketService:
+    
+    @staticmethod
+    def create_target_market(
+        creator,
+        crypto_symbol,  # 'BTC', 'ETH', etc.
+        target_price,   # Decimal('100000.00')
+        end_date=None   # Defaults to month-end
+    ):
+        """
+        Create a new price target market
+        
+        Example:
+            create_target_market(
+                creator=admin_user,
+                crypto_symbol='BTC',
+                target_price=Decimal('100000.00'),
+                end_date=None  # Defaults to end of current month
+            )
+        """
+        
+        # Get current price
+        crypto_prices = CryptoPriceService.get_crypto_prices()
+        current_price = crypto_prices.get(crypto_symbol, {}).get('price', 0)
+        
+        if not current_price:
+            raise ValueError(f"Unable to get current price for {crypto_symbol}")
+        
+        current_price = Decimal(str(current_price))
+        
+        if not end_date:
+            now = timezone.now()
+            # Get last day of current month
+            if now.month == 12:
+                next_month = now.replace(year=now.year + 1, month=1, day=1)
+            else:
+                next_month = now.replace(month=now.month + 1, day=1)
+            
+            end_date = next_month - timedelta(days=1)
+            # Set to 11:59 PM
+            end_date = end_date.replace(hour=23, minute=59, second=59)
+        
+        # Get or create category
+        category_type = 'bitcoin' if crypto_symbol == 'BTC' else 'ethereum' if crypto_symbol == 'ETH' else 'altcoins'
+        category, _ = CryptocurrencyCategory.objects.get_or_create(
+            category_type=category_type,
+            defaults={
+                'display_name': f'{crypto_symbol} Price Targets',
+                'description': f'Binary price target predictions for {crypto_symbol}',
+                'icon': '🎯',
+                'color_code': '#F7931A' if crypto_symbol == 'BTC' else '#627EEA',
+                'is_active': True
+            }
+        )
+        
+        # Determine if target is above or below current price
+        direction = "reach" if target_price > current_price else "fall below"
+        percent_change = abs((target_price - current_price) / current_price * 100)
+        
+        # Create market
+        market = Market.objects.create(
+            title=f"Will {crypto_symbol} {direction} ${target_price:,.0f} before {end_date.strftime('%B %d, %Y')}?",
+            description=f"""
+            **Current Price:** ${current_price:,.2f}
+            **Target Price:** ${target_price:,.0f}
+            **Required Change:** {percent_change:.1f}%
+            **Deadline:** {end_date.strftime('%B %d, %Y at %I:%M %p UTC')}
+
+            **How it works:**
+            - Vote **YES** if you think {crypto_symbol} will {direction} ${target_price:,.0f} before the deadline
+            - Vote **NO** if you think it won't reach this price
+            - Market resolves **YES** if {crypto_symbol} touches or exceeds ${target_price:,.0f} at any point before deadline
+            - Market resolves **NO** if deadline passes without reaching target
+
+            **Resolution Criteria:**
+            - Using CoinGecko API price data
+            - Checked automatically every hour
+            - First touch of target price wins
+            - No need to close above target - just needs to reach it
+            """.strip(),
+            market_type='target',
+            creator=creator,
+            category=category,
+            base_currency=crypto_symbol,
+            quote_currency='USDT',
+            
+            # Target-specific fields
+            target_price=target_price,
+            highest_price_reached=current_price,
+            round_start_price=current_price,
+            
+            # Dates
+            resolution_date=end_date,
+            round_start_time=timezone.now(),
+            
+            # Initial volumes (empty market)
+            total_volume=Decimal('0'),
+            up_volume=Decimal('0'),      # YES votes
+            down_volume=Decimal('0'),    # NO votes
+            flat_volume=Decimal('0'),    # Unused for binary
+            
+            # Settings
+            min_bet=Decimal('1.00'),
+            max_bet=Decimal('10000.00'),
+            round_duration=0,  # No rounds for target markets
+            current_round=1,
+            status='active'
+        )
+        
+        logger.info(f"Created price target market: {market.title}")
+        return market
+    
+    @staticmethod
+    def check_target_reached(market):
+        """
+        Check if target price has been reached
+        Returns: (bool, Decimal) - (reached, current_price)
+        """
+        from decimal import Decimal
+        
+        if market.market_type != 'target':
+            raise ValueError("Market is not a price target market")
+        
+        # Get current price
+        crypto_prices = CryptoPriceService.get_crypto_prices()
+        current_price = crypto_prices.get(market.base_currency, {}).get('price', 0)
+        
+        if not current_price:
+            return False, None
+        
+        current_price = Decimal(str(current_price))
+        
+        # Update highest price reached
+        if not market.highest_price_reached or current_price > market.highest_price_reached:
+            market.highest_price_reached = current_price
+            market.save(update_fields=['highest_price_reached'])
+        
+        # Check if target reached
+        target_reached = market.highest_price_reached >= market.target_price
+        
+        return target_reached, current_price
+    
+    @staticmethod
+    def resolve_target_market(market):
+        """
+        Resolve a price target market
+        Call this when resolution_date is passed OR target is reached early
+        """
+        from django.utils import timezone
+        from decimal import Decimal
+        
+        if market.status != 'active':
+            logger.warning(f"Market {market.id} is not active (status: {market.status})")
+            return
+        
+        if market.market_type != 'target':
+            raise ValueError("Market is not a price target market")
+        
+        # Determine outcome
+        target_reached, final_price = PriceTargetMarketService.check_target_reached(market)
+        
+        winning_outcome = 'UP' if target_reached else 'DOWN'  # UP = YES, DOWN = NO
+        
+        # Close market
+        market.status = 'resolved'
+        market.winning_outcome = winning_outcome
+        market.resolved_at = timezone.now()
+        market.round_end_price = final_price
+        market.save()
+        
+        # Resolve all bets
+        from predict.models import Bet, Transaction
+        winning_bets = Bet.objects.filter(
+            market=market,
+            outcome=winning_outcome,
+            status='active'
+        )
+        
+        losing_bets = Bet.objects.filter(
+            market=market,
+            status='active'
+        ).exclude(outcome=winning_outcome)
+        
+        total_pool = market.total_volume
+        winning_pool = market.up_volume if winning_outcome == 'UP' else market.down_volume
+        
+        # Pay winners
+        for bet in winning_bets:
+            # Recalculate actual payout based on final pool
+            if winning_pool > 0:
+                bet.actual_payout = (bet.amount / winning_pool) * total_pool
+            else:
+                bet.actual_payout = bet.potential_payout  # Fallback
+            
+            bet.status = 'won'
+            bet.resolved_at = timezone.now()
+            bet.save()
+            
+            # Credit user
+            user = bet.user
+            old_balance = user.balance
+            user.balance += bet.actual_payout
+            user.save()
+            
+            # Create transaction
+            Transaction.objects.create(
+                user=user,
+                transaction_type='payout',
+                amount=bet.actual_payout,
+                balance_before=old_balance,
+                balance_after=user.balance,
+                status='completed',
+                bet=bet,
+                market=market,
+                description=f'Payout for winning {"YES" if winning_outcome == "UP" else "NO"} bet on {market.title[:50]}...'
+            )
+            
+            # Award XP
+            user.add_xp(50)
+        
+        # Mark losers
+        for bet in losing_bets:
+            bet.status = 'lost'
+            bet.actual_payout = Decimal('0')
+            bet.resolved_at = timezone.now()
+            bet.save()
+        
+        logger.info(
+            f"Resolved target market {market.id}: {winning_outcome} "
+            f"({winning_bets.count()} winners, {losing_bets.count()} losers) "
+            f"Target: ${market.target_price}, Highest: ${market.highest_price_reached}"
+        )
+        
+        return market
+    
+    @staticmethod
+    def get_active_target_markets():
+        """Get all active price target markets"""
+        from market.models import Market
+        
+        return Market.objects.filter(
+            market_type='target',
+            status='active'
+        ).select_related('category', 'creator').order_by('resolution_date')
+    
+    @staticmethod
+    def get_user_target_bets(user):
+        """Get user's bets on target markets"""
+        from predict.models import Bet
+        
+        return Bet.objects.filter(
+            user=user,
+            market__market_type='target'
+        ).select_related('market').order_by('-placed_at')
