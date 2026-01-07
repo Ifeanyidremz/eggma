@@ -1321,6 +1321,13 @@
         </div>
     </nav>
 
+    <!-- Mobile Navigation Menu -->
+    <div class="mobile-nav-links" id="mobileNavLinks">
+        <a href="{% url 'dashboard' %}">📊 Dashboard</a>
+        <a href="{% url 'market-data' %}">📈 Markets</a>
+        <a href="{% url 'referral-dashboard' %}">🤝 Referrals</a>
+    </div>
+
     <div class="container">
         <div class="main-content">
             <div class="event-header">
@@ -2330,6 +2337,5 @@
             }
         }, 3000);
     </script>
-    {% endif %}
 </body>
 </html>
