@@ -74,6 +74,71 @@
             color: #f7931a;
         }
 
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            cursor: pointer;
+            padding: 8px;
+        }
+
+        .hamburger span {
+            width: 25px;
+            height: 3px;
+            background: white;
+            border-radius: 2px;
+            transition: all 0.3s ease;
+        }
+
+        .mobile-nav-links {
+            display: none;
+            position: fixed;
+            top: 130px;
+            left: 0;
+            right: 0;
+            background: rgba(20, 20, 20, 0.98);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            z-index: 99;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .mobile-nav-links.show {
+            display: flex;
+        }
+
+        .mobile-nav-links a {
+            color: #ccc;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 16px;
+            padding: 12px 15px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .mobile-nav-links a:hover, .mobile-nav-links a.active {
+            background: rgba(247, 147, 26, 0.1);
+            color: #f7931a;
+        }
+
+
+        .nav-links a.active::after {
+            content: '';
+            position: absolute;
+            bottom: -20px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(135deg, #f7931a 0%, #ffb84d 100%);
+        }
+
         .user-profile {
             display: flex;
             align-items: center;
@@ -199,30 +264,128 @@
             min-width: 250px;
         }
 
-        .market-stats-summary {
-            background: rgba(20, 20, 20, 0.8);
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 30px;
+        .news-summary-card {
+            background: rgba(20, 20, 20, 0.9);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 40px;
+            transition: all 0.3s ease;
+        }
+
+        .news-summary-card:hover {
+            border-color: rgba(34, 197, 94, 0.3);
+            box-shadow: 0 8px 25px rgba(34, 197, 94, 0.1);
+        }
+
+        .news-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .news-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .news-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: white;
+        }
+
+        .news-timestamp {
+            color: #999;
+            font-size: 12px;
+            margin-left: auto;
+        }
+
+        .news-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 20px;
         }
 
-        .summary-stat {
-            text-align: center;
+        .news-item {
+            background: rgba(30, 30, 30, 0.6);
+            border-radius: 10px;
+            padding: 16px;
+            border-left: 3px solid;
+            transition: all 0.3s ease;
         }
 
-        .summary-stat-value {
-            font-size: 24px;
-            font-weight: 700;
-            color: #f7931a;
-            margin-bottom: 5px;
+        .news-item.high-impact {
+            border-left-color: #ef4444;
         }
 
-        .summary-stat-label {
-            color: #999;
+        .news-item.medium-impact {
+            border-left-color: #f97316;
+        }
+
+        .news-item.low-impact {
+            border-left-color: #22c55e;
+        }
+
+        .news-item:hover {
+            background: rgba(40, 40, 40, 0.8);
+            transform: translateY(-1px);
+        }
+
+        .news-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .news-impact {
+            font-size: 10px;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 8px;
+            text-transform: uppercase;
+        }
+
+        .news-impact.high {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+
+        .news-impact.medium {
+            background: rgba(249, 115, 22, 0.2);
+            color: #f97316;
+        }
+
+        .news-impact.low {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+        }
+
+        .news-time {
+            font-size: 11px;
+            color: #666;
+        }
+
+        .news-headline {
             font-size: 14px;
+            font-weight: 600;
+            color: white;
+            line-height: 1.4;
+            margin-bottom: 8px;
+        }
+
+        .news-summary {
+            font-size: 12px;
+            color: #ccc;
+            line-height: 1.5;
         }
 
         .trading-cards-grid {
@@ -233,214 +396,6 @@
             margin: 0 auto;
         }
 
-        /* ==========================================
-           PRICE TARGET MARKET CARD STYLES
-        ========================================== */
-        .target-market-card {
-            background: linear-gradient(135deg, rgba(247, 147, 26, 0.05), rgba(255, 184, 77, 0.05));
-            border: 2px solid rgba(247, 147, 26, 0.3) !important;
-            position: relative;
-        }
-
-        .target-market-card:hover {
-            border-color: rgba(247, 147, 26, 0.6) !important;
-            box-shadow: 0 15px 40px rgba(247, 147, 26, 0.3) !important;
-        }
-
-        .target-badge {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            background: rgba(247, 147, 26, 0.2);
-            border: 1px solid #f7931a;
-            border-radius: 20px;
-            padding: 5px 12px;
-            font-size: 11px;
-            font-weight: 600;
-            color: #f7931a;
-            z-index: 10;
-        }
-
-        .target-card-header {
-            padding: 25px 25px 15px 25px;
-        }
-
-        .target-title {
-            font-size: 18px;
-            font-weight: 600;
-            color: white;
-            margin-bottom: 15px;
-            padding-right: 80px;
-            line-height: 1.3;
-        }
-
-        .target-prices {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 15px;
-        }
-
-        .price-stat {
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 10px;
-            padding: 12px;
-            text-align: center;
-        }
-
-        .price-label {
-            font-size: 11px;
-            color: #999;
-            text-transform: uppercase;
-            margin-bottom: 5px;
-        }
-
-        .price-value {
-            font-size: 20px;
-            font-weight: 700;
-            color: white;
-        }
-
-        .price-value.target {
-            color: #f7931a;
-        }
-
-        .target-progress {
-            margin: 15px 0;
-        }
-
-        .progress-bar {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            height: 8px;
-            overflow: hidden;
-            margin-bottom: 8px;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #f7931a, #ffb84d);
-            border-radius: 10px;
-            transition: width 0.3s ease;
-        }
-
-        .progress-text {
-            font-size: 12px;
-            color: #999;
-            text-align: center;
-        }
-
-        .target-deadline {
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            border-radius: 10px;
-            padding: 10px;
-            text-align: center;
-            margin: 15px 25px;
-        }
-
-        .deadline-label {
-            font-size: 11px;
-            color: #999;
-            margin-bottom: 3px;
-        }
-
-        .deadline-time {
-            font-size: 16px;
-            font-weight: 600;
-            color: #ef4444;
-        }
-
-        .yes-no-options {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            padding: 0 25px;
-            margin-bottom: 20px;
-        }
-
-        .yn-option-card {
-            background: rgba(30, 30, 30, 0.8);
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            padding: 15px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .yn-option-card.yes {
-            border-color: rgba(34, 197, 94, 0.3);
-        }
-
-        .yn-option-card.yes:hover {
-            background: rgba(34, 197, 94, 0.1);
-            border-color: #22c55e;
-            transform: scale(1.03);
-        }
-
-        .yn-option-card.no {
-            border-color: rgba(239, 68, 68, 0.3);
-        }
-
-        .yn-option-card.no:hover {
-            background: rgba(239, 68, 68, 0.1);
-            border-color: #ef4444;
-            transform: scale(1.03);
-        }
-
-        .yn-label {
-            font-size: 20px;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
-
-        .yn-option-card.yes .yn-label {
-            color: #22c55e;
-        }
-
-        .yn-option-card.no .yn-label {
-            color: #ef4444;
-        }
-
-        .yn-odds {
-            font-size: 16px;
-            font-weight: 600;
-            color: #f7931a;
-            margin-bottom: 5px;
-        }
-
-        .yn-pool {
-            font-size: 11px;
-            color: #999;
-        }
-
-        .target-stats {
-            display: flex;
-            justify-content: space-around;
-            padding: 15px 25px;
-            margin-bottom: 15px;
-            font-size: 12px;
-        }
-
-        .target-stat-item {
-            text-align: center;
-        }
-
-        .target-stat-value {
-            font-size: 16px;
-            font-weight: 600;
-            color: white;
-            margin-bottom: 3px;
-        }
-
-        .target-stat-label {
-            color: #999;
-        }
-
-        /* ==========================================
-           EVENT MARKET CARD STYLES (EXISTING)
-        ========================================== */
         .trading-card {
             background: rgba(20, 20, 20, 0.9);
             border-radius: 15px;
@@ -553,6 +508,16 @@
             transform: translate(-50%, -50%);
             color: #666;
             font-size: 14px;
+        }
+
+        .chart-error {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ef4444;
+            font-size: 12px;
+            text-align: center;
         }
 
         .prediction-options {
@@ -678,15 +643,42 @@
             box-shadow: 0 8px 25px rgba(34, 197, 94, 0.3);
         }
 
-        .action-button.target-button {
-            background: linear-gradient(135deg, #f7931a 0%, #ffb84d 100%);
+        .market-stats-summary {
+            background: rgba(20, 20, 20, 0.8);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
         }
 
-        .action-button.target-button:hover {
-            box-shadow: 0 8px 25px rgba(247, 147, 26, 0.3);
+        .summary-stat {
+            text-align: center;
         }
 
+        .summary-stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #f7931a;
+            margin-bottom: 5px;
+        }
+
+        .summary-stat-label {
+            color: #999;
+            font-size: 14px;
+        }
+
+        
         @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+
+            .hamburger {
+                display: flex;
+            }
+
             .nav-links {
                 display: none;
             }
@@ -696,12 +688,36 @@
                 gap: 20px;
             }
 
+            .news-grid {
+                grid-template-columns: 1fr;
+            }
+
             .container {
                 padding: 20px 15px;
             }
 
             .page-title {
                 font-size: 28px;
+            }
+
+            .card-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+
+            .timer-section {
+                align-items: flex-start;
+            }
+
+            .news-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .news-timestamp {
+                margin-left: 0;
             }
 
             .filter-controls {
@@ -718,14 +734,6 @@
                 min-width: auto;
                 width: 100%;
             }
-
-            .target-prices {
-                grid-template-columns: 1fr;
-            }
-
-            .yes-no-options {
-                grid-template-columns: 1fr;
-            }
         }
     </style>
 </head>
@@ -735,7 +743,13 @@
             <a href="{% url 'landing-page' %}" class="logo">
                <img src="/static/evgchain-logo.png" alt="EVGxchain">
             </a>
-            <div class="nav-links">
+                        <div class="hamburger" onclick="toggleMobileMenu()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            
+<div class="nav-links">
                 {% if user.is_authenticated %}
                 <a href="{% url 'dashboard' %}">Dashboard</a>
                 {% endif %}
@@ -775,20 +789,27 @@
             </div>
         </div>
     </nav>
-    
+
+    <!-- Mobile Navigation Menu -->
+    <div class="mobile-nav-links" id="mobileNavLinks">
+        <a href="{% url 'dashboard' %}">📊 Dashboard</a>
+        <a href="{% url 'market-data' %}" class="active">📈 Markets</a>
+        <a href="{% url 'referral-dashboard' %}">🤝 Referrals</a>
+    </div>
     <div class="container">
         <div class="page-header">
-            <h1 class="page-title">Crypto Prediction Markets</h1>
-            <p class="page-subtitle">Trade on price targets and economic event outcomes</p>
+            <h1 class="page-title">Economic Event Trading</h1>
+            <p class="page-subtitle">Trade crypto volatility during CPI, FOMC, and NFP announcements</p>
         </div>
 
         <div class="filter-controls">
             <div class="filter-group">
                 <label class="filter-label">Category:</label>
                 <select class="filter-select">
-                    <option>All Markets</option>
-                    <option>Price Targets</option>
-                    <option>Event Trading</option>
+                    <option>All Categories</option>
+                    <option>High Impact Events</option>
+                    <option>Medium Impact Events</option>
+                    <option>Low Impact Events</option>
                 </select>
             </div>
             <div class="filter-group">
@@ -807,7 +828,7 @@
 
         <div class="market-stats-summary">
             <div class="summary-stat">
-                <div class="summary-stat-value">{{ total_markets|default:"12" }}</div>
+                <div class="summary-stat-value">12</div>
                 <div class="summary-stat-label">Active Markets</div>
             </div>
             <div class="summary-stat">
@@ -819,163 +840,128 @@
                 <div class="summary-stat-label">ETH Price</div>
             </div>
             <div class="summary-stat">
-                <div class="summary-stat-value">{{ markets.count }}</div>
-                <div class="summary-stat-label">Available Now</div>
+                <div class="summary-stat-value">3</div>
+                <div class="summary-stat-label">Upcoming Events</div>
+            </div>
+        </div>
+
+        <div class="news-summary-card">
+            <div class="news-header">
+                <div class="news-icon">📰</div>
+                <div class="news-title">Market-Moving News</div>
+                <div class="news-timestamp">Last updated: 2 mins ago</div>
+            </div>
+            
+            <div class="news-grid">
+                <div class="news-item high-impact">
+                    <div class="news-item-header">
+                        <span class="news-impact high">High Impact</span>
+                        <span class="news-time">15 mins ago</span>
+                    </div>
+                    <div class="news-headline">Fed Chair Powell Hints at Rate Cut in Q4</div>
+                    <div class="news-summary">Federal Reserve Chairman suggests potential monetary policy adjustment based on recent inflation data.</div>
+                </div>
+                <div class="news-item medium-impact">
+                    <div class="news-item-header">
+                        <span class="news-impact medium">Medium Impact</span>
+                        <span class="news-time">32 mins ago</span>
+                    </div>
+                    <div class="news-headline">Bitcoin ETF Sees Record Inflows</div>
+                    <div class="news-summary">Spot Bitcoin ETFs attract $2.1B in net inflows over the past week, signaling institutional demand.</div>
+                </div>
+                <div class="news-item low-impact">
+                    <div class="news-item-header">
+                        <span class="news-impact low">Low Impact</span>
+                        <span class="news-time">1 hour ago</span>
+                    </div>
+                    <div class="news-headline">Ethereum Layer 2 Activity Surges</div>
+                    <div class="news-summary">Transaction volume on major L2 solutions reaches new monthly high amid growing DeFi adoption.</div>
+                </div>
             </div>
         </div>
 
         <div class="trading-cards-grid">
             {% for market in markets %}
-                {% if market.market_type == 'target' %}
-                    <!-- ========================================
-                         PRICE TARGET MARKET CARD (YES/NO)
-                    ======================================== -->
-                    <div class="trading-card target-market-card" data-market-id="{{ market.id }}">
-                        <div class="target-badge">🎯 PRICE TARGET</div>
-                        
-                        <div class="target-card-header">
-                            <h3 class="target-title">{{ market.title }}</h3>
-                            
-                            <div class="target-prices">
-                                <div class="price-stat">
-                                    <div class="price-label">Current Price</div>
-                                    <div class="price-value">${{ market.round_start_price|floatformat:0|default:"67,432" }}</div>
-                                </div>
-                                <div class="price-stat">
-                                    <div class="price-label">Target Price</div>
-                                    <div class="price-value target">${{ market.target_price|floatformat:0 }}</div>
-                                </div>
-                            </div>
-
-                            <div class="target-progress">
-                                <div class="progress-bar">
-                                    <div class="progress-fill" style="width: {% widthratio market.highest_price_reached market.target_price 100 %}%"></div>
-                                </div>
-                                <div class="progress-text">
-                                    Highest: ${{ market.highest_price_reached|floatformat:0|default:market.round_start_price|floatformat:0 }}
-                                    ({% widthratio market.highest_price_reached market.target_price 100 %}% to target)
-                                </div>
-                            </div>
+            <div class="trading-card" data-market-id="{{ market.id }}">
+                <div class="card-header">
+                    <div class="crypto-pair">
+                        <div class="crypto-icon" 
+                             {% if 'ETH' in market.title %}
+                             style="background: linear-gradient(135deg, #627eea 0%, #8c94ff 100%);"
+                             {% endif %}>
+                            {% if 'BTC' in market.title %}₿{% elif 'ETH' in market.title %}Ξ{% else %}₿{% endif %}
                         </div>
-
-                        <div class="target-deadline">
-                            <div class="deadline-label">Deadline</div>
-                            <div class="deadline-time">{{ market.resolution_date|date:"M d, Y H:i" }}</div>
+                        <div class="pair-info">
+                            <div class="pair-name">{{ market.title|default:"BTC/USDT" }}</div>
+                            <div class="timeframe">{{ market.get_round_duration_display|default:"15m" }}</div>
                         </div>
-
-                        <div class="yes-no-options">
-                            <div class="yn-option-card yes">
-                                <div class="yn-label">YES ✓</div>
-                                <div class="yn-odds">{{ market.up_odds|floatformat:2|default:"2.00" }}x</div>
-                                <div class="yn-pool">{{ market.up_volume|div:market.total_volume|mul:100|floatformat:1|default:"50.0" }}% pool</div>
-                            </div>
-                            
-                            <div class="yn-option-card no">
-                                <div class="yn-label">NO ✗</div>
-                                <div class="yn-odds">{{ market.down_odds|floatformat:2|default:"2.00" }}x</div>
-                                <div class="yn-pool">{{ market.down_volume|div:market.total_volume|mul:100|floatformat:1|default:"50.0" }}% pool</div>
-                            </div>
+                    </div>
+                    <div class="timer-section">
+                        <div class="timer-circle" data-time-remaining="{{ market.current_round_time_left|default:'20' }}">
+                            {{ market.current_round_time_left|default:"20" }}s
                         </div>
+                        <div class="current-round-text">Current Round Info</div>
+                    </div>
+                </div>
 
-                        <div class="target-stats">
-                            <div class="target-stat-item">
-                                <div class="target-stat-value">${{ market.total_volume|floatformat:0|default:"0" }}</div>
-                                <div class="target-stat-label">Total Pool</div>
-                            </div>
-                            <div class="target-stat-item">
-                                <div class="target-stat-value">{{ market.participant_count|default:"0" }}</div>
-                                <div class="target-stat-label">Participants</div>
-                            </div>
+                <div class="chart-area">
+                    <canvas id="chart-{{ forloop.counter0 }}" class="crypto-chart" 
+                            data-symbol="{% if 'BTC' in market.title %}BTC{% elif 'ETH' in market.title %}ETH{% else %}BTC{% endif %}"
+                            data-market-id="{{ market.id }}">
+                    </canvas>
+                    <div class="chart-loading">Loading chart...</div>
+                </div>
+
+                <div class="prediction-options">
+                    <div class="prediction-option up">
+                        <div class="option-label up">Closes above</div>
+                        <div class="option-change">+{{ market.crypto_data.change_24h|floatformat:2|default:"0.04" }}%</div>
+                        <div class="option-stats">
+                            <span class="pool-share">Pool share</span>
+                            <span class="payout">{{ market.up_odds|floatformat:2|default:"2.00" }}x</span>
                         </div>
-
-                        <a href="{% url 'market-detail' market.id %}" class="action-button target-button">Place Prediction</a>
+                        <div class="option-stats">
+                            <span class="pool-share">{{ market.up_volume|div:market.total_volume|mul:100|floatformat:1|default:"49.5" }}%</span>
+                            <span class="payout">Payout</span>
+                        </div>
                     </div>
 
-                {% else %}
-                    <!-- ========================================
-                         EVENT MARKET CARD (UP/DOWN/FLAT)
-                    ======================================== -->
-                    <div class="trading-card" data-market-id="{{ market.id }}">
-                        <div class="card-header">
-                            <div class="crypto-pair">
-                                <div class="crypto-icon" 
-                                     {% if 'ETH' in market.title %}
-                                     style="background: linear-gradient(135deg, #627eea 0%, #8c94ff 100%);"
-                                     {% endif %}>
-                                    {% if 'BTC' in market.title %}₿{% elif 'ETH' in market.title %}Ξ{% else %}₿{% endif %}
-                                </div>
-                                <div class="pair-info">
-                                    <div class="pair-name">{{ market.title|default:"BTC/USDT" }}</div>
-                                    <div class="timeframe">{{ market.get_round_duration_display|default:"15m" }}</div>
-                                </div>
-                            </div>
-                            <div class="timer-section">
-                                <div class="timer-circle" data-time-remaining="{{ market.current_round_time_left|default:'20' }}">
-                                    {{ market.current_round_time_left|default:"20" }}s
-                                </div>
-                                <div class="current-round-text">Current Round Info</div>
-                            </div>
+                    <div class="prediction-option flat">
+                        <div class="option-label flat">Stay Flat</div>
+                        <div class="option-change">±{{ market.crypto_data.change_24h|floatformat:2|default:"0.04" }}%</div>
+                        <div class="option-stats">
+                            <span class="pool-share">Pool share</span>
+                            <span class="payout">{{ market.flat_odds|floatformat:2|default:"2.00" }}x</span>
                         </div>
-
-                        <div class="chart-area">
-                            <canvas id="chart-{{ forloop.counter0 }}" class="crypto-chart" 
-                                    data-symbol="{% if 'BTC' in market.title %}BTC{% elif 'ETH' in market.title %}ETH{% else %}BTC{% endif %}"
-                                    data-market-id="{{ market.id }}">
-                            </canvas>
-                            <div class="chart-loading">Loading chart...</div>
+                        <div class="option-stats">
+                            <span class="pool-share">{{ market.flat_volume|div:market.total_volume|mul:100|floatformat:1|default:"25.2" }}%</span>
+                            <span class="payout">Payout</span>
                         </div>
-
-                        <div class="prediction-options">
-                            <div class="prediction-option up">
-                                <div class="option-label up">Closes above</div>
-                                <div class="option-change">+{{ market.crypto_data.change_24h|floatformat:2|default:"0.04" }}%</div>
-                                <div class="option-stats">
-                                    <span class="pool-share">Pool share</span>
-                                    <span class="payout">{{ market.up_odds|floatformat:2|default:"2.00" }}x</span>
-                                </div>
-                                <div class="option-stats">
-                                    <span class="pool-share">{{ market.up_volume|div:market.total_volume|mul:100|floatformat:1|default:"49.5" }}%</span>
-                                    <span class="payout">Payout</span>
-                                </div>
-                            </div>
-
-                            <div class="prediction-option flat">
-                                <div class="option-label flat">Stay Flat</div>
-                                <div class="option-change">±{{ market.crypto_data.change_24h|floatformat:2|default:"0.04" }}%</div>
-                                <div class="option-stats">
-                                    <span class="pool-share">Pool share</span>
-                                    <span class="payout">{{ market.flat_odds|floatformat:2|default:"2.00" }}x</span>
-                                </div>
-                                <div class="option-stats">
-                                    <span class="pool-share">{{ market.flat_volume|div:market.total_volume|mul:100|floatformat:1|default:"25.2" }}%</span>
-                                    <span class="payout">Payout</span>
-                                </div>
-                            </div>
-
-                            <div class="prediction-option down">
-                                <div class="option-label down">Closes below</div>
-                                <div class="option-change">-{{ market.crypto_data.change_24h|floatformat:2|default:"0.04" }}%</div>
-                                <div class="option-stats">
-                                    <span class="pool-share">Pool share</span>
-                                    <span class="payout">{{ market.down_odds|floatformat:2|default:"1.98" }}x</span>
-                                </div>
-                                <div class="option-stats">
-                                    <span class="pool-share">{{ market.down_volume|div:market.total_volume|mul:100|floatformat:1|default:"25.3" }}%</span>
-                                    <span class="payout">Payout</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="card-stats">
-                            <div class="stat-item">
-                                <div style="font-size: 12px; color: #999;">Total pool outcome:</div>
-                                <div class="stat-value">{{ market.participant_count|default:"210" }}</div>
-                            </div>
-                        </div>
-
-                        <a href="{% url 'market-detail' market.id %}" class="action-button">Check Detail</a>
                     </div>
-                {% endif %}
+
+                    <div class="prediction-option down">
+                        <div class="option-label down">Closes below</div>
+                        <div class="option-change">-{{ market.crypto_data.change_24h|floatformat:2|default:"0.04" }}%</div>
+                        <div class="option-stats">
+                            <span class="pool-share">Pool share</span>
+                            <span class="payout">{{ market.down_odds|floatformat:2|default:"1.98" }}x</span>
+                        </div>
+                        <div class="option-stats">
+                            <span class="pool-share">{{ market.down_volume|div:market.total_volume|mul:100|floatformat:1|default:"25.3" }}%</span>
+                            <span class="payout">Payout</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-stats">
+                    <div class="stat-item">
+                        <div style="font-size: 12px; color: #999;">Total pool outcome:</div>
+                        <div class="stat-value">{{ market.participant_count|default:"210" }}</div>
+                    </div>
+                </div>
+
+                <a href="{% url 'market-detail' market.id %}" class="action-button">Check Detail</a>
+            </div>
             {% empty %}
             <div style="text-align: center; color: #999; padding: 40px; grid-column: 1/-1;">
                 <p>No markets found matching your criteria.</p>
@@ -986,7 +972,7 @@
 
         {% if markets.count > 8 %}
         <div style="text-align: center; margin-top: 30px;">
-            <a href="?page=2" 
+            <a href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page=2" 
                class="action-button" style="width: auto; display: inline-block; margin: 0; padding: 12px 24px;">
                 Load More Markets
             </a>
@@ -995,34 +981,49 @@
     </div>
 
     <script>
-        // Simple chart implementation
+        // Simple chart implementation without external dependencies
         const chartInstances = {};
+        let priceDataCache = {};
 
+        // Wait for DOM to load
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('Initializing market list...');
+            console.log('Initializing trading dashboard...');
             
+            // Initialize fallback charts
             initializeSimpleCharts();
+            
+            // Start update intervals
             setInterval(updateTimers, 1000);
+            setInterval(updateMarketData, 5000);
             setInterval(updateCryptoPrices, 30000);
+            
+            // Initial price update
             updateCryptoPrices();
         });
 
         function initializeSimpleCharts() {
             const charts = document.querySelectorAll('.crypto-chart');
             
-            charts.forEach((canvas) => {
+            charts.forEach((canvas, index) => {
                 const symbol = canvas.dataset.symbol;
+                const marketId = canvas.dataset.marketId;
+                const chartId = canvas.id;
                 
                 try {
                     const ctx = canvas.getContext('2d');
+                    
+                    // Create simple line chart
                     drawSimpleChart(ctx, symbol, canvas);
                     
+                    // Hide loading indicator
                     const loadingEl = canvas.parentElement.querySelector('.chart-loading');
                     if (loadingEl) {
                         loadingEl.style.display = 'none';
                     }
+                    
                 } catch (error) {
-                    console.error('Chart error:', error);
+                    console.error(`Error initializing chart ${chartId}:`, error);
+                    showChartError(canvas, 'Chart unavailable');
                 }
             });
         }
@@ -1033,20 +1034,27 @@
             canvas.width = width;
             canvas.height = height;
             
+            // Generate sample price data
             const basePrice = symbol === 'BTC' ? 67432 : 3421;
             const points = 50;
             const data = [];
             
             for (let i = 0; i < points; i++) {
-                const variation = (Math.random() - 0.5) * 0.02;
+                const variation = (Math.random() - 0.5) * 0.02; // ±1% variation
                 const price = basePrice * (1 + variation * (i / points));
                 data.push(price);
             }
             
+            // Clear canvas
             ctx.clearRect(0, 0, width, height);
+            
+            // Set up drawing
             ctx.strokeStyle = symbol === 'BTC' ? '#f7931a' : '#627eea';
             ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
             
+            // Calculate dimensions
             const padding = 20;
             const chartWidth = width - 2 * padding;
             const chartHeight = height - 2 * padding;
@@ -1055,6 +1063,7 @@
             const maxPrice = Math.max(...data);
             const priceRange = maxPrice - minPrice;
             
+            // Draw price line
             ctx.beginPath();
             for (let i = 0; i < data.length; i++) {
                 const x = padding + (i / (data.length - 1)) * chartWidth;
@@ -1068,6 +1077,7 @@
             }
             ctx.stroke();
             
+            // Add gradient fill
             const gradient = ctx.createLinearGradient(0, padding, 0, height - padding);
             gradient.addColorStop(0, symbol === 'BTC' ? 'rgba(247, 147, 26, 0.3)' : 'rgba(98, 126, 234, 0.3)');
             gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
@@ -1083,33 +1093,108 @@
             ctx.lineTo(width - padding, height - padding);
             ctx.closePath();
             ctx.fill();
+            
+            // Draw current price
+            const currentPrice = data[data.length - 1];
+            const currentY = padding + ((maxPrice - currentPrice) / priceRange) * chartHeight;
+            
+            ctx.fillStyle = symbol === 'BTC' ? '#f7931a' : '#627eea';
+            ctx.beginPath();
+            ctx.arc(width - padding, currentY, 4, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // Draw price label
+            ctx.fillStyle = 'white';
+            ctx.font = '12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+            ctx.textAlign = 'right';
+            const priceText = `${currentPrice.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
+            ctx.fillText(priceText, width - padding - 10, currentY - 8);
         }
 
+        function showChartError(canvas, message) {
+            if (!canvas) return;
+            
+            const chartArea = canvas.parentElement;
+            let errorEl = chartArea.querySelector('.chart-error');
+            
+            if (!errorEl) {
+                errorEl = document.createElement('div');
+                errorEl.className = 'chart-error';
+                chartArea.appendChild(errorEl);
+            }
+            
+            errorEl.textContent = message;
+            
+            // Hide loading indicator
+            const loadingEl = chartArea.querySelector('.chart-loading');
+            if (loadingEl) {
+                loadingEl.style.display = 'none';
+            }
+        }
+
+        // Simulate crypto price updates
         async function updateCryptoPrices() {
             try {
-                const btcChange = (Math.random() - 0.5) * 0.1;
-                const ethChange = (Math.random() - 0.5) * 0.08;
+                // Simulate API response
+                const btcChange = (Math.random() - 0.5) * 0.1; // ±5% change
+                const ethChange = (Math.random() - 0.5) * 0.08; // ±4% change
                 
                 const btcPrice = 67432 * (1 + btcChange);
                 const ethPrice = 3421 * (1 + ethChange);
                 
+                // Update summary prices
                 const btcEl = document.getElementById('btc-price');
                 const ethEl = document.getElementById('eth-price');
                 
-                if (btcEl) btcEl.textContent = `$${Math.round(btcPrice).toLocaleString()}`;
-                if (ethEl) ethEl.textContent = `$${Math.round(ethPrice).toLocaleString()}`;
+                if (btcEl) {
+                    btcEl.textContent = `${Math.round(btcPrice).toLocaleString()}`;
+                }
+                if (ethEl) {
+                    ethEl.textContent = `${Math.round(ethPrice).toLocaleString()}`;
+                }
                 
+                // Update charts
                 const charts = document.querySelectorAll('.crypto-chart');
                 charts.forEach((canvas) => {
                     const symbol = canvas.dataset.symbol;
                     const ctx = canvas.getContext('2d');
                     drawSimpleChart(ctx, symbol, canvas);
                 });
+                
             } catch (error) {
                 console.log('Price update simulated');
             }
         }
 
+        // Update market data (simulate live updates)
+        async function updateMarketData() {
+            const cards = document.querySelectorAll('.trading-card');
+            
+            cards.forEach((card) => {
+                // Simulate slight changes in pool shares and payouts
+                const options = card.querySelectorAll('.prediction-option');
+                
+                options.forEach((option, index) => {
+                    const poolShareEl = option.querySelectorAll('.pool-share')[1];
+                    const payoutEl = option.querySelectorAll('.payout')[0];
+                    
+                    if (poolShareEl && payoutEl) {
+                        // Generate realistic variations
+                        const currentShare = parseFloat(poolShareEl.textContent);
+                        const variation = (Math.random() - 0.5) * 2; // ±1% variation
+                        const newShare = Math.max(15, Math.min(60, currentShare + variation));
+                        
+                        poolShareEl.textContent = `${newShare.toFixed(1)}%`;
+                        
+                        // Calculate corresponding payout
+                        const payout = (100 / newShare).toFixed(2);
+                        payoutEl.textContent = `${payout}x`;
+                    }
+                });
+            });
+        }
+
+        // Update countdown timers
         function updateTimers() {
             const timers = document.querySelectorAll('.timer-circle');
             timers.forEach((timer) => {
@@ -1117,7 +1202,7 @@
                 timeRemaining--;
                 
                 if (timeRemaining <= 0) {
-                    timeRemaining = 900;
+                    timeRemaining = 900; // Reset to 15 minutes
                 }
                 
                 timer.setAttribute('data-time-remaining', timeRemaining);
@@ -1130,12 +1215,14 @@
                     timer.textContent = `${timeRemaining}s`;
                 }
                 
+                // Update progress circle
                 const percentage = (timeRemaining / 900) * 360;
                 const color = timeRemaining < 60 ? '#ef4444' : '#22c55e';
                 timer.style.background = `conic-gradient(${color} 0deg, ${color} ${percentage}deg, rgba(255,255,255,0.1) ${percentage}deg)`;
             });
         }
 
+        // Profile dropdown functionality
         function toggleProfileMenu() {
             const dropdown = document.getElementById('profileDropdown');
             if (dropdown) {
@@ -1143,6 +1230,7 @@
             }
         }
 
+        // Close dropdown when clicking outside
         document.addEventListener('click', function(event) {
             const profile = document.querySelector('.user-profile');
             const dropdown = document.getElementById('profileDropdown');
@@ -1151,6 +1239,53 @@
                 dropdown.classList.remove('show');
             }
         });
-    </script>
+
+        // Add some interactive hover effects
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add click handlers for prediction options
+            const predictionOptions = document.querySelectorAll('.prediction-option');
+            predictionOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    // Remove active class from siblings
+                    this.parentElement.querySelectorAll('.prediction-option').forEach(opt => {
+                        opt.style.transform = '';
+                    });
+                    
+                    // Add active state
+                    this.style.transform = 'scale(1.05)';
+                    
+                    setTimeout(() => {
+                        this.style.transform = '';
+                    }, 200);
+                });
+            });
+        });
+    
+            // Mobile menu toggle
+            function toggleMobileMenu() {
+                const mobileNav = document.getElementById('mobileNavLinks');
+                if (mobileNav) {
+                    mobileNav.classList.toggle('show');
+                }
+                
+                const hamburger = document.querySelector('.hamburger');
+                if (hamburger) {
+                    hamburger.classList.toggle('active');
+                }
+            }
+
+            // Close mobile menu when clicking outside
+            document.addEventListener('click', function(event) {
+                const hamburger = document.querySelector('.hamburger');
+                const mobileNav = document.getElementById('mobileNavLinks');
+                
+                if (hamburger && mobileNav && 
+                    !hamburger.contains(event.target) && 
+                    !mobileNav.contains(event.target)) {
+                    mobileNav.classList.remove('show');
+                    hamburger.classList.remove('active');
+                }
+            });
+</script>
 </body>
 </html>
