@@ -74,61 +74,6 @@
             color: #f7931a;
         }
 
-        .hamburger {
-            display: none;
-            flex-direction: column;
-            gap: 5px;
-            cursor: pointer;
-            padding: 8px;
-        }
-
-        .hamburger span {
-            width: 25px;
-            height: 3px;
-            background: white;
-            border-radius: 2px;
-            transition: all 0.3s ease;
-        }
-
-        .mobile-nav-links {
-            display: none;
-            position: fixed;
-            top: 130px;
-            left: 0;
-            right: 0;
-            background: rgba(20, 20, 20, 0.98);
-            backdrop-filter: blur(20px);
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 20px;
-            z-index: 99;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .mobile-nav-links.show {
-            display: flex;
-        }
-
-        .mobile-nav-links a {
-            color: #ccc;
-            text-decoration: none;
-            font-weight: 500;
-            font-size: 16px;
-            padding: 12px 15px;
-            border-radius: 8px;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .mobile-nav-links a:hover, .mobile-nav-links a.active {
-            background: rgba(247, 147, 26, 0.1);
-            color: #f7931a;
-        }
-
-
         .nav-links a.active::after {
             content: '';
             position: absolute;
@@ -669,16 +614,7 @@
             font-size: 14px;
         }
 
-        
         @media (max-width: 768px) {
-            .nav-links {
-                display: none;
-            }
-
-            .hamburger {
-                display: flex;
-            }
-
             .nav-links {
                 display: none;
             }
@@ -735,6 +671,33 @@
                 width: 100%;
             }
         }
+
+        @media (max-width: 768px) {
+            .nav-container {
+                display: grid;
+                grid-template-columns: 1fr auto auto;
+                gap: 15px;
+                align-items: center;
+            }
+
+            .logo {
+                grid-column: 1;
+            }
+
+            .hamburger {
+                grid-column: 2;
+                order: 2;
+            }
+
+            .user-profile {
+                grid-column: 3;
+                order: 3;
+            }
+
+            .nav-links {
+                display: none;
+            }
+        }
     </style>
 </head>
 <body>
@@ -743,17 +706,9 @@
             <a href="{% url 'landing-page' %}" class="logo">
                <img src="/static/evgchain-logo.png" alt="EVGxchain">
             </a>
-                        <div class="hamburger" onclick="toggleMobileMenu()">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-            
-<div class="nav-links">
+            <div class="nav-links">
                 {% if user.is_authenticated %}
                 <a href="{% url 'dashboard' %}">Dashboard</a>
-                <a href="{% url 'market-data' %}" class="active">📈 Markets</a>
-                <a href="{% url 'referral-dashboard' %}">🤝 Referrals</a>
                 {% endif %}
             </div>
             <div class="user-profile" onclick="toggleProfileMenu()">
@@ -791,13 +746,6 @@
             </div>
         </div>
     </nav>
-
-    <!-- Mobile Navigation Menu -->
-    <div class="mobile-nav-links" id="mobileNavLinks">
-        <a href="{% url 'dashboard' %}">📊 Dashboard</a>
-        <a href="{% url 'market-data' %}" class="active">📈 Markets</a>
-        <a href="{% url 'referral-dashboard' %}">🤝 Referrals</a>
-    </div>
     <div class="container">
         <div class="page-header">
             <h1 class="page-title">Economic Event Trading</h1>
@@ -1232,13 +1180,35 @@
             }
         }
 
+        // Mobile menu toggle
+        function toggleMobileMenu() {
+            const mobileNav = document.getElementById('mobileNavLinks');
+            if (mobileNav) {
+                mobileNav.classList.toggle('show');
+            }
+            
+            const hamburger = document.querySelector('.hamburger');
+            if (hamburger) {
+                hamburger.classList.toggle('active');
+            }
+        }
+
         // Close dropdown when clicking outside
         document.addEventListener('click', function(event) {
             const profile = document.querySelector('.user-profile');
             const dropdown = document.getElementById('profileDropdown');
+            const hamburger = document.querySelector('.hamburger');
+            const mobileNav = document.getElementById('mobileNavLinks');
             
             if (profile && dropdown && !profile.contains(event.target)) {
                 dropdown.classList.remove('show');
+            }
+            
+            if (hamburger && mobileNav && 
+                !hamburger.contains(event.target) && 
+                !mobileNav.contains(event.target)) {
+                mobileNav.classList.remove('show');
+                hamburger.classList.remove('active');
             }
         });
 
@@ -1262,32 +1232,6 @@
                 });
             });
         });
-    
-            // Mobile menu toggle
-            function toggleMobileMenu() {
-                const mobileNav = document.getElementById('mobileNavLinks');
-                if (mobileNav) {
-                    mobileNav.classList.toggle('show');
-                }
-                
-                const hamburger = document.querySelector('.hamburger');
-                if (hamburger) {
-                    hamburger.classList.toggle('active');
-                }
-            }
-
-            // Close mobile menu when clicking outside
-            document.addEventListener('click', function(event) {
-                const hamburger = document.querySelector('.hamburger');
-                const mobileNav = document.getElementById('mobileNavLinks');
-                
-                if (hamburger && mobileNav && 
-                    !hamburger.contains(event.target) && 
-                    !mobileNav.contains(event.target)) {
-                    mobileNav.classList.remove('show');
-                    hamburger.classList.remove('active');
-                }
-            });
-</script>
+    </script>
 </body>
 </html>
