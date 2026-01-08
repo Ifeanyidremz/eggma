@@ -1200,7 +1200,7 @@
                         <div class="event-pair">{{ market.get_round_duration_display|default:"15m" }}</div>
                     </div>
                 </div>
-                <div class="event-description">{{ market.description|default:"Trade on Bitcoin vs USDT price movements with economic events: CPI, FOMC, NFP releases" }}</div>
+                <div class="event-description">{{ market.description|safe|default:"Trade on Bitcoin vs USDT price movements with economic events: CPI, FOMC, NFP releases" }}</div>
                 
                 <div class="timeframe-selector">
                     <button class="tf-btn active" data-timeframe="1m" onclick="selectTimeframe('1m')">1m</button>
