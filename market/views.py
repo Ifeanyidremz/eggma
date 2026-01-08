@@ -2025,34 +2025,64 @@ def wallet_transfer(request):
 # @user_passes_test(lambda u: u.is_superuser)
 @login_required
 def create_price_target_market(request):
+    
     if request.method == 'POST':
         try:
+            # Extract and validate form data
             crypto_symbol = request.POST.get('crypto_symbol', 'BTC').upper()
-            target_price = Decimal(request.POST.get('target_price', 0))
+            target_price_str = request.POST.get('target_price', '0')
+            
+            # Log the incoming request
+            logger.info(f"Create target market request: symbol={crypto_symbol}, target={target_price_str}, user={request.user.username}")
+            
+            # Validate and convert target price
+            try:
+                target_price = Decimal(target_price_str)
+            except (InvalidOperation, ValueError) as e:
+                logger.error(f"Invalid target price format: {target_price_str}")
+                messages.error(request, f'Invalid target price format: {target_price_str}')
+                return redirect('create-target-market')
             
             # Validation
             if target_price <= 0:
-                messages.error(request, 'Invalid target price')
+                messages.error(request, 'Target price must be greater than 0')
                 return redirect('create-target-market')
             
             # Optional: custom end date
-            end_date_str = request.POST.get('end_date', '')
+            end_date_str = request.POST.get('end_date', '').strip()
             end_date = None
+            
             if end_date_str:
                 try:
-                    end_date = timezone.datetime.fromisoformat(end_date_str)
-                except:
+                    from datetime import datetime
+                    # Parse the datetime-local format
+                    end_date = timezone.make_aware(
+                        datetime.strptime(end_date_str, '%Y-%m-%dT%H:%M')
+                    )
+                    
+                    # Validate end date is in the future
+                    if end_date <= timezone.now():
+                        messages.error(request, 'End date must be in the future')
+                        return redirect('create-target-market')
+                        
+                except ValueError as e:
+                    logger.error(f"Invalid date format: {end_date_str}, error: {e}")
                     messages.error(request, 'Invalid date format')
                     return redirect('create-target-market')
             
-            # Create market
+            # Create market using the service
+            logger.info(f"Attempting to create market: {crypto_symbol} @ ${target_price}")
+            
             from market.utils import PriceTargetMarketService
+            
             market = PriceTargetMarketService.create_target_market(
                 creator=request.user,
                 crypto_symbol=crypto_symbol,
                 target_price=target_price,
                 end_date=end_date
             )
+            
+            logger.info(f"✅ Market created successfully: ID={market.id}, Title={market.title}")
             
             messages.success(
                 request,
@@ -2061,13 +2091,40 @@ def create_price_target_market(request):
             return redirect('market-detail', market_id=market.id)
             
         except ValueError as e:
+            # Specific error from create_target_market
+            logger.error(f"ValueError creating market: {str(e)}", exc_info=True)
             messages.error(request, f'Error: {str(e)}')
+            return redirect('create-target-market')
+            
         except Exception as e:
-            logger.error(f"Error creating target market: {str(e)}", exc_info=True)
-            messages.error(request, 'An error occurred while creating the market')
+            # Catch-all for unexpected errors
+            logger.error(
+                f"❌ Unexpected error creating target market: {str(e)}", 
+                exc_info=True  # This logs the full traceback
+            )
+            
+            if settings.DEBUG:
+                messages.error(
+                    request, 
+                    f'Development Error: {str(e)}\n\nCheck server logs for full traceback'
+                )
+            else:
+                messages.error(
+                    request,
+                    'An error occurred while creating the market. Our team has been notified.'
+                )
+            
+            return redirect('create-target-market')
     
-   
-    crypto_prices = CryptoPriceService.get_crypto_prices()
+    # GET request - show the form
+    try:
+        crypto_prices = CryptoPriceService.get_crypto_prices()
+    except Exception as e:
+        logger.error(f"Error fetching crypto prices: {e}")
+        crypto_prices = {
+            'BTC': {'price': 67432},
+            'ETH': {'price': 3421}
+        }
     
     context = {
         'crypto_prices': crypto_prices,

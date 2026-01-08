@@ -1443,7 +1443,7 @@ class PriceTargetMarketService:
         end_date=None   # Defaults to month-end
     ):
         """
-        Create a new price target market
+        Create a new price target market with proper error handling
         
         Example:
             create_target_market(
@@ -1454,49 +1454,61 @@ class PriceTargetMarketService:
             )
         """
         
-        # Get current price
-        crypto_prices = CryptoPriceService.get_crypto_prices()
-        current_price = crypto_prices.get(crypto_symbol, {}).get('price', 0)
-        
-        if not current_price:
-            raise ValueError(f"Unable to get current price for {crypto_symbol}")
-        
-        current_price = Decimal(str(current_price))
-        
-        if not end_date:
-            now = timezone.now()
-            # Get last day of current month
-            if now.month == 12:
-                next_month = now.replace(year=now.year + 1, month=1, day=1)
-            else:
-                next_month = now.replace(month=now.month + 1, day=1)
+        try:
+            logger.info(f"Creating target market: symbol={crypto_symbol}, target={target_price}")
             
-            end_date = next_month - timedelta(days=1)
-            # Set to 11:59 PM
-            end_date = end_date.replace(hour=23, minute=59, second=59)
-        
-        # Get or create category
-        category_type = 'bitcoin' if crypto_symbol == 'BTC' else 'ethereum' if crypto_symbol == 'ETH' else 'altcoins'
-        category, _ = CryptocurrencyCategory.objects.get_or_create(
-            category_type=category_type,
-            defaults={
-                'display_name': f'{crypto_symbol} Price Targets',
-                'description': f'Binary price target predictions for {crypto_symbol}',
-                'icon': '🎯',
-                'color_code': '#F7931A' if crypto_symbol == 'BTC' else '#627EEA',
-                'is_active': True
-            }
-        )
-        
-        # Determine if target is above or below current price
-        direction = "reach" if target_price > current_price else "fall below"
-        percent_change = abs((target_price - current_price) / current_price * 100)
-        
-        # Create market
-        market = Market.objects.create(
-            title=f"Will {crypto_symbol} {direction} ${target_price:,.0f} before {end_date.strftime('%B %d, %Y')}?",
-            description=f"""
-            **Current Price:** ${current_price:,.2f}
+            # Get current price
+            crypto_prices = CryptoPriceService.get_crypto_prices()
+            current_price = crypto_prices.get(crypto_symbol, {}).get('price', 0)
+            
+            if not current_price:
+                raise ValueError(f"Unable to get current price for {crypto_symbol}")
+            
+            current_price = Decimal(str(current_price))
+            target_price = Decimal(str(target_price))
+            
+            logger.info(f"Current price: ${current_price}, Target: ${target_price}")
+            
+            # Calculate end date if not provided
+            if not end_date:
+                now = timezone.now()
+                # Get last day of current month
+                if now.month == 12:
+                    next_month = now.replace(year=now.year + 1, month=1, day=1)
+                else:
+                    next_month = now.replace(month=now.month + 1, day=1)
+                
+                end_date = next_month - timedelta(days=1)
+                # Set to 11:59 PM
+                end_date = end_date.replace(hour=23, minute=59, second=59)
+            
+            logger.info(f"End date: {end_date}")
+            
+            # Get or create category
+            category_type = 'bitcoin' if crypto_symbol == 'BTC' else 'ethereum' if crypto_symbol == 'ETH' else 'altcoins'
+            
+            try:
+                category = CryptocurrencyCategory.objects.get(category_type=category_type)
+                logger.info(f"Using existing category: {category.display_name}")
+            except CryptocurrencyCategory.DoesNotExist:
+                category = CryptocurrencyCategory.objects.create(
+                    category_type=category_type,
+                    display_name=f'{crypto_symbol} Price Targets',
+                    description=f'Binary price target predictions for {crypto_symbol}',
+                    icon='🎯',
+                    color_code='#F7931A' if crypto_symbol == 'BTC' else '#627EEA',
+                    is_active=True
+                )
+                logger.info(f"Created new category: {category.display_name}")
+            
+            # Determine if target is above or below current price
+            direction = "reach" if target_price > current_price else "fall below"
+            percent_change = abs((target_price - current_price) / current_price * 100)
+            
+            # Create market
+            market_data = {
+                'title': f"Will {crypto_symbol} {direction} ${target_price:,.0f} before {end_date.strftime('%B %d, %Y')}?",
+                'description': f"""**Current Price:** ${current_price:,.2f}
             **Target Price:** ${target_price:,.0f}
             **Required Change:** {percent_change:.1f}%
             **Deadline:** {end_date.strftime('%B %d, %Y at %I:%M %p UTC')}
@@ -1511,39 +1523,39 @@ class PriceTargetMarketService:
             - Using CoinGecko API price data
             - Checked automatically every hour
             - First touch of target price wins
-            - No need to close above target - just needs to reach it
-            """.strip(),
-            market_type='target',
-            creator=creator,
-            category=category,
-            base_currency=crypto_symbol,
-            quote_currency='USDT',
+            - No need to close above target - just needs to reach it""",
+                        'market_type': 'target',
+                        'creator': creator,
+                        'category': category,
+                        'base_currency': crypto_symbol,
+                        'quote_currency': 'USDT',
+                        'target_price': target_price,
+                        'highest_price_reached': current_price,
+                        'round_start_price': current_price,
+                        'resolution_date': end_date,
+                        'round_start_time': timezone.now(),
+                        'total_volume': Decimal('0'),
+                        'up_volume': Decimal('0'),      # YES votes
+                        'down_volume': Decimal('0'),    # NO votes
+                        'flat_volume': Decimal('0'),    # Unused for binary
+                        'min_bet': Decimal('1.00'),
+                        'max_bet': Decimal('10000.00'),
+                        'round_duration': 0,  # No rounds for target markets
+                        'current_round': 1,
+                        'status': 'active'
+                    }
             
-            # Target-specific fields
-            target_price=target_price,
-            highest_price_reached=current_price,
-            round_start_price=current_price,
+            logger.info(f"Creating Market object with data: title={market_data['title']}")
             
-            # Dates
-            resolution_date=end_date,
-            round_start_time=timezone.now(),
+            market = Market.objects.create(**market_data)
             
-            # Initial volumes (empty market)
-            total_volume=Decimal('0'),
-            up_volume=Decimal('0'),      # YES votes
-            down_volume=Decimal('0'),    # NO votes
-            flat_volume=Decimal('0'),    # Unused for binary
+            logger.info(f"Market created successfully: ID={market.id}")
             
-            # Settings
-            min_bet=Decimal('1.00'),
-            max_bet=Decimal('10000.00'),
-            round_duration=0,  # No rounds for target markets
-            current_round=1,
-            status='active'
-        )
-        
-        logger.info(f"Created price target market: {market.title}")
-        return market
+            return market
+            
+        except Exception as e:
+            logger.error(f"Error in create_target_market: {str(e)}", exc_info=True)
+            raise  
     
     @staticmethod
     def check_target_reached(market):
