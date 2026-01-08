@@ -106,7 +106,7 @@ COINREMITTER_TESTING_MODE = os.getenv('COINREMITTER_TESTING_MODE')
 TCN_BYPASS_ADDRESS_VALIDATION = os.getenv('TCN_BYPASS_ADDRESS_VALIDATION')
 
 # Site URL for email links
-# SITE_URL = os.getenv('SITE_URL', 'http://localhost:8000')
+SITE_URL = os.getenv('SITE_URL', 'https://www.evgxchain.com')
 
 LOGIN_URL = 'login-page'
 

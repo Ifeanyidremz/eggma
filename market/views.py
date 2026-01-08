@@ -23,6 +23,7 @@ from predict.models import Bet, Transaction, UserStats
 from django.db import transaction as db_transaction
 from .nowpayment_service import NowPaymentsService
 from .wallet_service import WalletTransferService
+from django.contrib.auth.decorators import user_passes_test
 import logging
 import traceback
 from dotenv import load_dotenv
@@ -1622,39 +1623,95 @@ def crypto_deposit(request):
         amount = Decimal(str(data.get('amount', 0)))
         pay_currency = data.get('pay_currency', 'btc').lower()
         
+        logger.info(f"Crypto deposit request: User={request.user.username}, Amount=${amount}, Currency={pay_currency}")
+        
         # Validation
         if amount < Decimal('5.00'):
             return JsonResponse({'success': False, 'error': 'Minimum deposit is $5.00'})
         
-        # Create NowPayments payment
-        nowpayments = NowPaymentsService()
-        ipn_url = request.build_absolute_uri('/market/wallet/nowpayments-ipn/')
+        if amount > Decimal('10000.00'):
+            return JsonResponse({'success': False, 'error': 'Maximum deposit is $10,000.00'})
         
-        payment_result = nowpayments.create_payment(
-            price_amount=amount,
-            price_currency='usd',
-            pay_currency=pay_currency,
-            order_id=f"deposit_{request.user.id}_{int(timezone.now().timestamp())}",
-            ipn_callback_url=ipn_url
-        )
+        # Validate currency
+        valid_currencies = ['btc', 'eth', 'usdt', 'usdttrc20', 'usdterc20', 'ltc', 'trx']
+        if pay_currency not in valid_currencies:
+            return JsonResponse({'success': False, 'error': f'Unsupported currency: {pay_currency}'})
+        
+        # Create NowPayments payment
+        try:
+            nowpayments = NowPaymentsService()
+            
+            # FIXED: Build proper IPN callback URL
+            # Use SITE_URL from settings if available, otherwise build from request
+            site_url = getattr(settings, 'SITE_URL', None)
+            if not site_url:
+                # Build from request
+                scheme = 'https' if request.is_secure() else 'http'
+                site_url = f"{scheme}://{request.get_host()}"
+            
+            # Remove trailing slash from site_url if present
+            site_url = site_url.rstrip('/')
+            
+            ipn_url = f"{site_url}/market/wallet/nowpayments-ipn/"
+            
+            logger.info(f"IPN callback URL: {ipn_url}")
+            
+            # Generate unique order ID
+            order_id = f"deposit_{request.user.id}_{int(timezone.now().timestamp())}"
+            
+            logger.info(f"Creating NowPayments payment with order_id: {order_id}")
+            
+            payment_result = nowpayments.create_payment(
+                price_amount=float(amount),
+                price_currency='usd',
+                pay_currency=pay_currency,
+                order_id=order_id,
+                ipn_callback_url=ipn_url
+            )
+            
+            logger.info(f"NowPayments response: {payment_result}")
+            
+            if not payment_result or not payment_result.get('payment_id'):
+                raise Exception(f"Invalid response from NowPayments: {payment_result}")
+            
+        except Exception as e:
+            logger.error(f"NowPayments API error: {str(e)}", exc_info=True)
+            return JsonResponse({
+                'success': False,
+                'error': f'Payment gateway error: {str(e)}'
+            })
         
         # Create pending transaction
-        with db_transaction.atomic():
-            transaction = Transaction.objects.create(
-                user=request.user,
-                transaction_type='deposit',
-                amount=amount,
-                balance_before=request.user.balance,
-                balance_after=request.user.balance,
-                status='pending',
-                description=f'Crypto deposit via NowPayments - {pay_currency.upper()}',
-                metadata={
-                    'payment_id': payment_result.get('payment_id'),
-                    'pay_address': payment_result.get('pay_address'),
-                    'pay_amount': payment_result.get('pay_amount'),
-                    'pay_currency': pay_currency
-                }
-            )
+        try:
+            with db_transaction.atomic():
+                transaction = Transaction.objects.create(
+                    user=request.user,
+                    transaction_type='deposit',
+                    amount=amount,
+                    balance_before=request.user.balance,
+                    balance_after=request.user.balance, 
+                    status='pending',
+                    external_id=payment_result.get('payment_id'),
+                    description=f'Crypto deposit via NowPayments - {pay_currency.upper()}',
+                    metadata={
+                        'payment_id': payment_result.get('payment_id'),
+                        'pay_address': payment_result.get('pay_address'),
+                        'pay_amount': str(payment_result.get('pay_amount', 0)),
+                        'pay_currency': pay_currency,
+                        'order_id': order_id,
+                        'payment_status': payment_result.get('payment_status', 'waiting'),
+                        'created_at': timezone.now().isoformat()
+                    }
+                )
+                
+                logger.info(f"Transaction created: ID={transaction.id}, PaymentID={payment_result.get('payment_id')}")
+        
+        except Exception as e:
+            logger.error(f"Database error creating transaction: {str(e)}", exc_info=True)
+            return JsonResponse({
+                'success': False,
+                'error': 'Database error. Please try again.'
+            })
         
         return JsonResponse({
             'success': True,
@@ -1662,12 +1719,16 @@ def crypto_deposit(request):
             'pay_address': payment_result.get('pay_address'),
             'pay_amount': payment_result.get('pay_amount'),
             'pay_currency': pay_currency.upper(),
-            'transaction_id': str(transaction.id)
+            'transaction_id': str(transaction.id),
+            'order_id': order_id
         })
         
+    except json.JSONDecodeError:
+        logger.error("Invalid JSON in request body")
+        return JsonResponse({'success': False, 'error': 'Invalid request format'})
     except Exception as e:
-        logger.error(f"Crypto deposit error: {str(e)}")
-        return JsonResponse({'success': False, 'error': str(e)})
+        logger.error(f"Crypto deposit error: {str(e)}", exc_info=True)
+        return JsonResponse({'success': False, 'error': f'An error occurred: {str(e)}'})
 
 
 @login_required
@@ -1944,7 +2005,7 @@ def wallet_transfer(request):
         logger.error(f"Wallet transfer error: {str(e)}")
         return JsonResponse({'success': False, 'error': str(e)})
 
-
+# @user_passes_test(lambda u: u.is_superuser)
 @login_required
 def create_price_target_market(request):
     if request.method == 'POST':
