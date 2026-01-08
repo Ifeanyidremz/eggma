@@ -23,7 +23,7 @@ from predict.models import Bet, Transaction, UserStats
 from django.db import transaction as db_transaction
 from .nowpayment_service import NowPaymentsService
 from .wallet_service import WalletTransferService
-from django.contrib.auth.decorators import user_passes_test
+from django.contrib.admin.views.decorators import staff_member_required
 import logging
 import traceback
 from dotenv import load_dotenv
@@ -2022,7 +2022,7 @@ def wallet_transfer(request):
         logger.error(f"Wallet transfer error: {str(e)}")
         return JsonResponse({'success': False, 'error': str(e)})
 
-# @user_passes_test(lambda u: u.is_superuser)
+@staff_member_required
 @login_required
 def create_price_target_market(request):
     
