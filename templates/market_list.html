@@ -672,32 +672,188 @@
             }
         }
 
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            cursor: pointer;
+            padding: 8px;
+        }
+
+        .hamburger span {
+            width: 25px;
+            height: 3px;
+            background: white;
+            border-radius: 2px;
+            transition: all 0.3s ease;
+        }
+
+        .mobile-nav-links {
+            display: none;
+            position: fixed;
+            top: 130px;
+            left: 0;
+            right: 0;
+            background: rgba(20, 20, 20, 0.98);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            z-index: 99;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .mobile-nav-links.show {
+            display: flex;
+        }
+
+        .mobile-nav-links a {
+            color: #ccc;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 16px;
+            padding: 12px 15px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .mobile-nav-links a:hover, .mobile-nav-links a.active {
+            background: rgba(247, 147, 26, 0.1);
+            color: #f7931a;
+        }
+
+
+        /* Price Target Market Cards */
+        .market-type-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            z-index: 1;
+        }
+
+        .target-question {
+            font-size: 16px;
+            font-weight: 600;
+            color: #f59e0b;
+            margin: 15px 25px 10px 25px;
+            line-height: 1.4;
+        }
+
+        .target-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            padding: 0 25px;
+            margin-bottom: 15px;
+        }
+
+        .target-stat {
+            background: rgba(30, 30, 30, 0.6);
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .target-stat-label {
+            font-size: 11px;
+            color: #999;
+            margin-bottom: 4px;
+        }
+
+        .target-stat-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: white;
+        }
+
+        .target-stat-value.highlight {
+            color: #f59e0b;
+        }
+
+        .yes-no-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            padding: 0 25px;
+            margin-bottom: 20px;
+        }
+
+        .yes-no-option {
+            background: rgba(30, 30, 30, 0.8);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .yes-no-option.yes {
+            border-color: rgba(34, 197, 94, 0.3);
+        }
+
+        .yes-no-option.yes:hover {
+            background: rgba(34, 197, 94, 0.1);
+            border-color: #22c55e;
+            transform: scale(1.05);
+        }
+
+        .yes-no-option.no {
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        .yes-no-option.no:hover {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: #ef4444;
+            transform: scale(1.05);
+        }
+
+        .yes-no-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+
+        .yes-no-label {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .yes-no-option.yes .yes-no-label {
+            color: #22c55e;
+        }
+
+        .yes-no-option.no .yes-no-label {
+            color: #ef4444;
+        }
+
+        .yes-no-odds {
+            font-size: 18px;
+            font-weight: 700;
+            color: #f59e0b;
+        }
+
         @media (max-width: 768px) {
-            .nav-container {
-                display: grid;
-                grid-template-columns: 1fr auto auto;
-                gap: 15px;
-                align-items: center;
+            .target-stats {
+                grid-template-columns: 1fr;
             }
 
-            .logo {
-                grid-column: 1;
-            }
-
-            .hamburger {
-                grid-column: 2;
-                order: 2;
-            }
-
-            .user-profile {
-                grid-column: 3;
-                order: 3;
-            }
-
-            .nav-links {
-                display: none;
+            .yes-no-options {
+                grid-template-columns: 1fr;
             }
         }
+
     </style>
 </head>
 <body>
@@ -706,9 +862,16 @@
             <a href="{% url 'landing-page' %}" class="logo">
                <img src="/static/evgchain-logo.png" alt="EVGxchain">
             </a>
+            <div class="hamburger" onclick="toggleMobileMenu()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
             <div class="nav-links">
                 {% if user.is_authenticated %}
                 <a href="{% url 'dashboard' %}">Dashboard</a>
+                <a href="{% url 'market-data' %}" class="active">Markets</a>
+                <a href="{% url 'referral-dashboard' %}">Referrals</a>
                 {% endif %}
             </div>
             <div class="user-profile" onclick="toggleProfileMenu()">
@@ -746,6 +909,13 @@
             </div>
         </div>
     </nav>
+
+    <!-- Mobile Navigation Menu -->
+    <div class="mobile-nav-links" id="mobileNavLinks">
+        <a href="{% url 'dashboard' %}">📊 Dashboard</a>
+        <a href="{% url 'market-data' %}" class="active">📈 Markets</a>
+        <a href="{% url 'referral-dashboard' %}">🤝 Referrals</a>
+    </div>
     <div class="container">
         <div class="page-header">
             <h1 class="page-title">Economic Event Trading</h1>
@@ -833,6 +1003,74 @@
         <div class="trading-cards-grid">
             {% for market in markets %}
             <div class="trading-card" data-market-id="{{ market.id }}">
+                {% if market.market_type == 'target' %}
+                <!-- PRICE TARGET MARKET CARD -->
+                <span class="market-type-badge">🎯 PRICE TARGET</span>
+                
+                <div class="card-header">
+                    <div class="crypto-pair">
+                        <div class="crypto-icon" 
+                             {% if 'ETH' in market.title %}
+                             style="background: linear-gradient(135deg, #627eea 0%, #8c94ff 100%);"
+                             {% endif %}>
+                            {% if 'BTC' in market.title %}₿{% elif 'ETH' in market.title %}Ξ{% else %}₿{% endif %}
+                        </div>
+                        <div class="pair-info">
+                            <div class="pair-name">{{ market.base_currency|default:"BTC" }}</div>
+                            <div class="timeframe">Target: ${{ market.target_price|floatformat:0|default:"100,000" }}</div>
+                        </div>
+                    </div>
+                    <div class="timer-section">
+                        <div class="timer-circle" data-time-remaining="{{ market.time_remaining|default:'20' }}">
+                            {{ market.time_remaining|default:"30" }}d
+                        </div>
+                        <div class="current-round-text">Days Left</div>
+                    </div>
+                </div>
+
+                <div class="target-question">
+                    {{ market.title|default:"Will Bitcoin reach $100,000 by end of month?" }}
+                </div>
+
+                <div class="target-stats">
+                    <div class="target-stat">
+                        <div class="target-stat-label">Current Price</div>
+                        <div class="target-stat-value">${{ market.round_start_price|floatformat:0|default:"95,432" }}</div>
+                    </div>
+                    <div class="target-stat">
+                        <div class="target-stat-label">Target Price</div>
+                        <div class="target-stat-value highlight">${{ market.target_price|floatformat:0|default:"100,000" }}</div>
+                    </div>
+                </div>
+
+                <div class="yes-no-options">
+                    <div class="yes-no-option yes">
+                        <div class="yes-no-icon">👍</div>
+                        <div class="yes-no-label">YES</div>
+                        <div class="yes-no-odds">{{ market.up_odds|floatformat:2|default:"1.85" }}x</div>
+                    </div>
+                    <div class="yes-no-option no">
+                        <div class="yes-no-icon">👎</div>
+                        <div class="yes-no-label">NO</div>
+                        <div class="yes-no-odds">{{ market.down_odds|floatformat:2|default:"2.15" }}x</div>
+                    </div>
+                </div>
+
+                <div class="card-stats">
+                    <div class="stat-item">
+                        <div style="font-size: 12px; color: #999;">Total Pool</div>
+                        <div class="stat-value">${{ market.total_volume|floatformat:0|default:"50,000" }}</div>
+                    </div>
+                    <div class="stat-item">
+                        <div style="font-size: 12px; color: #999;">Participants</div>
+                        <div class="stat-value">{{ market.participant_count|default:"156" }}</div>
+                    </div>
+                </div>
+
+                <a href="{% url 'market-detail' market.id %}" class="action-button">Place Your Bet</a>
+                
+                {% else %}
+                <!-- REGULAR EVENT MARKET CARD -->
                 <div class="card-header">
                     <div class="crypto-pair">
                         <div class="crypto-icon" 
@@ -911,6 +1149,7 @@
                 </div>
 
                 <a href="{% url 'market-detail' market.id %}" class="action-button">Check Detail</a>
+                {% endif %}
             </div>
             {% empty %}
             <div style="text-align: center; color: #999; padding: 40px; grid-column: 1/-1;">
@@ -1180,35 +1419,13 @@
             }
         }
 
-        // Mobile menu toggle
-        function toggleMobileMenu() {
-            const mobileNav = document.getElementById('mobileNavLinks');
-            if (mobileNav) {
-                mobileNav.classList.toggle('show');
-            }
-            
-            const hamburger = document.querySelector('.hamburger');
-            if (hamburger) {
-                hamburger.classList.toggle('active');
-            }
-        }
-
         // Close dropdown when clicking outside
         document.addEventListener('click', function(event) {
             const profile = document.querySelector('.user-profile');
             const dropdown = document.getElementById('profileDropdown');
-            const hamburger = document.querySelector('.hamburger');
-            const mobileNav = document.getElementById('mobileNavLinks');
             
             if (profile && dropdown && !profile.contains(event.target)) {
                 dropdown.classList.remove('show');
-            }
-            
-            if (hamburger && mobileNav && 
-                !hamburger.contains(event.target) && 
-                !mobileNav.contains(event.target)) {
-                mobileNav.classList.remove('show');
-                hamburger.classList.remove('active');
             }
         });
 
