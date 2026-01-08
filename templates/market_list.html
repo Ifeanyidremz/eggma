@@ -900,7 +900,8 @@
                 {% endif %}
                 <div class="profile-dropdown" id="profileDropdown">
                     {% if user.is_authenticated %}
-                        <a href="{% url 'logout' %}" class="dropdown-item">🚪 Logout</a>
+                        <a href="{% url 'dashboard' %}" class="dropdown-item">Dashboard</a>
+                        <a href="{% url 'logout' %}" class="dropdown-item">Logout</a>
                     {% else %}
                         <a href="{% url 'login' %}" class="dropdown-item">🔒 Login</a>
                         <a href="{% url 'register' %}" class="dropdown-item">📝 Register</a>
