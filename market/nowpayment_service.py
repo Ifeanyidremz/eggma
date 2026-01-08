@@ -46,23 +46,78 @@ class NowPaymentsService:
             return {'min_amount': 5}
 
     def create_payment(self, price_amount, price_currency, pay_currency, order_id, ipn_callback_url):
+        """
+        Create payment with enhanced error handling
+        """
         try:
             url = f"{self.api_url}/payment"
+            
+            # FIXED: Ensure all fields are correct types and format
             data = {
                 'price_amount': float(price_amount),
-                'price_currency': price_currency,
-                'pay_currency': pay_currency,
+                'price_currency': str(price_currency).lower(),
+                'pay_currency': str(pay_currency).lower(),
                 'order_id': str(order_id),
-                'ipn_callback_url': ipn_callback_url,
+                'ipn_callback_url': str(ipn_callback_url),
             }
             
+            # Log the request (without exposing API key)
             logger.info(f"Creating NowPayments payment: {data}")
-            response = requests.post(url, headers=self.headers, json=data)
-            response.raise_for_status()
-            return response.json()
+            logger.info(f"API URL: {url}")
+            
+            response = requests.post(url, headers=self.headers, json=data, timeout=30)
+            
+            # CRITICAL: Log the response BEFORE raising exception
+            logger.info(f"NowPayments response status: {response.status_code}")
+            logger.info(f"NowPayments response headers: {dict(response.headers)}")
+            logger.info(f"NowPayments response body: {response.text}")
+            
+            # Try to parse error from response body
+            if response.status_code != 200:
+                try:
+                    error_data = response.json()
+                    error_message = error_data.get('message', error_data.get('error', 'Unknown error'))
+                    logger.error(f"NowPayments API error details: {error_message}")
+                    logger.error(f"Full error response: {json.dumps(error_data, indent=2)}")
+                    
+                    # Return error instead of raising
+                    return {
+                        'success': False,
+                        'error': error_message,
+                        'status_code': response.status_code,
+                        'details': error_data
+                    }
+                except json.JSONDecodeError:
+                    logger.error(f"Could not parse error response: {response.text}")
+                    return {
+                        'success': False,
+                        'error': f'HTTP {response.status_code}: {response.text}',
+                        'status_code': response.status_code
+                    }
+            
+            # Success - parse and return
+            result = response.json()
+            logger.info(f"Payment created successfully: {result.get('payment_id')}")
+            return result
+            
+        except requests.exceptions.Timeout:
+            logger.error("NowPayments API timeout")
+            return {
+                'success': False,
+                'error': 'Request timeout - NowPayments API is not responding'
+            }
+        except requests.exceptions.ConnectionError as e:
+            logger.error(f"Connection error: {str(e)}")
+            return {
+                'success': False,
+                'error': 'Cannot connect to NowPayments API'
+            }
         except Exception as e:
-            logger.error(f"Error creating payment: {str(e)}")
-            raise
+            logger.error(f"Unexpected error creating payment: {str(e)}", exc_info=True)
+            return {
+                'success': False,
+                'error': str(e)
+            }
 
     def create_payout(self, address, amount, currency, ipn_callback_url=None):
         try:
@@ -77,22 +132,52 @@ class NowPaymentsService:
             }
             
             logger.info(f"Creating NowPayments payout: {data}")
-            response = requests.post(url, headers=self.headers, json=data)
-            response.raise_for_status()
-            return response.json()
+            response = requests.post(url, headers=self.headers, json=data, timeout=30)
+            
+            # Log response before raising
+            logger.info(f"Payout response status: {response.status_code}")
+            logger.info(f"Payout response body: {response.text}")
+            
+            if response.status_code != 200:
+                try:
+                    error_data = response.json()
+                    logger.error(f"Payout error: {error_data}")
+                    return {
+                        'success': False,
+                        'error': error_data.get('message', 'Payout failed')
+                    }
+                except:
+                    return {
+                        'success': False,
+                        'error': f'HTTP {response.status_code}: {response.text}'
+                    }
+            
+            result = response.json()
+            return result
+            
         except Exception as e:
-            logger.error(f"Error creating payout: {str(e)}")
-            raise
+            logger.error(f"Error creating payout: {str(e)}", exc_info=True)
+            return {
+                'success': False,
+                'error': str(e)
+            }
 
     def get_payment_status(self, payment_id):
         try:
             url = f"{self.api_url}/payment/{payment_id}"
-            response = requests.get(url, headers=self.headers)
-            response.raise_for_status()
-            return response.json()
+            response = requests.get(url, headers=self.headers, timeout=10)
+            
+            logger.info(f"Payment status response: {response.status_code}")
+            
+            if response.status_code == 200:
+                return response.json()
+            else:
+                logger.error(f"Failed to get payment status: {response.text}")
+                return None
+                
         except Exception as e:
             logger.error(f"Error getting payment status: {str(e)}")
-            raise
+            return None
 
     def verify_ipn(self, request_data, signature):
         if not self.ipn_secret:

@@ -1637,29 +1637,27 @@ def crypto_deposit(request):
         if pay_currency not in valid_currencies:
             return JsonResponse({'success': False, 'error': f'Unsupported currency: {pay_currency}'})
         
-        # Create NowPayments payment
+        # Build IPN URL
         try:
-            nowpayments = NowPaymentsService()
-            
-            # FIXED: Build proper IPN callback URL
-            # Use SITE_URL from settings if available, otherwise build from request
             site_url = getattr(settings, 'SITE_URL', None)
             if not site_url:
-                # Build from request
                 scheme = 'https' if request.is_secure() else 'http'
                 site_url = f"{scheme}://{request.get_host()}"
             
-            # Remove trailing slash from site_url if present
             site_url = site_url.rstrip('/')
-            
             ipn_url = f"{site_url}/market/wallet/nowpayments-ipn/"
             
             logger.info(f"IPN callback URL: {ipn_url}")
-            
-            # Generate unique order ID
-            order_id = f"deposit_{request.user.id}_{int(timezone.now().timestamp())}"
-            
-            logger.info(f"Creating NowPayments payment with order_id: {order_id}")
+        except Exception as e:
+            logger.error(f"Error building IPN URL: {e}")
+            return JsonResponse({'success': False, 'error': 'Configuration error'})
+        
+        order_id = f"deposit_{request.user.id}_{int(timezone.now().timestamp())}"
+        
+        logger.info(f"Creating NowPayments payment with order_id: {order_id}")
+        
+        try:
+            nowpayments = NowPaymentsService()
             
             payment_result = nowpayments.create_payment(
                 price_amount=float(amount),
@@ -1671,11 +1669,30 @@ def crypto_deposit(request):
             
             logger.info(f"NowPayments response: {payment_result}")
             
+            if isinstance(payment_result, dict) and payment_result.get('success') == False:
+                error_msg = payment_result.get('error', 'Unknown error from NowPayments')
+                logger.error(f"NowPayments API returned error: {error_msg}")
+                
+                # Try to extract more details
+                if 'details' in payment_result:
+                    logger.error(f"Error details: {payment_result['details']}")
+                
+                # Return user-friendly error
+                return JsonResponse({
+                    'success': False,
+                    'error': f'Payment gateway error: {error_msg}'
+                })
+            
+            # Check if we got a valid payment_id
             if not payment_result or not payment_result.get('payment_id'):
-                raise Exception(f"Invalid response from NowPayments: {payment_result}")
+                logger.error(f"Invalid response from NowPayments: {payment_result}")
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Payment gateway did not return a valid payment ID'
+                })
             
         except Exception as e:
-            logger.error(f"NowPayments API error: {str(e)}", exc_info=True)
+            logger.error(f"Exception calling NowPayments API: {str(e)}", exc_info=True)
             return JsonResponse({
                 'success': False,
                 'error': f'Payment gateway error: {str(e)}'
@@ -1689,7 +1706,7 @@ def crypto_deposit(request):
                     transaction_type='deposit',
                     amount=amount,
                     balance_before=request.user.balance,
-                    balance_after=request.user.balance, 
+                    balance_after=request.user.balance,
                     status='pending',
                     external_id=payment_result.get('payment_id'),
                     description=f'Crypto deposit via NowPayments - {pay_currency.upper()}',
