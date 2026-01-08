@@ -1502,26 +1502,6 @@ class PriceTargetMarketService:
                     <p><strong>Required Change:</strong> {percent_change:.1f}%</p>
                     <p><strong>Deadline:</strong> {end_date.strftime('%B %d, %Y at %I:%M %p UTC')}</p>
                 </div>
-
-                <div class="how-it-works">
-                    <h3>How it works:</h3>
-                    <ul>
-                        <li>Vote <strong>YES</strong> if you think {crypto_symbol} will {direction} ${target_price:,.0f} before the deadline</li>
-                        <li>Vote <strong>NO</strong> if you think it won't reach this price</li>
-                        <li>Market resolves <strong>YES</strong> if {crypto_symbol} touches or exceeds ${target_price:,.0f} at any point before deadline</li>
-                        <li>Market resolves <strong>NO</strong> if deadline passes without reaching target</li>
-                    </ul>
-                </div>
-
-                <div class="resolution-criteria">
-                    <h3>Resolution Criteria:</h3>
-                    <ul>
-                        <li>Using CoinGecko API price data</li>
-                        <li>Checked automatically every hour</li>
-                        <li>First touch of target price wins</li>
-                        <li>No need to close above target - just needs to reach it</li>
-                    </ul>
-                </div>
             </div>
     """.strip()
             
