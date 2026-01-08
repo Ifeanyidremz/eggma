@@ -111,6 +111,27 @@ class Market(models.Model):
         default=Decimal('0.0100'),
         validators=[MinValueValidator(Decimal('0')), MaxValueValidator(Decimal('0.0500'))]
     )
+    target_price = models.DecimalField(
+    max_digits=15, 
+    decimal_places=2, 
+    null=True, 
+    blank=True,
+    help_text='Target price for price target markets'
+     )
+    highest_price_reached = models.DecimalField(
+    max_digits=15, 
+    decimal_places=2, 
+    null=True, 
+    blank=True,
+    help_text='Highest price reached during market lifetime (for target markets)'
+      )
+    round_end_price = models.DecimalField(
+    max_digits=15, 
+    decimal_places=6, 
+    null=True, 
+    blank=True,
+    help_text='Price at round end/market resolution'
+    )
     
     updated_at = models.DateTimeField(auto_now=True)
 
