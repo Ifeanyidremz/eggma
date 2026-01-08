@@ -1438,21 +1438,11 @@ class PriceTargetMarketService:
     @staticmethod
     def create_target_market(
         creator,
-        crypto_symbol,  # 'BTC', 'ETH', etc.
-        target_price,   # Decimal('100000.00')
-        end_date=None   # Defaults to month-end
+        crypto_symbol,
+        target_price,
+        end_date=None
     ):
-        """
-        Create a new price target market with proper error handling
-        
-        Example:
-            create_target_market(
-                creator=admin_user,
-                crypto_symbol='BTC',
-                target_price=Decimal('100000.00'),
-                end_date=None  # Defaults to end of current month
-            )
-        """
+        """Create a new price target market with HTML-formatted description"""
         
         try:
             logger.info(f"Creating target market: symbol={crypto_symbol}, target={target_price}")
@@ -1472,14 +1462,12 @@ class PriceTargetMarketService:
             # Calculate end date if not provided
             if not end_date:
                 now = timezone.now()
-                # Get last day of current month
                 if now.month == 12:
                     next_month = now.replace(year=now.year + 1, month=1, day=1)
                 else:
                     next_month = now.replace(month=now.month + 1, day=1)
                 
                 end_date = next_month - timedelta(days=1)
-                # Set to 11:59 PM
                 end_date = end_date.replace(hour=23, minute=59, second=59)
             
             logger.info(f"End date: {end_date}")
@@ -1505,56 +1493,73 @@ class PriceTargetMarketService:
             direction = "reach" if target_price > current_price else "fall below"
             percent_change = abs((target_price - current_price) / current_price * 100)
             
+            # Create HTML-formatted description (no Markdown asterisks)
+            description = f"""
+    <div class="market-description">
+        <div class="price-info">
+            <p><strong>Current Price:</strong> ${current_price:,.2f}</p>
+            <p><strong>Target Price:</strong> ${target_price:,.0f}</p>
+            <p><strong>Required Change:</strong> {percent_change:.1f}%</p>
+            <p><strong>Deadline:</strong> {end_date.strftime('%B %d, %Y at %I:%M %p UTC')}</p>
+        </div>
+
+        <div class="how-it-works">
+            <h3>How it works:</h3>
+            <ul>
+                <li>Vote <strong>YES</strong> if you think {crypto_symbol} will {direction} ${target_price:,.0f} before the deadline</li>
+                <li>Vote <strong>NO</strong> if you think it won't reach this price</li>
+                <li>Market resolves <strong>YES</strong> if {crypto_symbol} touches or exceeds ${target_price:,.0f} at any point before deadline</li>
+                <li>Market resolves <strong>NO</strong> if deadline passes without reaching target</li>
+            </ul>
+        </div>
+
+        <div class="resolution-criteria">
+            <h3>Resolution Criteria:</h3>
+            <ul>
+                <li>Using CoinGecko API price data</li>
+                <li>Checked automatically every hour</li>
+                <li>First touch of target price wins</li>
+                <li>No need to close above target - just needs to reach it</li>
+            </ul>
+        </div>
+    </div>
+    """.strip()
+            
             # Create market
             market_data = {
                 'title': f"Will {crypto_symbol} {direction} ${target_price:,.0f} before {end_date.strftime('%B %d, %Y')}?",
-                'description': f"""**Current Price:** ${current_price:,.2f}
-            **Target Price:** ${target_price:,.0f}
-            **Required Change:** {percent_change:.1f}%
-            **Deadline:** {end_date.strftime('%B %d, %Y at %I:%M %p UTC')}
-
-            **How it works:**
-            - Vote **YES** if you think {crypto_symbol} will {direction} ${target_price:,.0f} before the deadline
-            - Vote **NO** if you think it won't reach this price
-            - Market resolves **YES** if {crypto_symbol} touches or exceeds ${target_price:,.0f} at any point before deadline
-            - Market resolves **NO** if deadline passes without reaching target
-
-            **Resolution Criteria:**
-            - Using CoinGecko API price data
-            - Checked automatically every hour
-            - First touch of target price wins
-            - No need to close above target - just needs to reach it""",
-                        'market_type': 'target',
-                        'creator': creator,
-                        'category': category,
-                        'base_currency': crypto_symbol,
-                        'quote_currency': 'USDT',
-                        'target_price': target_price,
-                        'highest_price_reached': current_price,
-                        'round_start_price': current_price,
-                        'resolution_date': end_date,
-                        'round_start_time': timezone.now(),
-                        'total_volume': Decimal('0'),
-                        'up_volume': Decimal('0'),      # YES votes
-                        'down_volume': Decimal('0'),    # NO votes
-                        'flat_volume': Decimal('0'),    # Unused for binary
-                        'min_bet': Decimal('1.00'),
-                        'max_bet': Decimal('10000.00'),
-                        'round_duration': 0,  # No rounds for target markets
-                        'current_round': 1,
-                        'status': 'active'
-                    }
+                'description': description,
+                'market_type': 'target',
+                'creator': creator,
+                'category': category,
+                'base_currency': crypto_symbol,
+                'quote_currency': 'USDT',
+                'target_price': target_price,
+                'highest_price_reached': current_price,
+                'round_start_price': current_price,
+                'resolution_date': end_date,
+                'round_start_time': timezone.now(),
+                'total_volume': Decimal('0'),
+                'up_volume': Decimal('0'),
+                'down_volume': Decimal('0'),
+                'flat_volume': Decimal('0'),
+                'min_bet': Decimal('1.00'),
+                'max_bet': Decimal('10000.00'),
+                'round_duration': 0,
+                'current_round': 1,
+                'status': 'active'
+            }
             
             logger.info(f"Creating Market object with data: title={market_data['title']}")
             
             market = Market.objects.create(**market_data)
             
-            logger.info(f"Market created successfully: ID={market.id}")
+            logger.info(f"✅ Market created successfully: ID={market.id}")
             
             return market
             
         except Exception as e:
-            logger.error(f"Error in create_target_market: {str(e)}", exc_info=True)
+            logger.error(f"❌ Error in create_target_market: {str(e)}", exc_info=True)
             raise  
     
     @staticmethod
