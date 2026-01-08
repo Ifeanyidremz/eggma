@@ -502,19 +502,15 @@
 
             .menu-toggle {
                 display: block;
-                order: 3;
-                margin-left: auto;
             }
 
-            .logo {
-                order: 1;
-                flex: 0 0 auto;
+            .logo img {
+                height: 60px;
             }
 
+            /* Hide user profile on mobile */
             .user-profile {
-                order: 2;
-                margin-left: auto;
-                margin-right: 10px;
+                display: none;
             }
 
             .nav-links {
@@ -553,23 +549,60 @@
                 background: rgba(247, 147, 26, 0.1);
             }
 
-            .logo img {
-                height: 60px;
-            }
-
-            .user-profile {
-                gap: 8px;
-                padding: 5px 10px;
-            }
-
-            .user-avatar {
-                width: 35px;
-                height: 35px;
-                font-size: 14px;
-            }
-
-            .user-profile > div:nth-child(2) {
+            /* Add profile info to mobile menu */
+            .mobile-profile-section {
                 display: none;
+                padding: 20px;
+                background: rgba(247, 147, 26, 0.1);
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                margin-bottom: 10px;
+            }
+
+            .nav-links.show .mobile-profile-section {
+                display: flex;
+                align-items: center;
+                gap: 15px;
+            }
+
+            .mobile-profile-section .user-avatar {
+                width: 50px;
+                height: 50px;
+                font-size: 18px;
+            }
+
+            .mobile-profile-info {
+                flex: 1;
+            }
+
+            .mobile-profile-info .name {
+                font-size: 16px;
+                font-weight: 600;
+                color: #fff;
+                margin-bottom: 4px;
+            }
+
+            .mobile-profile-info .level {
+                font-size: 13px;
+                color: #999;
+            }
+
+            /* Add logout to mobile menu */
+            .mobile-logout {
+                display: none;
+                padding: 15px 20px;
+                color: #ccc;
+                text-decoration: none;
+                border-top: 1px solid rgba(255, 255, 255, 0.1);
+                margin-top: 10px;
+            }
+
+            .nav-links.show .mobile-logout {
+                display: block;
+            }
+
+            .mobile-logout:hover {
+                background: rgba(255, 255, 255, 0.1);
+                color: #f7931a;
             }
 
             .referral-stats {
@@ -631,9 +664,33 @@
             </a>
             <button class="menu-toggle" onclick="toggleMenu()">☰</button>
             <div class="nav-links" id="navLinks">
+                <!-- Mobile Profile Section (only shows on mobile) -->
+                <div class="mobile-profile-section">
+                    <div class="user-avatar">
+                        {% if user.full_name %}
+                            {{ user.full_name|slice:":2"|upper }}
+                        {% else %}
+                            {{ user.username|slice:":2"|upper }}
+                        {% endif %}
+                    </div>
+                    <div class="mobile-profile-info">
+                        <div class="name">
+                            {% if user.full_name %}
+                                {{ user.full_name }}
+                            {% else %}
+                                {{ user.username }}
+                            {% endif %}
+                        </div>
+                        <div class="level">Level {{ user.level|default:"1" }}</div>
+                    </div>
+                </div>
+                
                 <a href="{% url 'dashboard' %}">Dashboard</a>
                 <a href="{% url 'market-data' %}">Markets</a>
                 <a href="{% url 'referral-dashboard' %}" class="active">💰 Referrals</a>
+                
+                <!-- Mobile Logout (only shows on mobile) -->
+                <a href="{% url 'logout' %}" class="mobile-logout">🚪 Logout</a>
             </div>
             <div class="user-profile" onclick="toggleProfileMenu()">
                 <div class="user-avatar">
@@ -771,7 +828,7 @@
             const menuToggle = document.querySelector('.menu-toggle');
             const navLinks = document.getElementById('navLinks');
             
-            if (!profile.contains(event.target)) {
+            if (profile && !profile.contains(event.target)) {
                 dropdown.classList.remove('show');
             }
 
