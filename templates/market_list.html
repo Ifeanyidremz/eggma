@@ -1003,8 +1003,7 @@
         <div class="trading-cards-grid">
             {% for market in markets %}
             <div class="trading-card" data-market-id="{{ market.id }}">
-                {% if market.market_type == 'target' %}
-                <!-- PRICE TARGET MARKET CARD -->
+                <!-- PRICE TARGET MARKET CARD (Always Visible) -->
                 <span class="market-type-badge">🎯 PRICE TARGET</span>
                 
                 <div class="card-header">
@@ -1069,8 +1068,7 @@
 
                 <a href="{% url 'market-detail' market.id %}" class="action-button">Place Your Bet</a>
                 
-                {% else %}
-                <!-- REGULAR EVENT MARKET CARD -->
+                <!-- REGULAR EVENT MARKET CARD (Always Visible) -->
                 <div class="card-header">
                     <div class="crypto-pair">
                         <div class="crypto-icon" 
@@ -1149,7 +1147,6 @@
                 </div>
 
                 <a href="{% url 'market-detail' market.id %}" class="action-button">Check Detail</a>
-                {% endif %}
             </div>
             {% empty %}
             <div style="text-align: center; color: #999; padding: 40px; grid-column: 1/-1;">
@@ -1448,6 +1445,32 @@
                     }, 200);
                 });
             });
+        });
+
+        // Mobile menu toggle
+        function toggleMobileMenu() {
+            const mobileNav = document.getElementById('mobileNavLinks');
+            if (mobileNav) {
+                mobileNav.classList.toggle('show');
+            }
+            
+            const hamburger = document.querySelector('.hamburger');
+            if (hamburger) {
+                hamburger.classList.toggle('active');
+            }
+        }
+
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const hamburger = document.querySelector('.hamburger');
+            const mobileNav = document.getElementById('mobileNavLinks');
+            
+            if (hamburger && mobileNav && 
+                !hamburger.contains(event.target) && 
+                !mobileNav.contains(event.target)) {
+                mobileNav.classList.remove('show');
+                hamburger.classList.remove('active');
+            }
         });
     </script>
 </body>
