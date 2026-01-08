@@ -24,7 +24,7 @@ urlpatterns = [
     path('wallet/deposit/', views.wallet_deposit, name='wallet-deposit'),
     path('wallet/withdraw/', views.wallet_withdraw, name='wallet-withdraw'),
 
-    # path('webhooks/coinremitter/', views.coinremitter_webhook, name='coinremitter_webhook'),
+    path('target-bet', views.place_target_bet, name='place-target-bet'),
 
     path('target-market/create/', views.create_price_target_market, name='create-target-market'),
 
