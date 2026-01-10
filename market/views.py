@@ -19,6 +19,7 @@ from predict.models import NewsArticle
 from decimal import Decimal, InvalidOperation
 from django.views.decorators.csrf import csrf_protect
 from .utils import *
+from django.conf import settings
 from predict.models import Bet, Transaction, UserStats
 from django.db import transaction as db_transaction
 from .b2binpay_service import B2BinPayService, VirtualWalletService
@@ -439,6 +440,7 @@ def userPortfolio(request):
         'bets_total': abs(bets_placed),  # Show as positive for display
         'payouts_total': payouts,
         'bonuses_total': bonuses,
+        'settings': settings,
     }
     
     return render(request, 'profile.html', context)
