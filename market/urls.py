@@ -36,6 +36,8 @@ urlpatterns = [
 
     path('stripe-webhook/', views.stripe_webhook, name='stripe-webhook'),
 
+    path('referral/', views.referral_dashboard, name='referral-dashboard'),
+
     path('wallet/deposit-card/', views.stripe_card_deposit, name='stripe_card_deposit'),
     path('wallet/crypto-deposit/', views.crypto_deposit_b2binpay, name='crypto_deposit_b2binpay'),
     path('wallet/b2binpay-callback/', views.b2binpay_callback, name='b2binpay_callback'),
