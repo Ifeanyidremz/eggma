@@ -1569,7 +1569,7 @@
                 {% endfor %}
 
                 {% if bet_history %}
-                <h2 class="section-title" style="margin-top: 30px;">📊 Recent Results</h2>
+                <h2 class="section-title" style="margin-top: 30px;">Recent Results</h2>
                 {% for bet in bet_history|slice:":3" %}
                 <div class="prediction-item">
                     <div class="prediction-header">
@@ -2333,33 +2333,45 @@
             spinner.style.display = 'inline-block';
             btnText.textContent = 'Processing...';
             
-            const formData = new FormData();
-            formData.append('amount', document.getElementById('withdrawAmount').value);
-            formData.append('wallet_address', document.getElementById('withdrawAddress').value);
-            formData.append('network', document.getElementById('withdrawNetwork').value);
-            formData.append('csrfmiddlewaretoken', getCSRFToken());
-            
             try {
                 const response = await fetch('/market/wallet/withdraw/', {
                     method: 'POST',
-                    body: formData
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCSRFToken()
+                    },
+                    body: JSON.stringify({
+                        amount: document.getElementById('withdrawAmount').value,
+                        wallet_address: document.getElementById('withdrawAddress').value,
+                        network: document.getElementById('withdrawNetwork').value
+                    })
                 });
                 
-                if (response.redirected) {
-                    window.location.href = response.url;
-                } else {
-                    const data = await response.json();
+                const data = await response.json();
+                
+                if (data.success) {
+                    showSuccess(data.message || 'Withdrawal request submitted successfully!');
                     
-                    if (data.success) {
-                        showSuccess(data.message || 'Withdrawal submitted successfully!');
-                        closeWithdrawModal();
-                        
-                        if (data.new_balance) {
-                            updateBalanceDisplay(data.new_balance);
-                        }
-                    } else {
-                        showError(data.error || 'Withdrawal failed');
+                    // Update balance display
+                    if (data.new_balance) {
+                        updateBalanceDisplay(data.new_balance);
                     }
+                    
+                    // Show withdrawal details
+                    const detailsMsg = `
+                        Withdrawal Details:
+                        • Amount: $${data.amount}
+                        • You'll receive: $${data.net_amount} (after fees)
+                        • Status: ${data.status}
+                        • Network fee: $${data.network_fee}
+                        • Platform fee: $${data.platform_fee}
+                    `;
+                    console.log(detailsMsg);
+                    
+                    closeWithdrawModal();
+                    setTimeout(() => location.reload(), 2000);
+                } else {
+                    showError(data.error || 'Withdrawal failed');
                 }
             } catch (error) {
                 console.error('Withdrawal error:', error);
@@ -2369,7 +2381,7 @@
             }
         }
 
-        document.getElementById('depositForm').addEventListener('submit', async function(event) {
+       document.getElementById('depositForm').addEventListener('submit', async function(event) {
             event.preventDefault();
             
             const submitBtn = document.getElementById('depositSubmitBtn');
@@ -2382,6 +2394,7 @@
             
             const amount = parseFloat(document.getElementById('depositAmount').value);
             
+            // Validation
             if (amount < 5) {
                 showError('Minimum deposit is $5.00');
                 resetDepositButton();
@@ -2400,62 +2413,77 @@
                     throw new Error('CSRF token not found. Please refresh the page.');
                 }
 
-                const response = await fetch('/market/wallet/deposit/', {
+                // Step 1: Create payment method from card
+                btnText.textContent = 'Processing Card...';
+                const { paymentMethod, error } = await stripe.createPaymentMethod({
+                    type: 'card',
+                    card: card,
+                    billing_details: {
+                        name: '{{ user.full_name|default:user.username }}'
+                    }
+                });
+
+                if (error) {
+                    showError(error.message);
+                    resetDepositButton();
+                    return;
+                }
+
+                // Step 2: Send to backend
+                btnText.textContent = 'Confirming Payment...';
+                const response = await fetch('/market/wallet/deposit-card/', { 
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'Content-Type': 'application/json',
                         'X-CSRFToken': csrfToken
                     },
-                    body: new URLSearchParams({
-                        'amount': amount.toString()
+                    body: JSON.stringify({
+                        amount: amount.toString(),
+                        payment_method_id: paymentMethod.id
                     })
                 });
                 
                 if (!response.ok) {
-                    throw new Error(`Server error: ${response.status}`);
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `Server error: ${response.status}`);
                 }
                 
                 const data = await response.json();
                 
-                if (!data.success) {
-                    showError(data.error || 'Payment failed');
-                    resetDepositButton();
-                    return;
-                }
-                
-                const paymentIntentId = data.payment_intent_id;
-                
-                btnText.textContent = 'Confirming Payment...';
-                const result = await stripe.confirmCardPayment(data.client_secret, {
-                    payment_method: {
-                        card: card,
-                        billing_details: {
-                            name: '{{ user.full_name|default:user.username }}'
-                        }
+                if (data.success) {
+                    // Payment succeeded!
+                    showSuccess(`Deposit successful! +$${amount.toFixed(2)} added to your balance.`);
+                    
+                    // Update balance display
+                    if (data.new_balance) {
+                        updateBalanceDisplay(data.new_balance);
                     }
-                });
-                
-                if (result.error) {
-                    showError(result.error.message);
-                    resetDepositButton();
-                } else {
-                    btnText.textContent = 'Processing Deposit...';
                     
-                    sessionStorage.setItem('pending_deposit', JSON.stringify({
-                        payment_intent_id: paymentIntentId,
-                        amount: amount,
-                        timestamp: Date.now()
-                    }));
-                    
-                    showSuccess(`Payment confirmed! Processing deposit of ${amount.toFixed(2)}. Your balance will update shortly.`);
-                    
-                    startDepositTracking(paymentIntentId, amount);
-                    
+                    // Close modal and reset
                     setTimeout(() => {
                         closeDepositModal();
                         resetDepositButton();
+                        location.reload();
                     }, 2000);
+                    
+                } else if (data.requires_action) {
+                    // 3D Secure authentication required
+                    btnText.textContent = 'Verifying...';
+                    
+                    const { error: confirmError } = await stripe.confirmCardPayment(data.client_secret);
+                    
+                    if (confirmError) {
+                        showError(confirmError.message);
+                        resetDepositButton();
+                    } else {
+                        showSuccess('Payment verified! Processing deposit...');
+                        setTimeout(() => location.reload(), 2000);
+                    }
+                } else {
+                    showError(data.error || 'Payment failed');
+                    resetDepositButton();
                 }
+                
             } catch (error) {
                 console.error('Payment error:', error);
                 showError(error.message || 'Payment processing failed. Please try again.');
@@ -2470,7 +2498,7 @@
             
             submitBtn.disabled = false;
             spinner.style.display = 'none';
-            btnText.textContent = '💳 Process Deposit';
+            btnText.textContent = 'Process Deposit';
         }
 
         function resetWithdrawButton() {
@@ -2691,7 +2719,7 @@
                     box-shadow: 0 20px 40px rgba(34, 197, 94, 0.3);
                     animation: depositSuccess 3s ease-out forwards;
                 ">
-                    💰 +${amount.toFixed(2)} Added!
+                    +${amount.toFixed(2)} Added!
                 </div>
             `;
             
@@ -2873,7 +2901,20 @@
                 openWithdrawModal();
             }
         });
-        // Crypto Deposit Functions
+        // ==========================================
+        // B2BINPAY CRYPTO DEPOSIT FUNCTIONS
+        // ==========================================
+        
+// Wallet IDs mapping - Update with your B2BinPay dashboard wallet IDs
+const B2BINPAY_WALLETS = {
+    'btc': '{{ settings.B2BINPAY_WALLETS.BTC }}' || '',
+    'eth': '{{ settings.B2BINPAY_WALLETS.ETH }}' || '',
+    'usdt': '{{ settings.B2BINPAY_WALLETS.USDT }}' || '',
+    'usdttrc20': '{{ settings.B2BINPAY_WALLETS.USDT }}' || '',
+    'ltc': '{{ settings.B2BINPAY_WALLETS.LTC }}' || '',
+    'trx': '{{ settings.B2BINPAY_WALLETS.TRX }}' || ''
+};
+
 function openCryptoDepositModal() {
     document.getElementById('cryptoDepositModal').classList.add('show');
 }
@@ -2881,6 +2922,10 @@ function openCryptoDepositModal() {
 function closeCryptoDepositModal() {
     document.getElementById('cryptoDepositModal').classList.remove('show');
     document.getElementById('paymentInstructions').style.display = 'none';
+    document.getElementById('cryptoDepositForm').reset();
+    const helperDiv = document.querySelector('.deposit-helper');
+    if (helperDiv) helperDiv.remove();
+    stopDepositPolling();
 }
 
 function setCryptoDepositAmount(amount) {
@@ -2893,17 +2938,38 @@ document.getElementById('cryptoDepositForm').addEventListener('submit', async fu
     e.preventDefault();
     
     const amount = document.getElementById('cryptoDepositAmount').value;
-    const currency = document.getElementById('cryptoCurrency').value;
+    const currency = document.getElementById('cryptoCurrency').value.toLowerCase();
     const btn = document.getElementById('cryptoDepositBtn');
     const spinner = document.getElementById('cryptoDepositSpinner');
     const btnText = document.getElementById('cryptoDepositBtnText');
     
+    // Validation
+    if (parseFloat(amount) < 10) {
+        showError('Minimum deposit is $10.00');
+        return;
+    }
+    
+    if (parseFloat(amount) > 50000) {
+        showError('Maximum deposit is $50,000.00');
+        return;
+    }
+    
+    // Get wallet ID for selected currency
+    const walletId = B2BINPAY_WALLETS[currency];
+    if (!walletId || walletId === '') {
+        showError(`${currency.toUpperCase()} wallet not configured. Please contact support.`);
+        console.error('Missing wallet ID for currency:', currency);
+        console.error('Available wallets:', B2BINPAY_WALLETS);
+        return;
+    }
+    
     btn.disabled = true;
     spinner.style.display = 'inline-block';
-    btnText.textContent = 'Generating...';
+    btnText.textContent = 'Generating Address...';
     
     try {
-        const response = await fetch('/market/wallet/deposit-crypto/', {
+        // B2BinPay endpoint (UPDATED from NowPayments)
+        const response = await fetch('/market/wallet/crypto-deposit/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -2911,25 +2977,53 @@ document.getElementById('cryptoDepositForm').addEventListener('submit', async fu
             },
             body: JSON.stringify({
                 amount: amount,
-                pay_currency: currency
+                currency: currency.toUpperCase(),
+                wallet_id: walletId
             })
         });
         
         const data = await response.json();
         
         if (data.success) {
-            // Show payment instructions
-            document.getElementById('payAmount').textContent = data.pay_amount + ' ' + data.pay_currency.toUpperCase();
-            document.getElementById('payAddress').value = data.pay_address;
-            document.getElementById('payCurrency').textContent = data.pay_currency.toUpperCase();
+            // Show payment instructions (B2BinPay response format)
+            document.getElementById('payAmount').textContent = `$${parseFloat(amount).toFixed(2)} USD`;
+            document.getElementById('payAddress').value = data.payment_address;
+            document.getElementById('payCurrency').textContent = data.currency;
             document.getElementById('paymentInstructions').style.display = 'block';
             
-            showSuccess('Payment address generated! Please send the exact amount shown.');
+            const paymentInstructions = document.getElementById('paymentInstructions');
+            paymentInstructions.dataset.depositId = data.deposit_id || '';
+            paymentInstructions.dataset.trackingId = data.tracking_id || '';
+            
+            showSuccess('Deposit address generated! Send ' + data.currency + ' to the address below.');
+            
+            // Add helpful information
+            const helperDiv = document.createElement('div');
+            helperDiv.className = 'deposit-helper';
+            helperDiv.style.cssText = 'margin-top: 15px; padding: 12px; background: rgba(34, 197, 94, 0.1); border-radius: 8px; font-size: 13px; color: #ddd; border-left: 3px solid #22c55e;';
+            helperDiv.innerHTML = `
+                <p style="margin-bottom: 5px;"><span style="margin-right: 8px;">⏱️</span><strong>Confirmations:</strong> 2 network confirmations required</p>
+                <p style="margin-bottom: 5px;"><span style="margin-right: 8px;">🔔</span><strong>Tracking ID:</strong> ${data.tracking_id || 'N/A'}</p>
+                <p style="margin: 0;"><span style="margin-right: 8px;">💡</span><strong>Tip:</strong> Balance updates automatically after confirmation</p>
+            `;
+            
+            const oldHelper = document.querySelector('.deposit-helper');
+            if (oldHelper) oldHelper.remove();
+            
+            paymentInstructions.appendChild(helperDiv);
+            
+            if (data.deposit_id) {
+                startDepositPolling(data.deposit_id);
+            }
         } else {
-            showError(data.error || 'Failed to generate payment address');
+            showError(data.error || 'Failed to generate deposit address');
+            if (data.details) {
+                console.error('B2BinPay API Error Details:', data.details);
+            }
         }
     } catch (error) {
-        showError('Network error. Please try again.');
+        console.error('Deposit request error:', error);
+        showError('Network error. Please check your connection and try again.');
     } finally {
         btn.disabled = false;
         spinner.style.display = 'none';
@@ -2937,11 +3031,79 @@ document.getElementById('cryptoDepositForm').addEventListener('submit', async fu
     }
 });
 
+// Deposit status polling
+let depositPollingInterval = null;
+
+function startDepositPolling(depositId) {
+    stopDepositPolling();
+    console.log('Starting deposit polling for:', depositId);
+    
+    let pollCount = 0;
+    const maxPolls = 120;
+    
+    depositPollingInterval = setInterval(async () => {
+        pollCount++;
+        
+        if (pollCount >= maxPolls) {
+            console.log('Polling timeout');
+            clearInterval(depositPollingInterval);
+            return;
+        }
+        
+        try {
+            const response = await fetch(`/market/wallet/deposit-status/${depositId}/`, {
+                headers: { 'X-CSRFToken': getCSRFToken() }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                console.log(`Poll ${pollCount}:`, data.status);
+                
+                if (data.status === 'completed') {
+                    stopDepositPolling();
+                    showSuccess('🎉 Deposit confirmed! Balance updated.');
+                    if (data.new_balance) {
+                        const balanceElements = document.querySelectorAll('.balance-value, [data-balance]');
+                        balanceElements.forEach(el => {
+                            el.textContent = `$${parseFloat(data.new_balance).toFixed(2)}`;
+                        });
+                    }
+                    setTimeout(() => location.reload(), 2000);
+                } else if (data.status === 'failed') {
+                    stopDepositPolling();
+                    showError('Deposit failed. Contact support if you sent funds.');
+                }
+            }
+        } catch (error) {
+            console.error('Polling error:', error);
+        }
+    }, 30000);
+}
+
+function stopDepositPolling() {
+    if (depositPollingInterval) {
+        clearInterval(depositPollingInterval);
+        depositPollingInterval = null;
+        console.log('⏹️ Polling stopped');
+    }
+}
+
 function copyPayAddress() {
     const addressInput = document.getElementById('payAddress');
     addressInput.select();
-    document.execCommand('copy');
-    showSuccess('Payment address copied to clipboard!');
+    addressInput.setSelectionRange(0, 99999);
+    
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(addressInput.value).then(() => {
+            showSuccess('Payment address copied to clipboard!');
+        }).catch(() => {
+            document.execCommand('copy');
+            showSuccess('Payment address copied to clipboard!');
+        });
+    } else {
+        document.execCommand('copy');
+        showSuccess('Payment address copied to clipboard!');
+    }
 }
 
 // Wallet Transfer Functions
@@ -3011,7 +3173,7 @@ document.getElementById('transferForm').addEventListener('submit', async functio
     } finally {
         btn.disabled = false;
         spinner.style.display = 'none';
-        btnText.textContent = '💸 Send Transfer';
+        btnText.textContent = 'Send Transfer';
     }
 });
 

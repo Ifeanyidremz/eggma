@@ -21,7 +21,7 @@ from django.views.decorators.csrf import csrf_protect
 from .utils import *
 from predict.models import Bet, Transaction, UserStats
 from django.db import transaction as db_transaction
-from .nowpayment_service import NowPaymentsService
+from .b2binpay_service import B2BinPayService, VirtualWalletService
 from .wallet_service import WalletTransferService
 from django.contrib.admin.views.decorators import staff_member_required
 import logging
@@ -444,6 +444,98 @@ def userPortfolio(request):
     return render(request, 'profile.html', context)
 
 
+@login_required
+def get_wallet_balance(request):
+    try:
+        balance = VirtualWalletService.get_wallet_balance(request.user)
+        
+        # Get recent transactions
+        recent_transactions = Transaction.objects.filter(
+            user=request.user
+        ).order_by('-created_at')[:10]
+        
+        transactions_data = [{
+            'id': str(txn.id),
+            'type': txn.transaction_type,
+            'amount': float(txn.amount),
+            'status': txn.status,
+            'description': txn.description,
+            'created_at': txn.created_at.isoformat(),
+            'balance_after': float(txn.balance_after)
+        } for txn in recent_transactions]
+        
+        return JsonResponse({
+            'success': True,
+            'balance': float(balance),
+            'currency': 'USD',
+            'recent_transactions': transactions_data
+        })
+        
+    except Exception as e:
+        logger.error(f"Error fetching wallet balance: {e}")
+        return JsonResponse({'success': False, 'error': str(e)})
+    
+
+@login_required
+def wallet_dashboard(request):
+    try:
+        # Get wallet balance
+        balance = VirtualWalletService.get_wallet_balance(request.user)
+        
+        # Get transaction history
+        transactions = Transaction.objects.filter(
+            user=request.user
+        ).order_by('-created_at')[:50]
+        
+        # Calculate statistics
+        total_deposits = Transaction.objects.filter(
+            user=request.user,
+            transaction_type='deposit',
+            status='completed'
+        ).aggregate(total=models.Sum('amount'))['total'] or Decimal('0')
+        
+        total_withdrawals = abs(Transaction.objects.filter(
+            user=request.user,
+            transaction_type='withdrawal',
+            status='completed'
+        ).aggregate(total=models.Sum('amount'))['total'] or Decimal('0'))
+        
+        total_transfers_sent = abs(Transaction.objects.filter(
+            user=request.user,
+            transaction_type='transfer',
+            amount__lt=0,
+            status='completed'
+        ).aggregate(total=models.Sum('amount'))['total'] or Decimal('0'))
+        
+        total_transfers_received = Transaction.objects.filter(
+            user=request.user,
+            transaction_type='transfer',
+            amount__gt=0,
+            status='completed'
+        ).aggregate(total=models.Sum('amount'))['total'] or Decimal('0')
+        
+        context = {
+            'balance': balance,
+            'transactions': transactions,
+            'total_deposits': total_deposits,
+            'total_withdrawals': total_withdrawals,
+            'total_transfers_sent': total_transfers_sent,
+            'total_transfers_received': total_transfers_received,
+            'pending_deposits': Transaction.objects.filter(
+                user=request.user,
+                transaction_type='deposit',
+                status='pending'
+            ).count()
+        }
+        
+        return render(request, 'wallet_dashboard.html', context)
+        
+    except Exception as e:
+        logger.error(f"Wallet dashboard error: {e}")
+        messages.error(request, 'Error loading wallet dashboard')
+        return redirect('dashboard')
+    
+    
 @login_required 
 def place_bet(request):
     """Enhanced bet placement with predict-to-earn support (without model changes)"""
@@ -1613,93 +1705,76 @@ def referral_dashboard(request):
 
 @login_required
 @csrf_protect
-def crypto_deposit(request):
-    """Handle crypto deposits via NowPayments"""
+def crypto_deposit_b2binpay(request):
+    """
+    Create crypto deposit using B2BinPay
+    Generates unique deposit address for user
+    """
     if request.method != 'POST':
         return JsonResponse({'success': False, 'error': 'Invalid method'})
     
     try:
         data = json.loads(request.body)
         amount = Decimal(str(data.get('amount', 0)))
-        pay_currency = data.get('pay_currency', 'btc').lower()
+        currency = data.get('currency', 'BTC').upper()
+        wallet_id = data.get('wallet_id')  # Admin must provide wallet ID from B2BinPay dashboard
         
-        logger.info(f"Crypto deposit request: User={request.user.username}, Amount=${amount}, Currency={pay_currency}")
+        logger.info(f"Crypto deposit request: User={request.user.username}, Amount=${amount}, Currency={currency}")
         
         # Validation
-        if amount < Decimal('5.00'):
-            return JsonResponse({'success': False, 'error': 'Minimum deposit is $5.00'})
+        if amount < Decimal('10.00'):
+            return JsonResponse({'success': False, 'error': 'Minimum deposit is $10.00'})
         
-        if amount > Decimal('10000.00'):
-            return JsonResponse({'success': False, 'error': 'Maximum deposit is $10,000.00'})
+        if amount > Decimal('50000.00'):
+            return JsonResponse({'success': False, 'error': 'Maximum deposit is $50,000.00'})
         
-        # Validate currency
-        valid_currencies = ['btc', 'eth', 'usdt', 'usdttrc20', 'usdterc20', 'ltc', 'trx']
-        if pay_currency not in valid_currencies:
-            return JsonResponse({'success': False, 'error': f'Unsupported currency: {pay_currency}'})
+        if not wallet_id:
+            return JsonResponse({
+                'success': False,
+                'error': 'Wallet ID not configured. Contact admin.'
+            })
         
-        # Build IPN URL
+        # Build callback URL
         try:
+            from django.conf import settings
             site_url = getattr(settings, 'SITE_URL', None)
             if not site_url:
                 scheme = 'https' if request.is_secure() else 'http'
                 site_url = f"{scheme}://{request.get_host()}"
             
             site_url = site_url.rstrip('/')
-            ipn_url = f"{site_url}/market/wallet/nowpayments-ipn/"
+            callback_url = f"{site_url}/market/wallet/b2binpay-callback/"
             
-            logger.info(f"IPN callback URL: {ipn_url}")
+            logger.info(f"Callback URL: {callback_url}")
         except Exception as e:
-            logger.error(f"Error building IPN URL: {e}")
+            logger.error(f"Error building callback URL: {e}")
             return JsonResponse({'success': False, 'error': 'Configuration error'})
         
-        order_id = f"deposit_{request.user.id}_{int(timezone.now().timestamp())}"
-        
-        logger.info(f"Creating NowPayments payment with order_id: {order_id}")
-        
+        # Create deposit via B2BinPay
         try:
-            nowpayments = NowPaymentsService()
+            b2binpay = B2BinPayService()
             
-            payment_result = nowpayments.create_payment(
-                price_amount=float(amount),
-                price_currency='usd',
-                pay_currency=pay_currency,
-                order_id=order_id,
-                ipn_callback_url=ipn_url
+            tracking_id = f"deposit_{request.user.id}_{int(time.time())}"
+            
+            deposit_result = b2binpay.create_deposit(
+                wallet_id=wallet_id,
+                amount=amount,
+                user_id=str(request.user.id),
+                callback_url=callback_url,
+                tracking_id=tracking_id
             )
             
-            logger.info(f"NowPayments response: {payment_result}")
+            logger.info(f"B2BinPay deposit result: {deposit_result}")
             
-            if isinstance(payment_result, dict) and payment_result.get('success') == False:
-                error_msg = payment_result.get('error', 'Unknown error from NowPayments')
-                logger.error(f"NowPayments API returned error: {error_msg}")
-                
-                # Try to extract more details
-                if 'details' in payment_result:
-                    logger.error(f"Error details: {payment_result['details']}")
-                
-                # Return user-friendly error
+            if not deposit_result.get('success'):
+                error_msg = deposit_result.get('error', 'Unknown error from B2BinPay')
+                logger.error(f"B2BinPay API error: {error_msg}")
                 return JsonResponse({
                     'success': False,
                     'error': f'Payment gateway error: {error_msg}'
                 })
             
-            # Check if we got a valid payment_id
-            if not payment_result or not payment_result.get('payment_id'):
-                logger.error(f"Invalid response from NowPayments: {payment_result}")
-                return JsonResponse({
-                    'success': False,
-                    'error': 'Payment gateway did not return a valid payment ID'
-                })
-            
-        except Exception as e:
-            logger.error(f"Exception calling NowPayments API: {str(e)}", exc_info=True)
-            return JsonResponse({
-                'success': False,
-                'error': f'Payment gateway error: {str(e)}'
-            })
-        
-        # Create pending transaction
-        try:
+            # Create pending transaction
             with db_transaction.atomic():
                 transaction = Transaction.objects.create(
                     user=request.user,
@@ -1708,44 +1783,44 @@ def crypto_deposit(request):
                     balance_before=request.user.balance,
                     balance_after=request.user.balance,
                     status='pending',
-                    external_id=payment_result.get('payment_id'),
-                    description=f'Crypto deposit via NowPayments - {pay_currency.upper()}',
+                    external_id=deposit_result.get('deposit_id'),
+                    description=f'Crypto deposit via B2BinPay - {currency}',
                     metadata={
-                        'payment_id': payment_result.get('payment_id'),
-                        'pay_address': payment_result.get('pay_address'),
-                        'pay_amount': str(payment_result.get('pay_amount', 0)),
-                        'pay_currency': pay_currency,
-                        'order_id': order_id,
-                        'payment_status': payment_result.get('payment_status', 'waiting'),
-                        'created_at': timezone.now().isoformat()
+                        'deposit_id': deposit_result.get('deposit_id'),
+                        'payment_address': deposit_result.get('address'),
+                        'currency': currency,
+                        'tracking_id': tracking_id,
+                        'wallet_id': wallet_id,
+                        'callback_url': callback_url,
+                        'provider': 'b2binpay'
                     }
                 )
                 
-                logger.info(f"Transaction created: ID={transaction.id}, PaymentID={payment_result.get('payment_id')}")
-        
+                logger.info(f"Transaction created: ID={transaction.id}, DepositID={deposit_result.get('deposit_id')}")
+            
+            return JsonResponse({
+                'success': True,
+                'deposit_id': deposit_result.get('deposit_id'),
+                'payment_address': deposit_result.get('address'),
+                'currency': currency,
+                'amount': float(amount),
+                'transaction_id': str(transaction.id),
+                'tracking_id': tracking_id,
+                'message': f'Send {currency} to the address below'
+            })
+            
         except Exception as e:
-            logger.error(f"Database error creating transaction: {str(e)}", exc_info=True)
+            logger.error(f"B2BinPay API exception: {str(e)}", exc_info=True)
             return JsonResponse({
                 'success': False,
-                'error': 'Database error. Please try again.'
+                'error': f'Payment gateway error: {str(e)}'
             })
         
-        return JsonResponse({
-            'success': True,
-            'payment_id': payment_result.get('payment_id'),
-            'pay_address': payment_result.get('pay_address'),
-            'pay_amount': payment_result.get('pay_amount'),
-            'pay_currency': pay_currency.upper(),
-            'transaction_id': str(transaction.id),
-            'order_id': order_id
-        })
-        
     except json.JSONDecodeError:
-        logger.error("Invalid JSON in request body")
         return JsonResponse({'success': False, 'error': 'Invalid request format'})
     except Exception as e:
         logger.error(f"Crypto deposit error: {str(e)}", exc_info=True)
-        return JsonResponse({'success': False, 'error': f'An error occurred: {str(e)}'})
+        return JsonResponse({'success': False, 'error': str(e)})
 
 
 @login_required
@@ -1997,29 +2072,46 @@ def place_target_bet(request):
     
 @login_required
 @csrf_protect
-def wallet_transfer(request):
-    """Handle wallet-to-wallet transfers"""
+def virtual_wallet_transfer(request):
+    """
+    P2P transfer between users' virtual wallets
+    """
     if request.method != 'POST':
         return JsonResponse({'success': False, 'error': 'Invalid method'})
     
     try:
         data = json.loads(request.body)
-        recipient = data.get('recipient', '').strip()
+        recipient_identifier = data.get('recipient', '').strip()
         amount = Decimal(str(data.get('amount', 0)))
-        description = data.get('description', '').strip()
+        description = data.get('description', '').strip() or 'P2P transfer'
         
-        # Use transfer service
-        result = WalletTransferService.transfer_funds(
+        # Validation
+        if amount < Decimal('1.00'):
+            return JsonResponse({'success': False, 'error': 'Minimum transfer amount is $1.00'})
+        
+        if amount > request.user.balance:
+            return JsonResponse({
+                'success': False,
+                'error': f'Insufficient balance. Available: ${request.user.balance}'
+            })
+        
+        # Perform transfer
+        result = VirtualWalletService.transfer_between_users(
             sender=request.user,
-            recipient_identifier=recipient,
+            recipient_identifier=recipient_identifier,
             amount=amount,
             description=description
         )
         
+        if result['success']:
+            messages.success(request, result['message'])
+        
         return JsonResponse(result)
         
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Invalid request format'})
     except Exception as e:
-        logger.error(f"Wallet transfer error: {str(e)}")
+        logger.error(f"P2P transfer error: {str(e)}", exc_info=True)
         return JsonResponse({'success': False, 'error': str(e)})
 
 @staff_member_required
@@ -2082,11 +2174,11 @@ def create_price_target_market(request):
                 end_date=end_date
             )
             
-            logger.info(f"✅ Market created successfully: ID={market.id}, Title={market.title}")
+            logger.info(f"Market created successfully: ID={market.id}, Title={market.title}")
             
             messages.success(
                 request,
-                f'✅ Price target market created successfully: {market.title}'
+                f'Price target market created successfully: {market.title}'
             )
             return redirect('market-detail', market_id=market.id)
             
@@ -2099,7 +2191,7 @@ def create_price_target_market(request):
         except Exception as e:
             # Catch-all for unexpected errors
             logger.error(
-                f"❌ Unexpected error creating target market: {str(e)}", 
+                f"Unexpected error creating target market: {str(e)}", 
                 exc_info=True  # This logs the full traceback
             )
             
@@ -2142,65 +2234,357 @@ def create_price_target_market(request):
 
 @csrf_exempt
 @require_POST
-def nowpayments_ipn(request):
-    """Handle NowPayments IPN callbacks"""
+def b2binpay_callback(request):
+    """
+    Handle B2BinPay deposit callbacks
+    """
     try:
         # Get signature
-        signature = request.headers.get('x-nowpayments-sig', '')
+        signature = request.headers.get('x-sign', '') or request.META.get('HTTP_X_SIGN', '')
         
         # Parse body
         if request.content_type == 'application/json':
-            data = json.loads(request.body)
+            callback_data = json.loads(request.body)
         else:
-            data = request.POST.dict()
+            callback_data = json.loads(request.body.decode('utf-8'))
+        
+        logger.info(f"B2BinPay callback received: {json.dumps(callback_data, indent=2)}")
         
         # Verify signature
-        nowpayments = NowPaymentsService()
-        if not nowpayments.verify_ipn(data, signature):
-            logger.error("Invalid NowPayments IPN signature")
+        b2binpay = B2BinPayService()
+        if not b2binpay.verify_callback(callback_data, signature):
+            logger.error("Invalid B2BinPay callback signature")
             return HttpResponse("Invalid signature", status=400)
         
-        # Process IPN
-        payment_status = data.get('payment_status')
-        payment_id = data.get('payment_id')
+        # Extract deposit information
+        deposit_data = callback_data.get('data', {}).get('attributes', {})
+        tracking_id = deposit_data.get('tracking_id')
         
-        if payment_status == 'finished':
-            # Find transaction and credit user
+        # Find associated transfer
+        included = callback_data.get('included', [])
+        transfer = None
+        for item in included:
+            if item.get('type') == 'transfer':
+                transfer = item.get('attributes', {})
+                break
+        
+        if not transfer:
+            logger.error("Transfer data not found in callback")
+            return HttpResponse("Transfer data missing", status=400)
+        
+        transfer_status = transfer.get('status')
+        transfer_amount = Decimal(str(transfer.get('amount', 0)))
+        
+        logger.info(f"Transfer status: {transfer_status}, Amount: {transfer_amount}, Tracking ID: {tracking_id}")
+        
+        # Process based on status
+        if transfer_status == 'success':
+            # Find transaction
             try:
                 transaction = Transaction.objects.get(
-                    metadata__payment_id=payment_id,
+                    metadata__tracking_id=tracking_id,
                     transaction_type='deposit',
                     status='pending'
                 )
                 
                 with db_transaction.atomic():
-                    user = transaction.user
-                    user.balance += transaction.amount
-                    user.save()
+                    # Credit user's virtual wallet
+                    result = VirtualWalletService.credit_wallet(
+                        user=transaction.user,
+                        amount=transfer_amount,
+                        description=f"Crypto deposit completed - {tracking_id}",
+                        transaction_type='deposit'
+                    )
                     
-                    transaction.status = 'completed'
-                    transaction.balance_after = user.balance
-                    transaction.save()
-                    
-                    logger.info(f"Credited ${transaction.amount} to user {user.username}")
-                    
+                    if result['success']:
+                        # Update original pending transaction
+                        transaction.status = 'completed'
+                        transaction.amount = transfer_amount
+                        transaction.balance_after = result['new_balance']
+                        transaction.metadata['completed_at'] = str(time.time())
+                        transaction.metadata['transfer_status'] = transfer_status
+                        transaction.save()
+                        
+                        logger.info(f"Deposit completed: ${transfer_amount} credited to {transaction.user.username}")
+                        return HttpResponse("Deposit processed successfully", status=200)
+                    else:
+                        logger.error(f"Failed to credit wallet: {result.get('error')}")
+                        return HttpResponse("Wallet credit failed", status=500)
+                
             except Transaction.DoesNotExist:
-                logger.warning(f"Transaction not found for payment_id: {payment_id}")
+                logger.warning(f"Transaction not found for tracking_id: {tracking_id}")
+                return HttpResponse("Transaction not found", status=404)
         
-        elif payment_status == 'failed':
+        elif transfer_status == 'failed':
             # Mark transaction as failed
             try:
                 transaction = Transaction.objects.get(
-                    metadata__payment_id=payment_id,
+                    metadata__tracking_id=tracking_id,
                     status='pending'
                 )
                 transaction.status = 'failed'
+                transaction.metadata['transfer_status'] = transfer_status
                 transaction.save()
+                
+                logger.info(f"Deposit marked as failed: {tracking_id}")
             except Transaction.DoesNotExist:
                 pass
         
-        return HttpResponse("IPN processed", status=200)
+        return HttpResponse("Callback processed", status=200)
         
     except Exception as e:
-        logger.error(f"NowPayments IPN error: {str(e)}")
-        return HttpResponse("IPN processing error", status=500)
+        logger.error(f"B2BinPay callback error: {str(e)}", exc_info=True)
+        return HttpResponse("Callback processing error", status=500)
+
+@login_required
+@csrf_protect
+def stripe_card_deposit(request):
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Invalid method'})
+    
+    try:
+        data = json.loads(request.body)
+        amount = Decimal(str(data.get('amount', 0)))
+        payment_method_id = data.get('payment_method_id')
+        
+        logger.info(f"Stripe deposit request: User={request.user.username}, Amount=${amount}")
+        
+        # Validation
+        if amount < Decimal('5.00'):
+            return JsonResponse({'success': False, 'error': 'Minimum deposit is $5.00'})
+        
+        if amount > Decimal('10000.00'):
+            return JsonResponse({'success': False, 'error': 'Maximum deposit is $10,000.00'})
+        
+        if not payment_method_id:
+            return JsonResponse({'success': False, 'error': 'Payment method required'})
+        
+        try:
+            # Create Stripe payment intent
+            intent = stripe.PaymentIntent.create(
+                amount=int(amount * 100),  # Stripe uses cents
+                currency='usd',
+                payment_method=payment_method_id,
+                confirm=True,
+                description=f'Wallet deposit - {request.user.username}',
+                metadata={
+                    'user_id': str(request.user.id),
+                    'username': request.user.username,
+                    'type': 'wallet_deposit'
+                },
+                return_url=f"{settings.SITE_URL}/market/payment-complete/"
+            )
+            
+            logger.info(f"Stripe PaymentIntent created: {intent.id}, Status: {intent.status}")
+            
+            # Check payment status
+            if intent.status == 'succeeded':
+                # Credit user's virtual wallet immediately
+                with db_transaction.atomic():
+                    result = VirtualWalletService.credit_wallet(
+                        user=request.user,
+                        amount=amount,
+                        description=f"Card deposit via Stripe - {intent.id}",
+                        transaction_type='deposit'
+                    )
+                    
+                    if result['success']:
+                        # Create completed transaction record
+                        Transaction.objects.create(
+                            user=request.user,
+                            transaction_type='deposit',
+                            amount=amount,
+                            balance_before=result['balance_before'],
+                            balance_after=result['new_balance'],
+                            status='completed',
+                            external_id=intent.id,
+                            description=f'Card deposit via Stripe',
+                            metadata={
+                                'payment_intent_id': intent.id,
+                                'payment_method': payment_method_id,
+                                'provider': 'stripe',
+                                'completed_at': str(time.time())
+                            }
+                        )
+                        
+                        logger.info(f"Stripe deposit completed: ${amount} credited to {request.user.username}")
+                        
+                        return JsonResponse({
+                            'success': True,
+                            'amount': float(amount),
+                            'new_balance': float(result['new_balance']),
+                            'transaction_id': intent.id,
+                            'message': f'Successfully deposited ${amount}'
+                        })
+                    else:
+                        logger.error(f"Failed to credit wallet: {result.get('error')}")
+                        return JsonResponse({
+                            'success': False,
+                            'error': 'Failed to credit wallet. Contact support.'
+                        })
+            
+            elif intent.status == 'requires_action':
+                # 3D Secure or additional authentication required
+                return JsonResponse({
+                    'success': False,
+                    'requires_action': True,
+                    'client_secret': intent.client_secret,
+                    'message': 'Additional authentication required'
+                })
+            
+            else:
+                return JsonResponse({
+                    'success': False,
+                    'error': f'Payment failed: {intent.status}'
+                })
+        
+        except stripe.error.CardError as e:
+            logger.error(f"Stripe card error: {e.user_message}")
+            return JsonResponse({'success': False, 'error': e.user_message})
+        
+        except stripe.error.StripeError as e:
+            logger.error(f"Stripe API error: {str(e)}")
+            return JsonResponse({'success': False, 'error': 'Payment processing error'})
+    
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Invalid request format'})
+    except Exception as e:
+        logger.error(f"Stripe deposit error: {str(e)}", exc_info=True)
+        return JsonResponse({'success': False, 'error': str(e)})
+    
+@login_required
+def deposit_status(request, deposit_id):
+    try:
+        transaction = Transaction.objects.get(
+            user=request.user,
+            external_id=deposit_id,
+            transaction_type='deposit'
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'status': transaction.status,
+            'amount': float(transaction.amount),
+            'new_balance': float(transaction.balance_after) if transaction.status == 'completed' else None
+        })
+        
+    except Transaction.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'Deposit not found'
+        }, status=404)
+    except Exception as e:
+        logger.error(f"Deposit status error: {e}")
+        return JsonResponse({'success': False, 'error': str(e)})
+    
+
+@login_required
+@csrf_protect
+def crypto_withdrawal(request):
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Invalid method'})
+    
+    try:
+        data = json.loads(request.body)
+        amount = Decimal(str(data.get('amount', 0)))
+        network = data.get('network', 'ethereum').lower()
+        wallet_address = data.get('wallet_address', '').strip()
+        
+        logger.info(f"Withdrawal request: User={request.user.username}, Amount=${amount}, Network={network}")
+        
+        # Validation
+        if amount < Decimal('10.00'):
+            return JsonResponse({'success': False, 'error': 'Minimum withdrawal is $10.00'})
+        
+        if amount > request.user.balance:
+            return JsonResponse({
+                'success': False,
+                'error': f'Insufficient balance. Available: ${request.user.balance}'
+            })
+        
+        if not wallet_address:
+            return JsonResponse({'success': False, 'error': 'Wallet address required'})
+        
+        # Network-specific validation
+        if network == 'ethereum' or network == 'bsc':
+            if not wallet_address.startswith('0x') or len(wallet_address) != 42:
+                return JsonResponse({'success': False, 'error': 'Invalid Ethereum/BSC address format'})
+        elif network == 'polygon':
+            if not wallet_address.startswith('0x') or len(wallet_address) != 42:
+                return JsonResponse({'success': False, 'error': 'Invalid Polygon address format'})
+        
+        # Calculate fees
+        network_fees = {
+            'ethereum': Decimal('5.00'),
+            'bsc': Decimal('1.00'),
+            'polygon': Decimal('0.50')
+        }
+        
+        network_fee = network_fees.get(network, Decimal('5.00'))
+        platform_fee = amount * Decimal('0.02')  # 2%
+        total_fee = platform_fee + network_fee
+        net_amount = amount - total_fee
+        
+        if net_amount <= 0:
+            return JsonResponse({
+                'success': False,
+                'error': 'Amount too small after fees'
+            })
+        
+        # Debit user's virtual wallet
+        with db_transaction.atomic():
+            result = VirtualWalletService.debit_wallet(
+                user=request.user,
+                amount=amount,
+                description=f"Withdrawal to {wallet_address[:10]}... ({network.upper()})",
+                transaction_type='withdrawal'
+            )
+            
+            if not result['success']:
+                return JsonResponse({
+                    'success': False,
+                    'error': result.get('error', 'Withdrawal failed')
+                })
+            
+            # Create withdrawal transaction record
+            withdrawal_txn = Transaction.objects.create(
+                user=request.user,
+                transaction_type='withdrawal',
+                amount=-amount,  # Negative for withdrawal
+                balance_before=result['balance_before'],
+                balance_after=result['new_balance'],
+                status='processing',
+                description=f'USDT withdrawal - {network.upper()}',
+                metadata={
+                    'wallet_address': wallet_address,
+                    'network': network,
+                    'requested_amount': float(amount),
+                    'platform_fee': float(platform_fee),
+                    'network_fee': float(network_fee),
+                    'total_fee': float(total_fee),
+                    'net_amount': float(net_amount),
+                    'provider': 'manual',  # Manual processing for now
+                    'requested_at': str(time.time())
+                }
+            )
+            
+            logger.info(f"Withdrawal initiated: ${amount} debited from {request.user.username}")
+            
+            return JsonResponse({
+                'success': True,
+                'transaction_id': str(withdrawal_txn.id),
+                'amount': float(amount),
+                'net_amount': float(net_amount),
+                'platform_fee': float(platform_fee),
+                'network_fee': float(network_fee),
+                'total_fee': float(total_fee),
+                'new_balance': float(result['new_balance']),
+                'message': f'Withdrawal request submitted. You will receive ${net_amount:.2f} after fees.',
+                'status': 'processing'
+            })
+    
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Invalid request format'})
+    except Exception as e:
+        logger.error(f"Withdrawal error: {str(e)}", exc_info=True)
+        return JsonResponse({'success': False, 'error': str(e)})

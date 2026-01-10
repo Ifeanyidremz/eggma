@@ -36,11 +36,14 @@ urlpatterns = [
 
     path('stripe-webhook/', views.stripe_webhook, name='stripe-webhook'),
 
-    path('wallet/deposit-crypto/', views.crypto_deposit, name='crypto-deposit'),
-    path('wallet/withdraw-crypto/', views.crypto_withdraw, name='crypto-withdraw'),
-    path('wallet/transfer/', views.wallet_transfer, name='wallet-transfer'),
-    path('wallet/nowpayments-ipn/', views.nowpayments_ipn, name='nowpayments-ipn'),
-    path('referral/dashboard/', views.referral_dashboard, name='referral-dashboard'),
+    path('wallet/deposit-card/', views.stripe_card_deposit, name='stripe_card_deposit'),
+    path('wallet/crypto-deposit/', views.crypto_deposit_b2binpay, name='crypto_deposit_b2binpay'),
+    path('wallet/b2binpay-callback/', views.b2binpay_callback, name='b2binpay_callback'),
+    path('wallet/deposit-status/<str:deposit_id>/', views.deposit_status, name='deposit_status'),
+    path('wallet/withdraw/', views.crypto_withdrawal, name='crypto_withdrawal'),
+    path('wallet/transfer/', views.virtual_wallet_transfer, name='virtual_wallet_transfer'),
+    path('wallet/balance/', views.get_wallet_balance, name='get_wallet_balance'),
+    path('wallet/dashboard/', views.wallet_dashboard, name='wallet_dashboard'),
 
 
 ]
