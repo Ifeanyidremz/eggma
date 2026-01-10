@@ -143,9 +143,11 @@ STRIPE_SECRET_KEY=os.getenv('STRIPE_SECRET_KEY')
 STRIPE_WEBHOOK_SECRET=os.getenv('STRIPE_WEBHOOK_SECRET')
 
 B2BINPAY_WALLETS = {
-       'BTC': os.getenv('B2BINPAY_BTC_WALLET_ID'),
-       'ETH': os.getenv('B2BINPAY_ETH_WALLET_ID'),
-       'USDT': os.getenv('B2BINPAY_USDT_WALLET_ID'),
+    'BTC': os.getenv('B2BINPAY_BTC_WALLET_ID', default=''),
+    'ETH': os.getenv('B2BINPAY_ETH_WALLET_ID', default=''),
+    'USDT': os.getenv('B2BINPAY_USDT_WALLET_ID', default='479'),  
+    'LTC': os.getenv('B2BINPAY_LTC_WALLET_ID', default=''),
+    'TRX': os.getenv('B2BINPAY_TRX_WALLET_ID', default=''),
 }
 
 MIN_DEPOSIT_AMOUNT = Decimal('10.00')
