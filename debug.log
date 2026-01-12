@@ -69,3 +69,46 @@ DEBUG 2026-01-07 14:05:27,453 base 26924 13744 Looking for jobs to run
 INFO 2026-01-07 14:05:27,454 scheduler 26924 22612 Scheduler started successfully
 DEBUG 2026-01-07 14:05:27,454 base 26924 13744 Next wakeup is due at 2026-01-07 13:10:27.450897+00:00 (in 299.996002 seconds)
 INFO 2026-01-07 14:05:27,565 autoreload 26924 22612 Watching for file changes with StatReloader
+INFO 2026-01-12 16:01:26,893 base 14668 5072 Adding job tentatively -- it will be properly scheduled when the scheduler starts
+INFO 2026-01-12 16:01:26,894 base 14668 5072 Added job "monitor_price_targets" to job store "default"
+INFO 2026-01-12 16:01:26,896 base 14668 5072 Scheduler started
+DEBUG 2026-01-12 16:01:26,898 base 14668 7908 Looking for jobs to run
+INFO 2026-01-12 16:01:26,899 scheduler 14668 5072 Scheduler started successfully
+DEBUG 2026-01-12 16:01:26,899 base 14668 7908 Next wakeup is due at 2026-01-12 15:06:26.892715+00:00 (in 299.992762 seconds)
+INFO 2026-01-12 16:01:31,504 base 6488 19880 Adding job tentatively -- it will be properly scheduled when the scheduler starts
+INFO 2026-01-12 16:01:31,505 base 6488 19880 Added job "monitor_price_targets" to job store "default"
+INFO 2026-01-12 16:01:31,506 base 6488 19880 Scheduler started
+DEBUG 2026-01-12 16:01:31,507 base 6488 22120 Looking for jobs to run
+INFO 2026-01-12 16:01:31,508 scheduler 6488 19880 Scheduler started successfully
+DEBUG 2026-01-12 16:01:31,508 base 6488 22120 Next wakeup is due at 2026-01-12 15:06:31.504063+00:00 (in 299.995953 seconds)
+INFO 2026-01-12 16:01:31,583 autoreload 6488 19880 Watching for file changes with StatReloader
+ERROR 2026-01-12 16:01:39,093 log 6488 23448 Invalid HTTP_HOST header: '127.0.0.1:8000'. You may need to add '127.0.0.1' to ALLOWED_HOSTS.
+Traceback (most recent call last):
+  File "C:\Users\HP\OneDrive\Documents\2026PROJECTS\evgchain\eggma\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\HP\OneDrive\Documents\2026PROJECTS\evgchain\eggma\venv\Lib\site-packages\django\utils\deprecation.py", line 119, in __call__
+    response = self.process_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\HP\OneDrive\Documents\2026PROJECTS\evgchain\eggma\venv\Lib\site-packages\django\middleware\common.py", line 48, in process_request
+    host = request.get_host()
+           ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\HP\OneDrive\Documents\2026PROJECTS\evgchain\eggma\venv\Lib\site-packages\django\http\request.py", line 202, in get_host
+    raise DisallowedHost(msg)
+django.core.exceptions.DisallowedHost: Invalid HTTP_HOST header: '127.0.0.1:8000'. You may need to add '127.0.0.1' to ALLOWED_HOSTS.
+WARNING 2026-01-12 16:01:39,209 basehttp 6488 23448 "GET / HTTP/1.1" 400 90546
+ERROR 2026-01-12 16:01:40,496 log 6488 16480 Invalid HTTP_HOST header: '127.0.0.1:8000'. You may need to add '127.0.0.1' to ALLOWED_HOSTS.
+Traceback (most recent call last):
+  File "C:\Users\HP\OneDrive\Documents\2026PROJECTS\evgchain\eggma\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\HP\OneDrive\Documents\2026PROJECTS\evgchain\eggma\venv\Lib\site-packages\django\utils\deprecation.py", line 119, in __call__
+    response = self.process_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\HP\OneDrive\Documents\2026PROJECTS\evgchain\eggma\venv\Lib\site-packages\django\middleware\common.py", line 48, in process_request
+    host = request.get_host()
+           ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\HP\OneDrive\Documents\2026PROJECTS\evgchain\eggma\venv\Lib\site-packages\django\http\request.py", line 202, in get_host
+    raise DisallowedHost(msg)
+django.core.exceptions.DisallowedHost: Invalid HTTP_HOST header: '127.0.0.1:8000'. You may need to add '127.0.0.1' to ALLOWED_HOSTS.
+WARNING 2026-01-12 16:01:40,521 basehttp 6488 16480 "GET /favicon.ico HTTP/1.1" 400 90374
