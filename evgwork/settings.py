@@ -159,7 +159,7 @@ B2BINPAY_CLIENT_ID = os.getenv('B2BINPAY_CLIENT_ID', default='')
 B2BINPAY_CLIENT_SECRET = os.getenv('B2BINPAY_CLIENT_SECRET', default='')
 B2BINPAY_CALLBACK_SECRET = os.getenv('B2BINPAY_CALLBACK_SECRET', default='')
 
-B2BINPAY_BASE_URL = os.getenv('B2BINPAY_BASE_URL', default='https://v3.api-sandbox.b2binpay.com')
+B2BINPAY_BASE_URL = os.getenv('B2BINPAY_BASE_URL', default='https://v3.api-sandbox.b2binpay.com/')
 
 REFERRAL_BONUS_AMOUNT = 10.00
 REFERRAL_SIGNUP_BONUS = 5.00   
