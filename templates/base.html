@@ -259,7 +259,7 @@
         
         <!-- Desktop Navigation -->
         <nav class="nav-menu">
-            <a href="{% url 'home' %}" class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">Home</a>
+            <a href="{% url 'landing-page' %}" class="nav-link {% if request.resolver_match.url_name == 'landing-page' %}active{% endif %}">Home</a>
             <a href="#" class="nav-link">Markets</a>
             <a href="#" class="nav-link">About</a>
             <a href="#" class="nav-link">Contact</a>
@@ -283,7 +283,7 @@
 
     <!-- Mobile Menu -->
     <div class="mobile-menu" id="mobileMenu">
-        <a href="{% url 'home' %}" class="nav-link">Home</a>
+        <a href="{% url 'landing-page' %}" class="nav-link">Home</a>
         <a href="#" class="nav-link">Markets</a>
         <a href="#" class="nav-link">About</a>
         <a href="#" class="nav-link">Contact</a>
