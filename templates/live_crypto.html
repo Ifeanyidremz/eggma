@@ -1,5 +1,7 @@
 {% extends "base.html" %}
+
 {% block title %}Live Crypto Data - EVGxchain{% endblock %}
+
 {% block extra_css %}
 <style>
     .floating-coins {
@@ -145,6 +147,31 @@
         padding: 30px;
         backdrop-filter: blur(20px);
         border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .table-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+        margin: 0 -30px; /* Compensate for section padding */
+        padding: 0 30px;
+    }
+
+    .table-wrapper::-webkit-scrollbar {
+        height: 8px;
+    }
+
+    .table-wrapper::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 4px;
+    }
+
+    .table-wrapper::-webkit-scrollbar-thumb {
+        background: rgba(247, 147, 26, 0.5);
+        border-radius: 4px;
+    }
+
+    .table-wrapper::-webkit-scrollbar-thumb:hover {
+        background: rgba(247, 147, 26, 0.8);
     }
 
     .section-title {
@@ -332,21 +359,257 @@
     }
 
     @media (max-width: 768px) {
+        .page-title {
+            font-size: 28px;
+        }
+
+        .page-subtitle {
+            font-size: 16px;
+        }
+
         .main-content-grid {
             grid-template-columns: 1fr;
         }
 
         .market-overview {
             grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .overview-card {
+            padding: 20px;
+        }
+
+        .overview-title {
+            font-size: 12px;
+        }
+
+        .overview-value {
+            font-size: 20px;
+        }
+
+        .overview-change {
+            font-size: 12px;
+        }
+
+        .crypto-table-section {
+            padding: 20px;
+            overflow-x: auto;
+        }
+
+        .section-title {
+            font-size: 18px;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
         }
 
         .crypto-table {
             font-size: 14px;
+            min-width: 600px; /* Allow horizontal scroll */
         }
 
         .crypto-table th,
         .crypto-table td {
             padding: 10px 5px;
+            font-size: 12px;
+        }
+
+        .crypto-icon {
+            width: 28px;
+            height: 28px;
+            font-size: 12px;
+        }
+
+        .crypto-name {
+            gap: 8px;
+        }
+
+        .crypto-name > div {
+            font-size: 14px;
+        }
+
+        .crypto-symbol {
+            font-size: 11px;
+        }
+
+        .price-cell {
+            font-size: 14px;
+        }
+
+        .change-cell {
+            font-size: 12px;
+            padding: 3px 6px;
+        }
+
+        .refresh-btn {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .sidebar {
+            gap: 20px;
+        }
+
+        .trending-section,
+        .news-section,
+        .prediction-alerts {
+            padding: 20px;
+        }
+
+        .trending-item {
+            padding: 12px 0;
+        }
+
+        .trending-rank {
+            width: 20px;
+            height: 20px;
+            font-size: 11px;
+        }
+
+        .trending-info > div {
+            font-size: 14px;
+        }
+
+        .trending-info > div > div:last-child {
+            font-size: 11px;
+        }
+
+        .news-item {
+            padding: 12px 0;
+        }
+
+        .news-title {
+            font-size: 14px;
+        }
+
+        .news-meta {
+            font-size: 11px;
+        }
+
+        .alert-item {
+            padding: 12px;
+        }
+
+        .alert-title {
+            font-size: 14px;
+        }
+
+        .alert-description {
+            font-size: 12px;
+        }
+
+        /* Make floating coins less on mobile */
+        .floating-coin {
+            width: 20px;
+            height: 20px;
+            font-size: 10px;
+        }
+
+        /* Container padding adjustment */
+        .container {
+            padding: 20px 15px;
+        }
+
+        /* Live indicator adjustments */
+        .live-indicator {
+            font-size: 12px;
+            padding: 6px 12px;
+        }
+
+        .live-dot {
+            width: 6px;
+            height: 6px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .page-title {
+            font-size: 24px;
+        }
+
+        .page-subtitle {
+            font-size: 14px;
+        }
+
+        .market-overview {
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        .overview-card {
+            padding: 15px;
+        }
+
+        .section-title {
+            font-size: 16px;
+        }
+
+        .crypto-table-section {
+            padding: 15px;
+        }
+
+        /* Stack table for very small screens */
+        .crypto-table {
+            font-size: 12px;
+            min-width: 500px;
+        }
+
+        .crypto-table th,
+        .crypto-table td {
+            padding: 8px 4px;
+            font-size: 11px;
+        }
+
+        .crypto-icon {
+            width: 24px;
+            height: 24px;
+            font-size: 11px;
+        }
+
+        .trending-section,
+        .news-section,
+        .prediction-alerts {
+            padding: 15px;
+        }
+
+        .container {
+            padding: 15px 10px;
+        }
+    }
+
+    /* Landscape mobile orientation */
+    @media (max-width: 896px) and (orientation: landscape) {
+        .page-header {
+            margin-bottom: 20px;
+        }
+
+        .market-overview {
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        .overview-card {
+            padding: 15px;
+        }
+
+        .main-content-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* Tablet styles */
+    @media (min-width: 769px) and (max-width: 1024px) {
+        .main-content-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .market-overview {
+            grid-template-columns: repeat(4, 1fr);
+        }
+
+        .crypto-table {
+            font-size: 15px;
         }
     }
 </style>
@@ -401,22 +664,24 @@
                 <button class="refresh-btn" onclick="refreshPrices()">🔄 Refresh</button>
             </div>
             
-            <table class="crypto-table" id="cryptoTable">
-                <thead>
-                    <tr>
-                        <th>Rank</th>
-                        <th>Name</th>
-                        <th>Price</th>
-                        <th>24h Change</th>
-                        <th>Market Cap</th>
-                        <th>Volume</th>
-                        <th>Predict</th>
-                    </tr>
-                </thead>
-                <tbody id="cryptoTableBody">
-                    <!-- Data will be populated by JavaScript -->
-                </tbody>
-            </table>
+            <div class="table-wrapper">
+                <table class="crypto-table" id="cryptoTable">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Name</th>
+                            <th>Price</th>
+                            <th>24h Change</th>
+                            <th>Market Cap</th>
+                            <th>Volume</th>
+                            <th>Predict</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cryptoTableBody">
+                        <!-- Data will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
         </div>
 
         <div class="sidebar">
