@@ -1,17 +1,12 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - EVGxchain</title>
-    {% load static %}
-    <script src="https://js.stripe.com/v3/"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+{% extends 'base.html' %}
+
+
+{% block title %}Dashboard - EVGxchain{% endblock %}
+
+
+{% block extra_css %}
+<style>
+
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -1409,10 +1404,12 @@
                 min-height: 44px;
             }
         }
-    </style>
-</head>
-   <body>
-    <div class="mobile-nav-overlay" id="mobileNavOverlay" onclick="closeMobileNav()"></div>
+</style>
+{% endblock %}
+
+
+{% block content %}
+<div class="mobile-nav-overlay" id="mobileNavOverlay" onclick="closeMobileNav()"></div>
     <div class="mobile-nav" id="mobileNav">
         <div class="mobile-nav-header">
             <span class="mobile-nav-logo">EVGxchain</span>
@@ -1444,9 +1441,7 @@
 
     <nav class="navbar">
         <div class="nav-container">
-            <a href="{% url 'landing-page' %}" class="logo">
-               <img src="/static/evgchain-logo.png" alt="EVGxchain">
-           </a>
+            
             <div class="nav-links">
                 <a href="{% url 'dashboard' %}" class="active">Dashboard</a>
                 <a href="{% url 'market-data' %}">Markets</a>
@@ -3180,5 +3175,1257 @@ document.getElementById('transferForm').addEventListener('submit', async functio
 // Update the wallet actions section buttons
 document.querySelector('.wallet-btn.deposit').onclick = openCryptoDepositModal;
     </script>
-</body>
-</html>
+{% endblock %}
+
+
+{% block extra_js %}
+<script>
+const stripe = Stripe('{{ STRIPE_PUBLISHABLE_KEY|default:"pk_test_51Rwr0cKDBFHQr38IUHFsZNoElLZBlNr8OlC9FLqSgW1zKMZ2P9s2Q4lOxurs474tMnbbKqyxzyjYNMSZQtdF2VOi00n1rdORUO" }}');
+        let elements;
+        let card;
+        function toggleMobileNav() {
+            const mobileNav = document.getElementById('mobileNav');
+            const overlay = document.getElementById('mobileNavOverlay');
+            const menuBtn = document.getElementById('mobileMenuBtn');
+            
+            mobileNav.classList.toggle('show');
+            overlay.classList.toggle('show');
+            
+            if (mobileNav.classList.contains('show')) {
+                menuBtn.innerHTML = '×';
+                document.body.style.overflow = 'hidden';
+            } else {
+                menuBtn.innerHTML = '☰';
+                document.body.style.overflow = '';
+            }
+        }
+
+        function closeMobileNav() {
+            const mobileNav = document.getElementById('mobileNav');
+            const overlay = document.getElementById('mobileNavOverlay');
+            const menuBtn = document.getElementById('mobileMenuBtn');
+            
+            mobileNav.classList.remove('show');
+            overlay.classList.remove('show');
+            menuBtn.innerHTML = '☰';
+            document.body.style.overflow = '';
+        }
+
+        // Close mobile nav when clicking on a link
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.mobile-nav-links a').forEach(link => {
+                link.addEventListener('click', closeMobileNav);
+            });
+        });
+        function getCSRFToken() {
+            let token = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+            if (!token) {
+                token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            }
+            if (!token) {
+                token = getCookie('csrftoken');
+            }
+            return token;
+        }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        function initializeStripe() {
+            if (elements && card) {
+                return;
+            }
+
+            elements = stripe.elements({
+                appearance: {
+                    theme: 'night',
+                    variables: {
+                        colorPrimary: '#f7931a',
+                        colorBackground: 'rgba(26, 26, 26, 0.8)',
+                        colorText: '#ffffff',
+                        colorDanger: '#ef4444',
+                        fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
+                        borderRadius: '8px',
+                        colorTextPlaceholder: '#999999',
+                    }
+                }
+            });
+
+            card = elements.create('card', {
+                hidePostalCode: false,
+                style: {
+                    base: {
+                        fontSize: '16px',
+                        color: '#ffffff',
+                        '::placeholder': {
+                            color: '#999999',
+                        },
+                    },
+                    invalid: {
+                        color: '#ef4444',
+                        iconColor: '#ef4444',
+                    },
+                },
+            });
+
+            card.mount('#card-element');
+            
+            card.on('change', function(event) {
+                const displayError = document.getElementById('card-errors');
+                if (event.error) {
+                    displayError.textContent = event.error.message;
+                    displayError.style.display = 'block';
+                } else {
+                    displayError.textContent = '';
+                    displayError.style.display = 'none';
+                }
+            });
+        }
+
+        function toggleProfileMenu() {
+            const dropdown = document.getElementById('profileDropdown');
+            dropdown.classList.toggle('show');
+        }
+
+        document.addEventListener('click', function(event) {
+            const profile = document.querySelector('.user-profile');
+            const dropdown = document.getElementById('profileDropdown');
+            
+            if (!profile.contains(event.target)) {
+                dropdown.classList.remove('show');
+            }
+        });
+
+        function openDepositModal() {
+            storePreDepositBalance();
+            document.getElementById('depositModal').classList.add('show');
+            setTimeout(() => {
+                if (!card) {
+                    initializeStripe();
+                }
+            }, 100);
+        }
+
+        function closeDepositModal() {
+            document.getElementById('depositModal').classList.remove('show');
+        }
+
+        function openWithdrawModal() {
+            document.getElementById('withdrawModal').classList.add('show');
+            setTimeout(() => {
+                updateWithdrawFees();
+                showAddressFormatHint();
+            }, 100);
+        }
+
+        function closeWithdrawModal() {
+            document.getElementById('withdrawModal').classList.remove('show');
+        }
+
+        document.addEventListener('click', function(event) {
+            const depositModal = document.getElementById('depositModal');
+            const withdrawModal = document.getElementById('withdrawModal');
+            
+            if (event.target === depositModal) {
+                closeDepositModal();
+            }
+            if (event.target === withdrawModal) {
+                closeWithdrawModal();
+            }
+        });
+
+        function setDepositAmount(amount) {
+            document.getElementById('depositAmount').value = amount;
+            updateDepositFees();
+            
+            document.querySelectorAll('#depositModal .preset-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+
+        function updateDepositFees() {
+            const amount = parseFloat(document.getElementById('depositAmount').value) || 0;
+            
+            document.getElementById('depositFeeAmount').textContent = `${amount.toFixed(2)}`;
+            document.getElementById('depositTotal').textContent = `${amount.toFixed(2)}`;
+        }
+
+        function setWithdrawAmount(amount) {
+            const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+            document.getElementById('withdrawAmount').value = numAmount;
+            updateWithdrawFees();
+            
+            document.querySelectorAll('#withdrawModal .preset-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+
+        function updateWithdrawFees() {
+            const amount = parseFloat(document.getElementById('withdrawAmount').value) || 0;
+            const network = document.getElementById('withdrawNetwork').value;
+            
+            const networkFees = {
+                'ethereum': { 
+                    name: 'Ethereum (ERC-20)', 
+                    fee: 5.00, 
+                    minAmount: 10, 
+                    time: '10-30 minutes',
+                    description: 'Most compatible network, widely supported'
+                },
+                'bsc': { 
+                    name: 'Binance Smart Chain (BEP-20)', 
+                    fee: 2.00, 
+                    minAmount: 10, 
+                    time: '5-15 minutes',
+                    description: 'Lower fees, good for frequent withdrawals'
+                },
+                'polygon': { 
+                    name: 'Polygon (MATIC)', 
+                    fee: 1.00, 
+                    minAmount: 10, 
+                    time: '2-10 minutes',
+                    description: 'Fastest and cheapest option'
+                }
+            };
+            
+            const networkConfig = networkFees[network];
+            const platformFeeRate = 0.02;
+            const platformFee = amount * platformFeeRate;
+            const networkFee = networkConfig.fee;
+            const totalToUser = amount - platformFee - networkFee;
+            
+            document.getElementById('withdrawFeeAmount').textContent = `${amount.toFixed(2)}`;
+            document.getElementById('withdrawPercentageFee').textContent = `${platformFee.toFixed(2)}`;
+            document.getElementById('withdrawNetworkFee').textContent = `${networkFee.toFixed(2)}`;
+            document.getElementById('withdrawNetAmount').textContent = `${Math.max(0, totalToUser).toFixed(2)}`;
+            
+            const submitBtn = document.getElementById('withdrawSubmitBtn');
+            const btnText = document.getElementById('withdrawBtnText');
+            
+            if (totalToUser <= 0) {
+                submitBtn.disabled = true;
+                submitBtn.style.background = '#6c757d';
+                btnText.textContent = 'Amount too low';
+            } else {
+                submitBtn.disabled = false;
+                submitBtn.style.background = '';
+                btnText.textContent = '💸 Process Withdrawal';
+            }
+            
+            document.getElementById('networkInfo').innerHTML = `
+                <div class="network-name">${networkConfig.name}</div>
+                <div class="network-details">
+                    • Min withdrawal: ${networkConfig.minAmount.toFixed(2)}<br>
+                    • Estimated time: ${networkConfig.time}<br>
+                    • Platform fee: ${(platformFeeRate * 100).toFixed(1)}% + ${networkConfig.fee.toFixed(2)} network fee<br>
+                    • ${networkConfig.description}<br>
+                    • <strong>You will receive: ${Math.max(0, totalToUser).toFixed(2)} USDT</strong>
+                </div>
+            `;
+        }
+
+        function validateWalletAddress() {
+            const address = document.getElementById('withdrawAddress').value.trim();
+            const addressInput = document.getElementById('withdrawAddress');
+            const network = document.getElementById('withdrawNetwork').value;
+            
+            let isValid = false;
+            let errorMessage = '';
+            
+            if (!address) {
+                errorMessage = 'Wallet address is required';
+            } else if (address.length < 20) {
+                errorMessage = 'Wallet address is too short';
+            } else {
+                switch(network) {
+                    case 'ethereum':
+                    case 'bsc':
+                    case 'polygon':
+                        if (address.startsWith('0x') && address.length === 42 && /^0x[a-fA-F0-9]{40}$/.test(address)) {
+                            isValid = true;
+                        } else {
+                            errorMessage = `Invalid ${network} address format. Should start with 0x and be 42 characters long.`;
+                        }
+                        break;
+                    default:
+                        errorMessage = 'Unsupported network';
+                }
+            }
+            
+            let errorElement = document.getElementById('address-error');
+            if (!errorElement) {
+                errorElement = document.createElement('div');
+                errorElement.id = 'address-error';
+                errorElement.style.cssText = 'font-size: 12px; margin-top: 5px;';
+                addressInput.parentNode.appendChild(errorElement);
+            }
+            
+            if (isValid) {
+                addressInput.style.borderColor = '#22c55e';
+                errorElement.textContent = '✓ Valid address format';
+                errorElement.style.color = '#22c55e';
+            } else {
+                addressInput.style.borderColor = '#ef4444';
+                errorElement.textContent = errorMessage;
+                errorElement.style.color = '#ef4444';
+            }
+            
+            return isValid;
+        }
+
+        async function pasteAddress() {
+            const addressInput = document.getElementById('withdrawAddress');
+            const pasteBtn = event.target;
+            
+            try {
+                const text = await navigator.clipboard.readText();
+                addressInput.value = text.trim();
+                validateWalletAddress();
+                pasteBtn.innerHTML = '✅';
+                setTimeout(() => {
+                    pasteBtn.innerHTML = '📋 Paste';
+                }, 2000);
+            } catch (err) {
+                console.log('Could not paste from clipboard');
+                pasteBtn.innerHTML = '❌';
+                setTimeout(() => {
+                    pasteBtn.innerHTML = '📋 Paste';
+                }, 2000);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const addressInput = document.getElementById('withdrawAddress');
+            if (addressInput) {
+                addressInput.addEventListener('input', function() {
+                    clearTimeout(this.validationTimeout);
+                    this.validationTimeout = setTimeout(validateWalletAddress, 500);
+                });
+                
+                addressInput.addEventListener('paste', function() {
+                    setTimeout(validateWalletAddress, 100);
+                });
+            }
+        });
+
+        const withdrawFormElement = document.getElementById('withdrawForm');
+        if (withdrawFormElement) {
+            withdrawFormElement.addEventListener('submit', function(event) {
+                event.preventDefault();
+                
+                const amount = parseFloat(document.getElementById('withdrawAmount').value) || 0;
+                const address = document.getElementById('withdrawAddress').value.trim();
+                const network = document.getElementById('withdrawNetwork').value;
+                
+                if (!validateWalletAddress()) {
+                    showError('Please enter a valid wallet address');
+                    return;
+                }
+                
+                const networkNames = {
+                    'ethereum': 'Ethereum (ERC-20)',
+                    'bsc': 'Binance Smart Chain (BEP-20)',
+                    'polygon': 'Polygon (MATIC)'
+                };
+                
+                const confirmed = confirm(
+                    `Confirm USDT Withdrawal:\n\n` +
+                    `Amount: ${amount.toFixed(2)}\n` +
+                    `Network: ${networkNames[network]}\n` +
+                    `Address: ${address.slice(0, 20)}...${address.slice(-10)}\n\n` +
+                    `⚠️ This transaction CANNOT be reversed!\n` +
+                    `Make sure the address and network are correct.`
+                );
+                
+                if (!confirmed) {
+                    return;
+                }
+                
+                if (amount >= 500) {
+                    const doubleConfirm = prompt(
+                        `Large withdrawal detected!\n\n` +
+                        `For security, please type "CONFIRM" to proceed with withdrawing ${amount.toFixed(2)} USDT:`
+                    );
+                    
+                    if (doubleConfirm !== 'CONFIRM') {
+                        showError('Withdrawal cancelled. Please type "CONFIRM" exactly.');
+                        return;
+                    }
+                }
+                
+                trackWithdrawal(amount, address, 'pending');
+                submitWithdrawal();
+            });
+        }
+
+        async function submitWithdrawal() {
+            const submitBtn = document.getElementById('withdrawSubmitBtn');
+            const spinner = document.getElementById('withdrawSpinner');
+            const btnText = document.getElementById('withdrawBtnText');
+            
+            submitBtn.disabled = true;
+            spinner.style.display = 'inline-block';
+            btnText.textContent = 'Processing...';
+            
+            try {
+                const response = await fetch('/market/wallet/withdraw/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCSRFToken()
+                    },
+                    body: JSON.stringify({
+                        amount: document.getElementById('withdrawAmount').value,
+                        wallet_address: document.getElementById('withdrawAddress').value,
+                        network: document.getElementById('withdrawNetwork').value
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showSuccess(data.message || 'Withdrawal request submitted successfully!');
+                    
+                    // Update balance display
+                    if (data.new_balance) {
+                        updateBalanceDisplay(data.new_balance);
+                    }
+                    
+                    // Show withdrawal details
+                    const detailsMsg = `
+                        Withdrawal Details:
+                        • Amount: $${data.amount}
+                        • You'll receive: $${data.net_amount} (after fees)
+                        • Status: ${data.status}
+                        • Network fee: $${data.network_fee}
+                        • Platform fee: $${data.platform_fee}
+                    `;
+                    console.log(detailsMsg);
+                    
+                    closeWithdrawModal();
+                    setTimeout(() => location.reload(), 2000);
+                } else {
+                    showError(data.error || 'Withdrawal failed');
+                }
+            } catch (error) {
+                console.error('Withdrawal error:', error);
+                showError('Network error. Please try again.');
+            } finally {
+                resetWithdrawButton();
+            }
+        }
+
+       document.getElementById('depositForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            
+            const submitBtn = document.getElementById('depositSubmitBtn');
+            const spinner = document.getElementById('depositSpinner');
+            const btnText = document.getElementById('depositBtnText');
+            
+            submitBtn.disabled = true;
+            spinner.style.display = 'inline-block';
+            btnText.textContent = 'Processing...';
+            
+            const amount = parseFloat(document.getElementById('depositAmount').value);
+            
+            // Validation
+            if (amount < 5) {
+                showError('Minimum deposit is $5.00');
+                resetDepositButton();
+                return;
+            }
+            
+            if (amount > 10000) {
+                showError('Maximum deposit is $10,000.00');
+                resetDepositButton();
+                return;
+            }
+            
+            try {
+                const csrfToken = getCSRFToken();
+                if (!csrfToken) {
+                    throw new Error('CSRF token not found. Please refresh the page.');
+                }
+
+                // Step 1: Create payment method from card
+                btnText.textContent = 'Processing Card...';
+                const { paymentMethod, error } = await stripe.createPaymentMethod({
+                    type: 'card',
+                    card: card,
+                    billing_details: {
+                        name: '{{ user.full_name|default:user.username }}'
+                    }
+                });
+
+                if (error) {
+                    showError(error.message);
+                    resetDepositButton();
+                    return;
+                }
+
+                // Step 2: Send to backend
+                btnText.textContent = 'Confirming Payment...';
+                const response = await fetch('/market/wallet/deposit-card/', { 
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({
+                        amount: amount.toString(),
+                        payment_method_id: paymentMethod.id
+                    })
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `Server error: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Payment succeeded!
+                    showSuccess(`Deposit successful! +$${amount.toFixed(2)} added to your balance.`);
+                    
+                    // Update balance display
+                    if (data.new_balance) {
+                        updateBalanceDisplay(data.new_balance);
+                    }
+                    
+                    // Close modal and reset
+                    setTimeout(() => {
+                        closeDepositModal();
+                        resetDepositButton();
+                        location.reload();
+                    }, 2000);
+                    
+                } else if (data.requires_action) {
+                    // 3D Secure authentication required
+                    btnText.textContent = 'Verifying...';
+                    
+                    const { error: confirmError } = await stripe.confirmCardPayment(data.client_secret);
+                    
+                    if (confirmError) {
+                        showError(confirmError.message);
+                        resetDepositButton();
+                    } else {
+                        showSuccess('Payment verified! Processing deposit...');
+                        setTimeout(() => location.reload(), 2000);
+                    }
+                } else {
+                    showError(data.error || 'Payment failed');
+                    resetDepositButton();
+                }
+                
+            } catch (error) {
+                console.error('Payment error:', error);
+                showError(error.message || 'Payment processing failed. Please try again.');
+                resetDepositButton();
+            }
+        });
+
+        function resetDepositButton() {
+            const submitBtn = document.getElementById('depositSubmitBtn');
+            const spinner = document.getElementById('depositSpinner');
+            const btnText = document.getElementById('depositBtnText');
+            
+            submitBtn.disabled = false;
+            spinner.style.display = 'none';
+            btnText.textContent = 'Process Deposit';
+        }
+
+        function resetWithdrawButton() {
+            const submitBtn = document.getElementById('withdrawSubmitBtn');
+            const spinner = document.getElementById('withdrawSpinner');
+            const btnText = document.getElementById('withdrawBtnText');
+            
+            submitBtn.disabled = false;
+            spinner.style.display = 'none';
+            btnText.textContent = '💸 Process Withdrawal';
+        }
+
+        function showError(message) {
+            const existingError = document.querySelector('.error-toast');
+            if (existingError) {
+                existingError.remove();
+            }
+            
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'message error error-toast';
+            errorDiv.textContent = message;
+            errorDiv.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 3000;
+                max-width: 400px;
+                animation: slideIn 0.3s ease-out;
+            `;
+            
+            document.body.appendChild(errorDiv);
+            
+            setTimeout(() => {
+                if (errorDiv.parentNode) {
+                    errorDiv.remove();
+                }
+            }, 5000);
+        }
+
+        function showSuccess(message) {
+            const existingSuccess = document.querySelector('.success-toast');
+            if (existingSuccess) {
+                existingSuccess.remove();
+            }
+            
+            const successDiv = document.createElement('div');
+            successDiv.className = 'message success success-toast';
+            successDiv.textContent = message;
+            successDiv.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 3000;
+                max-width: 400px;
+                animation: slideIn 0.3s ease-out;
+                padding: 15px 20px;
+                border-radius: 8px;
+                background: rgba(34, 197, 94, 0.1);
+                border: 1px solid rgba(34, 197, 94, 0.3);
+                color: #86efac;
+            `;
+            
+            document.body.appendChild(successDiv);
+            
+            setTimeout(() => {
+                if (successDiv.parentNode) {
+                    successDiv.remove();
+                }
+            }, 8000);
+        }
+
+        function updateBalanceDisplay(newBalance) {
+            const balanceElements = document.querySelectorAll('.stat-value');
+            if (balanceElements[0]) {
+                balanceElements[0].textContent = `${parseFloat(newBalance).toFixed(2)}`;
+                
+                balanceElements[0].style.transform = 'scale(1.1)';
+                balanceElements[0].style.color = '#22c55e';
+                balanceElements[0].style.transition = 'all 0.3s ease';
+                
+                setTimeout(() => {
+                    balanceElements[0].style.transform = 'scale(1)';
+                    balanceElements[0].style.color = '#f7931a';
+                }, 1000);
+            }
+
+            const metricsBalance = document.querySelector('.performance-metrics .metric-value');
+            if (metricsBalance && metricsBalance.parentElement.querySelector('.metric-label').textContent.includes('Balance')) {
+                metricsBalance.textContent = `${parseFloat(newBalance).toFixed(2)}`;
+                metricsBalance.style.color = '#22c55e';
+                setTimeout(() => {
+                    metricsBalance.style.color = '#fff';
+                }, 2000);
+            }
+        }
+
+        let withdrawalHistory = JSON.parse(localStorage.getItem('withdrawal_history') || '[]');
+
+        function trackWithdrawal(amount, address, status = 'pending') {
+            const withdrawal = {
+                id: Date.now(),
+                amount: parseFloat(amount),
+                address: address,
+                status: status,
+                timestamp: new Date().toISOString(),
+                network: document.getElementById('withdrawNetwork').value
+            };
+            
+            withdrawalHistory.unshift(withdrawal);
+            withdrawalHistory = withdrawalHistory.slice(0, 10);
+            localStorage.setItem('withdrawal_history', JSON.stringify(withdrawalHistory));
+            updateWithdrawalHistoryDisplay();
+        }
+
+        function updateWithdrawalHistoryDisplay() {
+            const historyContainer = document.getElementById('withdrawal-history');
+            if (historyContainer && withdrawalHistory.length > 0) {
+                historyContainer.innerHTML = `
+                    <h4 style="color: #ccc; margin-bottom: 10px;">Recent Withdrawals</h4>
+                    ${withdrawalHistory.slice(0, 5).map(w => `
+                        <div class="history-item">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 13px;">${w.amount.toFixed(2)} to ${w.address.slice(0, 8)}...</span>
+                                <span class="status-${w.status}" style="font-size: 11px; padding: 2px 6px; border-radius: 4px;">
+                                    ${w.status.toUpperCase()}
+                                </span>
+                            </div>
+                            <div style="font-size: 11px; color: #666; margin-top: 2px;">
+                                ${new Date(w.timestamp).toLocaleString()}
+                            </div>
+                        </div>
+                    `).join('')}
+                `;
+            }
+        }
+
+        function startDepositTracking(paymentIntentId, expectedAmount) {
+            let attempts = 0;
+            const maxAttempts = 30;
+            const pollInterval = 10000;
+            
+            const trackingInterval = setInterval(async () => {
+                attempts++;
+                
+                try {
+                    const response = await fetch('/api/user-stats/');
+                    if (response.ok) {
+                        const data = await response.json();
+                        const currentBalance = data.balance;
+                        
+                        let storedBalance = parseFloat(localStorage.getItem('pre_deposit_balance') || '0');
+                        
+                       if (!storedBalance) {
+                            const balanceElement = document.querySelector('.stat-value');
+                            if (balanceElement) {
+                                storedBalance = parseFloat(balanceElement.textContent.replace('$', '').replace(',', ''));
+                            }
+                        }
+                        
+                        const balanceIncrease = currentBalance - storedBalance;
+                        
+                        if (Math.abs(balanceIncrease - expectedAmount) < 0.01) {
+                            clearInterval(trackingInterval);
+                            updateBalanceDisplay(currentBalance);
+                            createDepositSuccessAnimation(expectedAmount);
+                            sessionStorage.removeItem('pending_deposit');
+                            localStorage.removeItem('pre_deposit_balance');
+                            showSuccess(`Deposit completed! +${expectedAmount.toFixed(2)} added to your balance.`);
+                            
+                            setTimeout(() => {
+                                location.reload();
+                            }, 3000);
+                            
+                            return;
+                        }
+                    }
+                    
+                    if (attempts >= maxAttempts) {
+                        clearInterval(trackingInterval);
+                        console.log('Deposit tracking timed out - webhook may be delayed');
+                        sessionStorage.removeItem('pending_deposit');
+                    }
+                    
+                } catch (error) {
+                    console.error('Error tracking deposit:', error);
+                    
+                    if (attempts >= maxAttempts) {
+                        clearInterval(trackingInterval);
+                        sessionStorage.removeItem('pending_deposit');
+                    }
+                }
+            }, pollInterval);
+        }
+
+        function storePreDepositBalance() {
+            const balanceElement = document.querySelector('.stat-value');
+            if (balanceElement) {
+                const currentBalance = parseFloat(balanceElement.textContent.replace('$', '').replace(',', ''));
+                localStorage.setItem('pre_deposit_balance', currentBalance.toString());
+            }
+        }
+
+        function createDepositSuccessAnimation(amount) {
+            const successIndicator = document.createElement('div');
+            successIndicator.innerHTML = `
+                <div style="
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+                    color: white;
+                    padding: 30px;
+                    border-radius: 20px;
+                    font-size: 24px;
+                    font-weight: bold;
+                    z-index: 3000;
+                    box-shadow: 0 20px 40px rgba(34, 197, 94, 0.3);
+                    animation: depositSuccess 3s ease-out forwards;
+                ">
+                    +${amount.toFixed(2)} Added!
+                </div>
+            `;
+            
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes depositSuccess {
+                    0% { 
+                        opacity: 0; 
+                        transform: translate(-50%, -50%) scale(0.5); 
+                    }
+                    20% { 
+                        opacity: 1; 
+                        transform: translate(-50%, -50%) scale(1.1); 
+                    }
+                    80% { 
+                        opacity: 1; 
+                        transform: translate(-50%, -50%) scale(1); 
+                    }
+                    100% { 
+                        opacity: 0; 
+                        transform: translate(-50%, -60%) scale(0.8); 
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            document.body.appendChild(successIndicator);
+            
+            setTimeout(() => {
+                successIndicator.remove();
+                style.remove();
+            }, 3000);
+        }
+
+        function showAddressFormatHint() {
+            const network = document.getElementById('withdrawNetwork').value;
+            const addressInput = document.getElementById('withdrawAddress');
+            
+            const hints = {
+                'ethereum': '0x1234...abcd (42 characters, ERC-20 compatible)',
+                'bsc': '0x1234...abcd (42 characters, BEP-20 compatible)',
+                'polygon': '0x1234...abcd (42 characters, Polygon compatible)'
+            };
+            
+            const hint = hints[network];
+            if (hint) {
+                addressInput.placeholder = hint;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const depositAmount = document.getElementById('depositAmount');
+            const withdrawAmount = document.getElementById('withdrawAmount');
+            const networkSelect = document.getElementById('withdrawNetwork');
+            
+            if (depositAmount) {
+                depositAmount.addEventListener('input', updateDepositFees);
+            }
+            
+            if (withdrawAmount) {
+                withdrawAmount.addEventListener('input', updateWithdrawFees);
+            }
+            
+            if (networkSelect) {
+                networkSelect.addEventListener('change', () => {
+                    updateWithdrawFees();
+                    showAddressFormatHint();
+                });
+            }
+            
+            updateWithdrawalHistoryDisplay();
+            
+            const pendingDeposit = sessionStorage.getItem('pending_deposit');
+            if (pendingDeposit) {
+                try {
+                    const depositData = JSON.parse(pendingDeposit);
+                    const timeSinceDeposit = Date.now() - depositData.timestamp;
+                    
+                    if (timeSinceDeposit < 600000) {
+                        console.log('Resuming tracking for pending deposit:', depositData.payment_intent_id);
+                        startDepositTracking(depositData.payment_intent_id, depositData.amount);
+                    } else {
+                        sessionStorage.removeItem('pending_deposit');
+                    }
+                } catch (error) {
+                    console.error('Error parsing pending deposit:', error);
+                    sessionStorage.removeItem('pending_deposit');
+                }
+            }
+        });
+
+        function updateCryptoPrices() {
+            const prices = {
+                btc: { element: 'btc-price', changeElement: 'btc-change', basePrice: 67432 },
+                eth: { element: 'eth-price', changeElement: 'eth-change', basePrice: 3421 }
+            };
+            
+            Object.values(prices).forEach(crypto => {
+                const priceElement = document.getElementById(crypto.element);
+                const changeElement = document.getElementById(crypto.changeElement);
+                
+                if (priceElement && changeElement) {
+                    const change = (Math.random() - 0.5) * 0.05;
+                    const newPrice = crypto.basePrice * (1 + change);
+                    const changePercent = change * 100;
+                    
+                    priceElement.textContent = `${newPrice.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0})}`;
+                    changeElement.textContent = `${changePercent > 0 ? '+' : ''}${changePercent.toFixed(1)}%`;
+                    changeElement.className = `price-change ${changePercent > 0 ? 'price-up' : 'price-down'}`;
+                }
+            });
+        }
+
+        function animateXPBar() {
+            const xpBar = document.querySelector('.xp-progress');
+            if (xpBar) {
+                const targetWidth = parseInt(xpBar.getAttribute('data-progress')) || 75;
+                let width = 0;
+                const interval = setInterval(() => {
+                    if (width >= targetWidth) {
+                        clearInterval(interval);
+                    } else {
+                        width += 2;
+                        xpBar.style.width = width + '%';
+                    }
+                }, 50);
+            }
+        }
+
+        setInterval(() => {
+            if (Math.random() < 0.3) {
+                const container = document.querySelector('.floating-coins');
+                const coin = document.createElement('div');
+                coin.className = 'floating-coin';
+                coin.textContent = '₿';
+                coin.style.left = Math.random() * 100 + '%';
+                coin.style.animationDelay = '0s';
+                coin.style.animationDuration = (20 + Math.random() * 10) + 's';
+                container.appendChild(coin);
+                
+                setTimeout(() => {
+                    coin.remove();
+                }, 30000);
+            }
+        }, 4000);
+
+        window.addEventListener('load', () => {
+            setTimeout(animateXPBar, 500);
+            updateCryptoPrices();
+            setInterval(updateCryptoPrices, 30000);
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const messages = document.querySelectorAll('.message');
+            messages.forEach(message => {
+                setTimeout(() => {
+                    message.style.opacity = '0';
+                    message.style.transform = 'translateY(-10px)';
+                    setTimeout(() => {
+                        message.remove();
+                    }, 300);
+                }, 5000);
+            });
+        });
+
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeDepositModal();
+                closeWithdrawModal();
+            }
+            
+            if (event.ctrlKey && event.key === 'd') {
+                event.preventDefault();
+                openDepositModal();
+            }
+            
+            if (event.ctrlKey && event.key === 'w') {
+                event.preventDefault();
+                openWithdrawModal();
+            }
+        });
+        // ==========================================
+        // B2BINPAY CRYPTO DEPOSIT FUNCTIONS
+        // ==========================================
+        
+// Wallet IDs mapping - Update with your B2BinPay dashboard wallet IDs
+const B2BINPAY_WALLETS = {
+    'btc': '{{ settings.B2BINPAY_WALLETS.BTC }}' || '',
+    'eth': '{{ settings.B2BINPAY_WALLETS.ETH }}' || '',
+    'usdt': '{{ settings.B2BINPAY_WALLETS.USDT }}' || '',
+    'usdttrc20': '{{ settings.B2BINPAY_WALLETS.USDT }}' || '',
+    'ltc': '{{ settings.B2BINPAY_WALLETS.LTC }}' || '',
+    'trx': '{{ settings.B2BINPAY_WALLETS.TRX }}' || ''
+};
+
+function openCryptoDepositModal() {
+    document.getElementById('cryptoDepositModal').classList.add('show');
+}
+
+function closeCryptoDepositModal() {
+    document.getElementById('cryptoDepositModal').classList.remove('show');
+    document.getElementById('paymentInstructions').style.display = 'none';
+    document.getElementById('cryptoDepositForm').reset();
+    const helperDiv = document.querySelector('.deposit-helper');
+    if (helperDiv) helperDiv.remove();
+    stopDepositPolling();
+}
+
+function setCryptoDepositAmount(amount) {
+    document.getElementById('cryptoDepositAmount').value = amount;
+    document.querySelectorAll('#cryptoDepositModal .preset-btn').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+}
+
+document.getElementById('cryptoDepositForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const amount = document.getElementById('cryptoDepositAmount').value;
+    const currency = document.getElementById('cryptoCurrency').value.toLowerCase();
+    const btn = document.getElementById('cryptoDepositBtn');
+    const spinner = document.getElementById('cryptoDepositSpinner');
+    const btnText = document.getElementById('cryptoDepositBtnText');
+    
+    // Validation
+    if (parseFloat(amount) < 10) {
+        showError('Minimum deposit is $10.00');
+        return;
+    }
+    
+    if (parseFloat(amount) > 50000) {
+        showError('Maximum deposit is $50,000.00');
+        return;
+    }
+    
+    // Get wallet ID for selected currency
+    const walletId = B2BINPAY_WALLETS[currency];
+    if (!walletId || walletId === '') {
+        showError(`${currency.toUpperCase()} wallet not configured. Please contact support.`);
+        console.error('Missing wallet ID for currency:', currency);
+        console.error('Available wallets:', B2BINPAY_WALLETS);
+        return;
+    }
+    
+    btn.disabled = true;
+    spinner.style.display = 'inline-block';
+    btnText.textContent = 'Generating Address...';
+    
+    try {
+        // B2BinPay endpoint (UPDATED from NowPayments)
+        const response = await fetch('/market/wallet/crypto-deposit/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            },
+            body: JSON.stringify({
+                amount: amount,
+                currency: currency.toUpperCase(),
+                wallet_id: walletId
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Show payment instructions (B2BinPay response format)
+            document.getElementById('payAmount').textContent = `$${parseFloat(amount).toFixed(2)} USD`;
+            document.getElementById('payAddress').value = data.payment_address;
+            document.getElementById('payCurrency').textContent = data.currency;
+            document.getElementById('paymentInstructions').style.display = 'block';
+            
+            const paymentInstructions = document.getElementById('paymentInstructions');
+            paymentInstructions.dataset.depositId = data.deposit_id || '';
+            paymentInstructions.dataset.trackingId = data.tracking_id || '';
+            
+            showSuccess('Deposit address generated! Send ' + data.currency + ' to the address below.');
+            
+            // Add helpful information
+            const helperDiv = document.createElement('div');
+            helperDiv.className = 'deposit-helper';
+            helperDiv.style.cssText = 'margin-top: 15px; padding: 12px; background: rgba(34, 197, 94, 0.1); border-radius: 8px; font-size: 13px; color: #ddd; border-left: 3px solid #22c55e;';
+            helperDiv.innerHTML = `
+                <p style="margin-bottom: 5px;"><span style="margin-right: 8px;">⏱️</span><strong>Confirmations:</strong> 2 network confirmations required</p>
+                <p style="margin-bottom: 5px;"><span style="margin-right: 8px;">🔔</span><strong>Tracking ID:</strong> ${data.tracking_id || 'N/A'}</p>
+                <p style="margin: 0;"><span style="margin-right: 8px;">💡</span><strong>Tip:</strong> Balance updates automatically after confirmation</p>
+            `;
+            
+            const oldHelper = document.querySelector('.deposit-helper');
+            if (oldHelper) oldHelper.remove();
+            
+            paymentInstructions.appendChild(helperDiv);
+            
+            if (data.deposit_id) {
+                startDepositPolling(data.deposit_id);
+            }
+        } else {
+            showError(data.error || 'Failed to generate deposit address');
+            if (data.details) {
+                console.error('B2BinPay API Error Details:', data.details);
+            }
+        }
+    } catch (error) {
+        console.error('Deposit request error:', error);
+        showError('Network error. Please check your connection and try again.');
+    } finally {
+        btn.disabled = false;
+        spinner.style.display = 'none';
+        btnText.textContent = '₿ Generate Payment Address';
+    }
+});
+
+// Deposit status polling
+let depositPollingInterval = null;
+
+function startDepositPolling(depositId) {
+    stopDepositPolling();
+    console.log('Starting deposit polling for:', depositId);
+    
+    let pollCount = 0;
+    const maxPolls = 120;
+    
+    depositPollingInterval = setInterval(async () => {
+        pollCount++;
+        
+        if (pollCount >= maxPolls) {
+            console.log('Polling timeout');
+            clearInterval(depositPollingInterval);
+            return;
+        }
+        
+        try {
+            const response = await fetch(`/market/wallet/deposit-status/${depositId}/`, {
+                headers: { 'X-CSRFToken': getCSRFToken() }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                console.log(`Poll ${pollCount}:`, data.status);
+                
+                if (data.status === 'completed') {
+                    stopDepositPolling();
+                    showSuccess('🎉 Deposit confirmed! Balance updated.');
+                    if (data.new_balance) {
+                        const balanceElements = document.querySelectorAll('.balance-value, [data-balance]');
+                        balanceElements.forEach(el => {
+                            el.textContent = `$${parseFloat(data.new_balance).toFixed(2)}`;
+                        });
+                    }
+                    setTimeout(() => location.reload(), 2000);
+                } else if (data.status === 'failed') {
+                    stopDepositPolling();
+                    showError('Deposit failed. Contact support if you sent funds.');
+                }
+            }
+        } catch (error) {
+            console.error('Polling error:', error);
+        }
+    }, 30000);
+}
+
+function stopDepositPolling() {
+    if (depositPollingInterval) {
+        clearInterval(depositPollingInterval);
+        depositPollingInterval = null;
+        console.log('⏹️ Polling stopped');
+    }
+}
+
+function copyPayAddress() {
+    const addressInput = document.getElementById('payAddress');
+    addressInput.select();
+    addressInput.setSelectionRange(0, 99999);
+    
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(addressInput.value).then(() => {
+            showSuccess('Payment address copied to clipboard!');
+        }).catch(() => {
+            document.execCommand('copy');
+            showSuccess('Payment address copied to clipboard!');
+        });
+    } else {
+        document.execCommand('copy');
+        showSuccess('Payment address copied to clipboard!');
+    }
+}
+
+// Wallet Transfer Functions
+function openTransferModal() {
+    document.getElementById('transferModal').classList.add('show');
+}
+
+function closeTransferModal() {
+    document.getElementById('transferModal').classList.remove('show');
+}
+
+function setTransferAmount(amount) {
+    document.getElementById('transferAmount').value = amount;
+    updateTransferFees();
+    document.querySelectorAll('#transferModal .preset-btn').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+}
+
+function updateTransferFees() {
+    const amount = parseFloat(document.getElementById('transferAmount').value) || 0;
+    document.getElementById('transferFeeAmount').textContent = `$${amount.toFixed(2)}`;
+    document.getElementById('transferTotal').textContent = `$${amount.toFixed(2)}`;
+}
+
+document.getElementById('transferAmount').addEventListener('input', updateTransferFees);
+
+document.getElementById('transferForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const recipient = document.getElementById('transferRecipient').value;
+    const amount = document.getElementById('transferAmount').value;
+    const description = document.getElementById('transferDescription').value;
+    const btn = document.getElementById('transferSubmitBtn');
+    const spinner = document.getElementById('transferSpinner');
+    const btnText = document.getElementById('transferBtnText');
+    
+    btn.disabled = true;
+    spinner.style.display = 'inline-block';
+    btnText.textContent = 'Processing...';
+    
+    try {
+        const response = await fetch('/market/wallet/transfer/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            },
+            body: JSON.stringify({
+                recipient: recipient,
+                amount: amount,
+                description: description
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showSuccess(data.message);
+            updateBalanceDisplay(data.sender_new_balance);
+            closeTransferModal();
+            setTimeout(() => location.reload(), 2000);
+        } else {
+            showError(data.error || 'Transfer failed');
+        }
+    } catch (error) {
+        showError('Network error. Please try again.');
+    } finally {
+        btn.disabled = false;
+        spinner.style.display = 'none';
+        btnText.textContent = 'Send Transfer';
+    }
+});
+
+// Update the wallet actions section buttons
+document.querySelector('.wallet-btn.deposit').onclick = openCryptoDepositModal;
+</script>
+{% endblock %}

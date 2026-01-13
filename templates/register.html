@@ -1,603 +1,603 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create Your Wallet - Endless Freedom</title>
-    {% load static %}
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+{% extends 'base.html' %}
+{% block title %}Create Your Wallet - Endless Freedom{% endblock %}
+{% block extra_css %}
+<style>
+    body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow-x: hidden;
+    }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-            color: white;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            overflow-x: hidden;
-            padding: 10px;
-        }
+    .main-content {
+        padding-top: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
 
-        .background-glow {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            width: clamp(400px, 80vw, 800px);
-            height: clamp(400px, 80vh, 800px);
-            background: radial-gradient(circle, rgba(247, 147, 26, 0.08) 0%, transparent 70%);
-            transform: translate(-50%, -50%);
-            z-index: 0;
-            animation: pulse 8s ease-in-out infinite;
-        }
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+        color: white;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        overflow-x: hidden;
+        padding: 10px;
+    }
 
-        @keyframes pulse {
-            0%, 100% { opacity: 0.3; transform: translate(-50%, -50%) scale(1); }
-            50% { opacity: 0.6; transform: translate(-50%, -50%) scale(1.3); }
-        }
+    .background-glow {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        width: clamp(400px, 80vw, 800px);
+        height: clamp(400px, 80vh, 800px);
+        background: radial-gradient(circle, rgba(247, 147, 26, 0.08) 0%, transparent 70%);
+        transform: translate(-50%, -50%);
+        z-index: 0;
+        animation: pulse 8s ease-in-out infinite;
+    }
 
-        .floating-coins {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            pointer-events: none;
-            overflow: hidden;
-            z-index: 1;
-        }
+    @keyframes pulse {
+        0%, 100% { opacity: 0.3; transform: translate(-50%, -50%) scale(1); }
+        50% { opacity: 0.6; transform: translate(-50%, -50%) scale(1.3); }
+    }
 
-        .floating-coin {
-            position: absolute;
-            width: clamp(20px, 4vw, 30px);
-            height: clamp(20px, 4vw, 30px);
-            background: linear-gradient(135deg, #f7931a 0%, #ffb84d 100%);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: clamp(10px, 2.5vw, 14px);
-            font-weight: bold;
-            color: white;
-            opacity: 0.4;
-            animation: floatAround 20s linear infinite;
-        }
+    .floating-coins {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        pointer-events: none;
+        overflow: hidden;
+        z-index: 1;
+    }
 
-        @keyframes floatAround {
-            0% { transform: translateY(100vh) translateX(0) rotate(0deg); opacity: 0; }
-            10% { opacity: 0.4; }
-            90% { opacity: 0.4; }
-            100% { transform: translateY(-100px) translateX(100px) rotate(360deg); opacity: 0; }
-        }
+    .floating-coin {
+        position: absolute;
+        width: clamp(20px, 4vw, 30px);
+        height: clamp(20px, 4vw, 30px);
+        background: linear-gradient(135deg, #f7931a 0%, #ffb84d 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: clamp(10px, 2.5vw, 14px);
+        font-weight: bold;
+        color: white;
+        opacity: 0.4;
+        animation: floatAround 20s linear infinite;
+    }
 
-        .logo {
-            position: fixed;
-            top: clamp(15px, 3vh, 30px);
-            left: clamp(15px, 3vw, 30px);
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            z-index: 10;
-        }
-        
-        .logo img {
-            height: clamp(60px, 10vw, 100px);
-            width: auto;
-            transition: transform 0.3s ease;
-        }
-        
-        .logo:hover img {
-            transform: scale(1.05);
-            filter: brightness(1.1);
-        }
+    @keyframes floatAround {
+        0% { transform: translateY(100vh) translateX(0) rotate(0deg); opacity: 0; }
+        10% { opacity: 0.4; }
+        90% { opacity: 0.4; }
+        100% { transform: translateY(-100px) translateX(100px) rotate(360deg); opacity: 0; }
+    }
 
-        .register-container {
-            background: rgba(45, 45, 45, 0.9);
-            border-radius: clamp(16px, 4vw, 24px);
-            padding: clamp(30px, 6vw, 60px);
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            width: 100%;
-            max-width: min(500px, 90vw);
-            position: relative;
-            z-index: 5;
-            margin: clamp(80px, 15vh, 120px) auto 20px;
-        }
-
-        .register-header {
-            text-align: center;
-            margin-bottom: clamp(24px, 5vw, 40px);
-        }
-
-        .register-title {
-            font-size: clamp(24px, 6vw, 36px);
-            font-weight: 700;
-            margin-bottom: clamp(8px, 2vw, 12px);
-            background: linear-gradient(135deg, #fff 0%, #f0f0f0 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .register-subtitle {
-            color: #999;
-            font-size: clamp(14px, 3vw, 16px);
-            line-height: 1.5;
-            padding: 0 10px;
-        }
-
-        .form-group {
-            margin-bottom: clamp(16px, 4vw, 24px);
-            position: relative;
-        }
-
-        .form-label {
-            display: block;
-            margin-bottom: clamp(4px, 1.5vw, 8px);
-            color: #ccc;
-            font-size: clamp(12px, 3vw, 14px);
-            font-weight: 500;
-        }
-
-        .form-input {
-            width: 100%;
-            padding: clamp(12px, 3vw, 16px) clamp(14px, 3.5vw, 20px);
-            background: rgba(26, 26, 26, 0.8);
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            border-radius: clamp(8px, 2vw, 12px);
-            color: white;
-            font-size: clamp(14px, 3.5vw, 16px);
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-        }
-
-        .form-input:focus {
-            outline: none;
-            border-color: #f7931a;
-            box-shadow: 0 0 20px rgba(247, 147, 26, 0.2);
-            transform: translateY(-2px);
-        }
-
-        .form-input::placeholder {
-            color: #666;
-        }
-
-        .form-input.error {
-            border-color: #ef4444;
-            box-shadow: 0 0 20px rgba(239, 68, 68, 0.2);
-        }
-
-        .error-message {
-            color: #ef4444;
-            font-size: clamp(10px, 2.5vw, 12px);
-            margin-top: 4px;
-        }
-
-        .password-strength {
-            margin-top: clamp(4px, 1.5vw, 8px);
-            display: flex;
-            gap: clamp(2px, 0.5vw, 4px);
-        }
-
-        .strength-bar {
-            height: clamp(3px, 0.8vw, 4px);
-            flex: 1;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 2px;
-            transition: all 0.3s ease;
-        }
-
-        .strength-bar.active {
-            background: #f7931a;
-            box-shadow: 0 0 10px rgba(247, 147, 26, 0.5);
-        }
-
-        .checkbox-group {
-            display: flex;
-            align-items: flex-start;
-            gap: clamp(8px, 2vw, 12px);
-            margin-bottom: clamp(20px, 5vw, 32px);
-        }
-
-        .custom-checkbox {
-            width: clamp(16px, 4vw, 20px);
-            height: clamp(16px, 4vw, 20px);
-            background: rgba(26, 26, 26, 0.8);
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            flex-shrink: 0;
-            margin-top: 2px;
-        }
-
-        .custom-checkbox.checked {
-            background: linear-gradient(45deg, #f7931a, #ffb84d);
-            border-color: #f7931a;
-        }
-
-        .custom-checkbox::after {
-            content: '✓';
-            color: white;
-            font-size: clamp(8px, 2vw, 12px);
-            font-weight: bold;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .custom-checkbox.checked::after {
-            opacity: 1;
-        }
-
-        .checkbox-label {
-            color: #ccc;
-            font-size: clamp(12px, 3vw, 14px);
-            line-height: 1.4;
-            cursor: pointer;
-            flex: 1;
-        }
-
-        .checkbox-label a {
-            color: #f7931a;
-            text-decoration: none;
-            transition: color 0.3s ease;
-            cursor: pointer;
-        }
-
-        .checkbox-label a:hover {
-            color: #ffb84d;
-            text-decoration: underline;
-        }
-
-        .register-btn {
-            width: 100%;
-            background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
-            color: #1a1a1a;
-            border: none;
-            padding: clamp(14px, 3.5vw, 18px);
-            border-radius: clamp(8px, 2vw, 12px);
-            font-size: clamp(16px, 3.5vw, 18px);
-            font-weight: 600;
-            cursor: pointer;
-            box-shadow: 0 10px 30px rgba(255, 215, 0, 0.3);
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-            margin-bottom: clamp(16px, 4vw, 24px);
-        }
-
-        .register-btn:hover:not(:disabled) {
-            transform: translateY(-3px);
-            box-shadow: 0 15px 40px rgba(255, 215, 0, 0.4);
-        }
-
-        .register-btn:active {
-            transform: translateY(-1px);
-        }
-
-        .register-btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-            transition: left 0.5s;
-        }
-
-        .register-btn:hover::before {
-            left: 100%;
-        }
-
-        .register-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .register-btn:disabled:hover {
-            transform: none;
-            box-shadow: 0 10px 30px rgba(255, 215, 0, 0.3);
-        }
-
-        .login-link {
-            text-align: center;
-            color: #999;
-            font-size: clamp(12px, 3vw, 14px);
-        }
-
-        .login-link a {
-            color: #f7931a;
-            text-decoration: none;
-            font-weight: 600;
-            transition: color 0.3s ease;
-        }
-
-        .login-link a:hover {
-            color: #ffb84d;
-        }
-
-        .security-features {
-            display: flex;
-            justify-content: space-around;
-            margin-top: clamp(20px, 5vw, 32px);
-            padding-top: clamp(16px, 4vw, 24px);
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            flex-wrap: wrap;
-            gap: clamp(10px, 2vw, 0);
-        }
-
-        .security-feature {
-            text-align: center;
-            color: #666;
-            font-size: clamp(10px, 2.5vw, 12px);
-            flex: 1;
-            min-width: 70px;
-        }
-
-        .security-icon {
-            width: clamp(24px, 6vw, 32px);
-            height: clamp(24px, 6vw, 32px);
-            background: rgba(247, 147, 26, 0.2);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto clamp(4px, 2vw, 8px);
-            font-size: clamp(10px, 3vw, 14px);
-        }
-
-        .alert {
-            padding: clamp(8px, 2vw, 12px) clamp(12px, 3vw, 16px);
-            border-radius: clamp(6px, 1.5vw, 8px);
-            margin-bottom: clamp(16px, 4vw, 20px);
-            font-size: clamp(12px, 3vw, 14px);
-        }
-
-        .alert-success {
-            background: rgba(34, 197, 94, 0.1);
-            border: 1px solid rgba(34, 197, 94, 0.3);
-            color: #22c55e;
-        }
-
-        .alert-error {
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            color: #ef4444;
-        }
-
-        /* Loading state */
-        .loading {
-            opacity: 0.7;
-            pointer-events: none;
-        }
-
-        .loading .register-btn {
-            background: linear-gradient(135deg, #ccc 0%, #999 100%);
-        }
-
-        /* Mobile-specific adjustments */
-        @media (max-width: 768px) {
-            body {
-                padding: 5px;
-            }
-            
-            .register-container {
-                margin: 70px auto 10px;
-            }
-            
-            .checkbox-group {
-                flex-direction: column;
-                gap: 8px;
-            }
-            
-            .custom-checkbox {
-                align-self: flex-start;
-                margin-top: 0;
-            }
-            
-            .security-features {
-                gap: 15px;
-            }
-            
-            .security-feature {
-                min-width: 60px;
-            }
-        }
-
-        /* Very small screens */
-        @media (max-width: 480px) {
-            .security-features {
-                flex-direction: column;
-                gap: 15px;
-            }
-            
-            .security-feature {
-                flex: none;
-            }
-            
-            .floating-coin {
-                display: none;
-            }
-        }
-
-        /* Large screens optimization */
-        @media (min-width: 1200px) {
-            .register-container {
-                max-width: 500px;
-            }
-        }
-
-        /* Landscape mobile orientation */
-        @media (max-height: 600px) and (orientation: landscape) {
-            body {
-                align-items: flex-start;
-                padding-top: 20px;
-            }
-            
-            .register-container {
-                margin: 20px auto;
-            }
-            
-            .logo {
-                position: relative;
-                top: auto;
-                left: auto;
-                margin-bottom: 20px;
-            }
-            
-            .background-glow {
-                display: none;
-            }
-        }
-
-        /* High DPI screens */
-        @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-            .form-input, .register-btn {
-                border-width: 1px;
-            }
-        }
-
-        /* Reduced motion accessibility */
-        @media (prefers-reduced-motion: reduce) {
-            .background-glow, .floating-coin {
-                animation: none;
-            }
-            
-            .form-input:focus, .register-btn:hover {
-                transform: none;
-            }
-        }
-
-        /* Dark mode enhancement for devices that support it */
-        @media (prefers-color-scheme: dark) {
-            .register-container {
-                background: rgba(30, 30, 30, 0.95);
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="background-glow"></div>
+    .logo {
+        position: fixed;
+        top: clamp(15px, 3vh, 30px);
+        left: clamp(15px, 3vw, 30px);
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        z-index: 10;
+    }
     
-    <div class="floating-coins">
-        <div class="floating-coin" style="left: 5%; animation-delay: 0s;">₿</div>
-        <div class="floating-coin" style="left: 15%; animation-delay: 4s;">₿</div>
-        <div class="floating-coin" style="left: 35%; animation-delay: 8s;">₿</div>
-        <div class="floating-coin" style="left: 55%; animation-delay: 12s;">₿</div>
-        <div class="floating-coin" style="left: 75%; animation-delay: 16s;">₿</div>
-        <div class="floating-coin" style="left: 85%; animation-delay: 2s;">₿</div>
+    .logo img {
+        height: clamp(60px, 10vw, 100px);
+        width: auto;
+        transition: transform 0.3s ease;
+    }
+    
+    .logo:hover img {
+        transform: scale(1.05);
+        filter: brightness(1.1);
+    }
+
+    .register-container {
+        background: rgba(45, 45, 45, 0.9);
+        border-radius: clamp(16px, 4vw, 24px);
+        padding: clamp(30px, 6vw, 60px);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        width: 100%;
+        max-width: min(500px, 90vw);
+        position: relative;
+        z-index: 5;
+        margin: clamp(80px, 15vh, 120px) auto 20px;
+    }
+
+    .register-header {
+        text-align: center;
+        margin-bottom: clamp(24px, 5vw, 40px);
+    }
+
+    .register-title {
+        font-size: clamp(24px, 6vw, 36px);
+        font-weight: 700;
+        margin-bottom: clamp(8px, 2vw, 12px);
+        background: linear-gradient(135deg, #fff 0%, #f0f0f0 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .register-subtitle {
+        color: #999;
+        font-size: clamp(14px, 3vw, 16px);
+        line-height: 1.5;
+        padding: 0 10px;
+    }
+
+    .form-group {
+        margin-bottom: clamp(16px, 4vw, 24px);
+        position: relative;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: clamp(4px, 1.5vw, 8px);
+        color: #ccc;
+        font-size: clamp(12px, 3vw, 14px);
+        font-weight: 500;
+    }
+
+    .form-input {
+        width: 100%;
+        padding: clamp(12px, 3vw, 16px) clamp(14px, 3.5vw, 20px);
+        background: rgba(26, 26, 26, 0.8);
+        border: 2px solid rgba(255, 255, 255, 0.1);
+        border-radius: clamp(8px, 2vw, 12px);
+        color: white;
+        font-size: clamp(14px, 3.5vw, 16px);
+        transition: all 0.3s ease;
+        backdrop-filter: blur(10px);
+    }
+
+    .form-input:focus {
+        outline: none;
+        border-color: #f7931a;
+        box-shadow: 0 0 20px rgba(247, 147, 26, 0.2);
+        transform: translateY(-2px);
+    }
+
+    .form-input::placeholder {
+        color: #666;
+    }
+
+    .form-input.error {
+        border-color: #ef4444;
+        box-shadow: 0 0 20px rgba(239, 68, 68, 0.2);
+    }
+
+    .error-message {
+        color: #ef4444;
+        font-size: clamp(10px, 2.5vw, 12px);
+        margin-top: 4px;
+    }
+
+    .password-strength {
+        margin-top: clamp(4px, 1.5vw, 8px);
+        display: flex;
+        gap: clamp(2px, 0.5vw, 4px);
+    }
+
+    .strength-bar {
+        height: clamp(3px, 0.8vw, 4px);
+        flex: 1;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 2px;
+        transition: all 0.3s ease;
+    }
+
+    .strength-bar.active {
+        background: #f7931a;
+        box-shadow: 0 0 10px rgba(247, 147, 26, 0.5);
+    }
+
+    .checkbox-group {
+        display: flex;
+        align-items: flex-start;
+        gap: clamp(8px, 2vw, 12px);
+        margin-bottom: clamp(20px, 5vw, 32px);
+    }
+
+    .custom-checkbox {
+        width: clamp(16px, 4vw, 20px);
+        height: clamp(16px, 4vw, 20px);
+        background: rgba(26, 26, 26, 0.8);
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+
+    .custom-checkbox.checked {
+        background: linear-gradient(45deg, #f7931a, #ffb84d);
+        border-color: #f7931a;
+    }
+
+    .custom-checkbox::after {
+        content: '✓';
+        color: white;
+        font-size: clamp(8px, 2vw, 12px);
+        font-weight: bold;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .custom-checkbox.checked::after {
+        opacity: 1;
+    }
+
+    .checkbox-label {
+        color: #ccc;
+        font-size: clamp(12px, 3vw, 14px);
+        line-height: 1.4;
+        cursor: pointer;
+        flex: 1;
+    }
+
+    .checkbox-label a {
+        color: #f7931a;
+        text-decoration: none;
+        transition: color 0.3s ease;
+        cursor: pointer;
+    }
+
+    .checkbox-label a:hover {
+        color: #ffb84d;
+        text-decoration: underline;
+    }
+
+    .register-btn {
+        width: 100%;
+        background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
+        color: #1a1a1a;
+        border: none;
+        padding: clamp(14px, 3.5vw, 18px);
+        border-radius: clamp(8px, 2vw, 12px);
+        font-size: clamp(16px, 3.5vw, 18px);
+        font-weight: 600;
+        cursor: pointer;
+        box-shadow: 0 10px 30px rgba(255, 215, 0, 0.3);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        margin-bottom: clamp(16px, 4vw, 24px);
+    }
+
+    .register-btn:hover:not(:disabled) {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 40px rgba(255, 215, 0, 0.4);
+    }
+
+    .register-btn:active {
+        transform: translateY(-1px);
+    }
+
+    .register-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transition: left 0.5s;
+    }
+
+    .register-btn:hover::before {
+        left: 100%;
+    }
+
+    .register-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .register-btn:disabled:hover {
+        transform: none;
+        box-shadow: 0 10px 30px rgba(255, 215, 0, 0.3);
+    }
+
+    .login-link {
+        text-align: center;
+        color: #999;
+        font-size: clamp(12px, 3vw, 14px);
+    }
+
+    .login-link a {
+        color: #f7931a;
+        text-decoration: none;
+        font-weight: 600;
+        transition: color 0.3s ease;
+    }
+
+    .login-link a:hover {
+        color: #ffb84d;
+    }
+
+    .security-features {
+        display: flex;
+        justify-content: space-around;
+        margin-top: clamp(20px, 5vw, 32px);
+        padding-top: clamp(16px, 4vw, 24px);
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        flex-wrap: wrap;
+        gap: clamp(10px, 2vw, 0);
+    }
+
+    .security-feature {
+        text-align: center;
+        color: #666;
+        font-size: clamp(10px, 2.5vw, 12px);
+        flex: 1;
+        min-width: 70px;
+    }
+
+    .security-icon {
+        width: clamp(24px, 6vw, 32px);
+        height: clamp(24px, 6vw, 32px);
+        background: rgba(247, 147, 26, 0.2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto clamp(4px, 2vw, 8px);
+        font-size: clamp(10px, 3vw, 14px);
+    }
+
+    .alert {
+        padding: clamp(8px, 2vw, 12px) clamp(12px, 3vw, 16px);
+        border-radius: clamp(6px, 1.5vw, 8px);
+        margin-bottom: clamp(16px, 4vw, 20px);
+        font-size: clamp(12px, 3vw, 14px);
+    }
+
+    .alert-success {
+        background: rgba(34, 197, 94, 0.1);
+        border: 1px solid rgba(34, 197, 94, 0.3);
+        color: #22c55e;
+    }
+
+    .alert-error {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        color: #ef4444;
+    }
+
+    .loading {
+        opacity: 0.7;
+        pointer-events: none;
+    }
+
+    .loading .register-btn {
+        background: linear-gradient(135deg, #ccc 0%, #999 100%);
+    }
+
+    @media (max-width: 768px) {
+        body {
+            padding: 5px;
+        }
+        
+        .register-container {
+            margin: 70px auto 10px;
+        }
+        
+        .checkbox-group {
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .custom-checkbox {
+            align-self: flex-start;
+            margin-top: 0;
+        }
+        
+        .security-features {
+            gap: 15px;
+        }
+        
+        .security-feature {
+            min-width: 60px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .security-features {
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .security-feature {
+            flex: none;
+        }
+        
+        .floating-coin {
+            display: none;
+        }
+    }
+
+    @media (min-width: 1200px) {
+        .register-container {
+            max-width: 500px;
+        }
+    }
+
+    @media (max-height: 600px) and (orientation: landscape) {
+        body {
+            align-items: flex-start;
+            padding-top: 20px;
+        }
+        
+        .register-container {
+            margin: 20px auto;
+        }
+        
+        .logo {
+            position: relative;
+            top: auto;
+            left: auto;
+            margin-bottom: 20px;
+        }
+        
+        .background-glow {
+            display: none;
+        }
+    }
+
+    @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+        .form-input, .register-btn {
+            border-width: 1px;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .background-glow, .floating-coin {
+            animation: none;
+        }
+        
+        .form-input:focus, .register-btn:hover {
+            transform: none;
+        }
+    }
+
+    @media (prefers-color-scheme: dark) {
+        .register-container {
+            background: rgba(30, 30, 30, 0.95);
+        }
+    }
+</style>
+{% endblock %}
+
+
+{% block content %}
+<div class="background-glow"></div>
+    
+<div class="floating-coins">
+    <div class="floating-coin" style="left: 5%; animation-delay: 0s;">₿</div>
+    <div class="floating-coin" style="left: 15%; animation-delay: 4s;">₿</div>
+    <div class="floating-coin" style="left: 35%; animation-delay: 8s;">₿</div>
+    <div class="floating-coin" style="left: 55%; animation-delay: 12s;">₿</div>
+    <div class="floating-coin" style="left: 75%; animation-delay: 16s;">₿</div>
+    <div class="floating-coin" style="left: 85%; animation-delay: 2s;">₿</div>
+</div>
+
+<div class="register-container">
+    <div class="register-header">
+        <h1 class="register-title">Create Your Wallet</h1>
+        <p class="register-subtitle">Join thousands of users experiencing limitless digital freedom</p>
     </div>
-    <a href="{% url 'landing-page' %}" class="logo">
-        <img src="/static/evgchain-logo.png" alt="EVGxchain">
-    </a>
-    <div class="register-container">
-        <div class="register-header">
-            <h1 class="register-title">Create Your Wallet</h1>
-            <p class="register-subtitle">Join thousands of users experiencing limitless digital freedom</p>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div id="error-container"></div>
+
+    <form id="registerForm">
+        {% csrf_token %}
+        <div class="form-group">
+            <label class="form-label" for="fullName">Full Name</label>
+            <input type="text" id="fullName" name="full_name" class="form-input" placeholder="Enter your full name" required>
+            <div class="error-message" id="fullName-error"></div>
         </div>
 
-        <!-- Django Messages -->
-        {% if messages %}
-            {% for message in messages %}
-                <div class="alert alert-{{ message.tags }}">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        {% endif %}
-
-        <!-- Error messages container for AJAX -->
-        <div id="error-container"></div>
-
-        <form id="registerForm">
-            {% csrf_token %}
-            <div class="form-group">
-                <label class="form-label" for="fullName">Full Name</label>
-                <input type="text" id="fullName" name="full_name" class="form-input" placeholder="Enter your full name" required>
-                <div class="error-message" id="fullName-error"></div>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label" for="email">Email Address</label>
-                <input type="email" id="email" name="email" class="form-input" placeholder="Enter your email address" required>
-                <div class="error-message" id="email-error"></div>
-            </div>
-
-            <div class="form-group" id="referralGroup" style="display: none;">
-                <label class="form-label" for="referralCode">Referral Code (Optional)</label>
-                <input type="text" id="referralCode" name="referral_code" class="form-input" placeholder="Enter referral code if you have one">
-                <div class="error-message" id="referralCode-error"></div>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label" for="password">Password</label>
-                <input type="password" id="password" name="password1" class="form-input" placeholder="Create a strong password" required>
-                <div class="password-strength">
-                    <div class="strength-bar"></div>
-                    <div class="strength-bar"></div>
-                    <div class="strength-bar"></div>
-                    <div class="strength-bar"></div>
-                </div>
-                <div class="error-message" id="password-error"></div>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label" for="confirmPassword">Confirm Password</label>
-                <input type="password" id="confirmPassword" name="password2" class="form-input" placeholder="Confirm your password" required>
-                <div class="error-message" id="confirmPassword-error"></div>
-            </div>
-
-            <div class="checkbox-group">
-                <div class="custom-checkbox" id="termsCheckbox"></div>
-                <label class="checkbox-label" for="termsCheckbox">
-                    I agree to the <a href="#" id="termsLink">Terms of Service</a> and <a href="#" id="privacyLink">Privacy Policy</a>
-                </label>
-                <div class="error-message" id="terms-error"></div>
-            </div>
-
-            <button type="submit" class="register-btn" id="registerButton" disabled>
-                Register
-            </button>
-        </form>
-
-        <div class="login-link">
-            Already have an account? <a href="{% url 'login-page' %}">Sign In</a>
+        <div class="form-group">
+            <label class="form-label" for="email">Email Address</label>
+            <input type="email" id="email" name="email" class="form-input" placeholder="Enter your email address" required>
+            <div class="error-message" id="email-error"></div>
         </div>
 
-        <div class="security-features">
-            <div class="security-feature">
-                <div class="security-icon">🔒</div>
-                <div>Bank-Level Security</div>
-            </div>
-            <div class="security-feature">
-                <div class="security-icon">⚡</div>
-                <div>Instant Setup</div>
-            </div>
-            <div class="security-feature">
-                <div class="security-icon">🌍</div>
-                <div>Global Access</div>
-            </div>
+        <div class="form-group" id="referralGroup" style="display: none;">
+            <label class="form-label" for="referralCode">Referral Code (Optional)</label>
+            <input type="text" id="referralCode" name="referral_code" class="form-input" placeholder="Enter referral code if you have one">
+            <div class="error-message" id="referralCode-error"></div>
         </div>
+
+        <div class="form-group">
+            <label class="form-label" for="password">Password</label>
+            <input type="password" id="password" name="password1" class="form-input" placeholder="Create a strong password" required>
+            <div class="password-strength">
+                <div class="strength-bar"></div>
+                <div class="strength-bar"></div>
+                <div class="strength-bar"></div>
+                <div class="strength-bar"></div>
+            </div>
+            <div class="error-message" id="password-error"></div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="confirmPassword">Confirm Password</label>
+            <input type="password" id="confirmPassword" name="password2" class="form-input" placeholder="Confirm your password" required>
+            <div class="error-message" id="confirmPassword-error"></div>
+        </div>
+
+        <div class="checkbox-group">
+            <div class="custom-checkbox" id="termsCheckbox"></div>
+            <label class="checkbox-label" for="termsCheckbox">
+                I agree to the <a href="#" id="termsLink">Terms of Service</a> and <a href="#" id="privacyLink">Privacy Policy</a>
+            </label>
+            <div class="error-message" id="terms-error"></div>
+        </div>
+
+        <button type="submit" class="register-btn" id="registerButton" disabled>
+            Register
+        </button>
+    </form>
+
+    <div class="login-link">
+        Already have an account? <a href="{% url 'login-page' %}">Sign In</a>
     </div>
 
-    <script>
+    <div class="security-features">
+        <div class="security-feature">
+            <div class="security-icon">🔒</div>
+            <div>Bank-Level Security</div>
+        </div>
+        <div class="security-feature">
+            <div class="security-icon">⚡</div>
+            <div>Instant Setup</div>
+        </div>
+        <div class="security-feature">
+            <div class="security-icon">🌍</div>
+            <div>Global Access</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+{% block extra_js %}
+<script>
+// ✅ SINGLE SCRIPT BLOCK - All JavaScript here only
+document.addEventListener('DOMContentLoaded', function() {
     // Get CSRF token
     function getCSRFToken() {
         return document.querySelector('[name=csrfmiddlewaretoken]').value;
     }
 
-    // Form validation and interaction
+    // Get DOM elements
     const form = document.getElementById('registerForm');
     const termsCheckbox = document.getElementById('termsCheckbox');
     const registerButton = document.getElementById('registerButton');
@@ -608,37 +608,32 @@
 
     let termsAccepted = false;
 
-    document.addEventListener('DOMContentLoaded', function() {
-        // Check for referral code in URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const refCode = urlParams.get('ref');
+    // Check for referral code in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const refCode = urlParams.get('ref');
+    
+    if (refCode) {
+        const referralGroup = document.getElementById('referralGroup');
+        const referralInput = document.getElementById('referralCode');
         
-        if (refCode) {
-            const referralGroup = document.getElementById('referralGroup');
-            const referralInput = document.getElementById('referralCode');
-            
-            referralGroup.style.display = 'block';
-            referralInput.value = refCode;
-            
-            // Highlight that referral code is applied
-            referralGroup.style.background = 'rgba(34, 197, 94, 0.05)';
-            referralGroup.style.border = '1px solid rgba(34, 197, 94, 0.2)';
-            referralGroup.style.padding = '15px';
-            referralGroup.style.borderRadius = '10px';
-            referralInput.style.borderColor = '#22c55e';
-            
-            // Show success message
-            const referralLabel = referralGroup.querySelector('.form-label');
-            referralLabel.innerHTML = `
-                🎁 Referral Code Applied! 
-                <span style="color: #22c55e; font-size: 12px; margin-left: 8px;">
-                    You'll get $5 bonus on signup
-                </span>
-            `;
-        }
-    });
+        referralGroup.style.display = 'block';
+        referralInput.value = refCode;
+        referralGroup.style.background = 'rgba(34, 197, 94, 0.05)';
+        referralGroup.style.border = '1px solid rgba(34, 197, 94, 0.2)';
+        referralGroup.style.padding = '15px';
+        referralGroup.style.borderRadius = '10px';
+        referralInput.style.borderColor = '#22c55e';
+        
+        const referralLabel = referralGroup.querySelector('.form-label');
+        referralLabel.innerHTML = `
+            🎁 Referral Code Applied! 
+            <span style="color: #22c55e; font-size: 12px; margin-left: 8px;">
+                You'll get $5 bonus on signup
+            </span>
+        `;
+    }
 
-    // Clear previous error messages
+    // Clear error messages
     function clearErrors() {
         const errorMessages = document.querySelectorAll('.error-message');
         const inputs = document.querySelectorAll('.form-input');
@@ -653,18 +648,13 @@
         const errorElement = document.getElementById(fieldId + '-error');
         const inputElement = document.getElementById(fieldId);
         
-        if (errorElement) {
-            errorElement.textContent = message;
-        }
-        if (inputElement) {
-            inputElement.classList.add('error');
-        }
+        if (errorElement) errorElement.textContent = message;
+        if (inputElement) inputElement.classList.add('error');
     }
 
     // Display general error
     function showGeneralError(message) {
         errorContainer.innerHTML = `<div class="alert alert-error">${message}</div>`;
-        // Scroll to error
         errorContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
@@ -681,36 +671,12 @@
     });
 
     // Password strength indicator
-    passwordInput.addEventListener('input', function() {
-        const password = this.value;
-        const strength = calculatePasswordStrength(password);
-        updateStrengthBars(strength);
-        updateRegisterButton();
-    });
-
-    // Confirm password validation
-    confirmPasswordInput.addEventListener('input', function() {
-        updateRegisterButton();
-    });
-
-    // Email validation
-    document.getElementById('email').addEventListener('input', function() {
-        updateRegisterButton();
-    });
-
-    // Full name validation
-    document.getElementById('fullName').addEventListener('input', function() {
-        updateRegisterButton();
-    });
-
     function calculatePasswordStrength(password) {
         let strength = 0;
-        
         if (password.length >= 8) strength++;
         if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
         if (/\d/.test(password)) strength++;
         if (/[^a-zA-Z0-9]/.test(password)) strength++;
-        
         return strength;
     }
 
@@ -738,6 +704,17 @@
         registerButton.disabled = !isValid;
     }
 
+    // Event listeners
+    passwordInput.addEventListener('input', function() {
+        const strength = calculatePasswordStrength(this.value);
+        updateStrengthBars(strength);
+        updateRegisterButton();
+    });
+
+    confirmPasswordInput.addEventListener('input', updateRegisterButton);
+    document.getElementById('email').addEventListener('input', updateRegisterButton);
+    document.getElementById('fullName').addEventListener('input', updateRegisterButton);
+
     // Form submission
     form.addEventListener('submit', function(e) {
         e.preventDefault();
@@ -752,11 +729,10 @@
             email: document.getElementById('email').value.trim(),
             password: document.getElementById('password').value,
             confirmPassword: document.getElementById('confirmPassword').value,
-            referralCode: document.getElementById('referralCode').value.trim(),  // ✅ COMMA ADDED
+            referralCode: document.getElementById('referralCode').value.trim(),
             termsAccepted: termsAccepted
         };
 
-        // Client-side validation
         if (!formData.termsAccepted) {
             showGeneralError('Please accept the terms and conditions');
             return;
@@ -767,7 +743,6 @@
             return;
         }
 
-        // Show loading state
         const container = document.querySelector('.register-container');
         const button = registerButton;
         const originalText = button.textContent;
@@ -776,7 +751,6 @@
         button.textContent = 'Creating Account...';
         button.disabled = true;
 
-        // Send AJAX request
         fetch('{% url "ajax-register" %}', {
             method: 'POST',
             headers: {
@@ -792,16 +766,11 @@
             if (data.success) {
                 button.textContent = 'Welcome! 🎉';
                 button.style.background = 'linear-gradient(135deg, #4ade80 0%, #22c55e 100%)';
-                
                 showSuccess(data.message);
                 createSuccessAnimation();
                 
                 setTimeout(() => {
-                    if (data.redirect_url) {
-                        window.location.href = data.redirect_url;
-                    } else {
-                        window.location.href = '/email-verification-sent/';
-                    }
+                    window.location.href = data.redirect_url || '/email-verification-sent/';
                 }, 2000);
             } else {
                 button.textContent = originalText;
@@ -822,27 +791,28 @@
         const container = document.querySelector('.register-container');
         for (let i = 0; i < 12; i++) {
             const coin = document.createElement('div');
-            coin.style.position = 'absolute';
-            coin.style.width = '30px';
-            coin.style.height = '30px';
-            coin.style.background = 'linear-gradient(135deg, #f7931a 0%, #ffb84d 100%)';
-            coin.style.borderRadius = '50%';
-            coin.style.display = 'flex';
-            coin.style.alignItems = 'center';
-            coin.style.justifyContent = 'center';
-            coin.style.color = 'white';
-            coin.style.fontWeight = 'bold';
-            coin.style.fontSize = '14px';
+            coin.style.cssText = `
+                position: absolute;
+                width: 30px;
+                height: 30px;
+                background: linear-gradient(135deg, #f7931a 0%, #ffb84d 100%);
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-weight: bold;
+                font-size: 14px;
+                left: 50%;
+                top: 50%;
+                transform: translate(-50%, -50%);
+                z-index: 1000;
+                pointer-events: none;
+            `;
             coin.textContent = '₿';
-            coin.style.left = '50%';
-            coin.style.top = '50%';
-            coin.style.transform = 'translate(-50%, -50%)';
-            coin.style.zIndex = '1000';
-            coin.style.pointerEvents = 'none';
             
             const angle = (i / 12) * 360;
             const distance = 100 + Math.random() * 50;
-            
             coin.style.animation = `successBurst${i} 1.5s ease-out forwards`;
             
             const style = document.createElement('style');
@@ -862,7 +832,6 @@
                 }
             `;
             document.head.appendChild(style);
-            
             container.appendChild(coin);
             
             setTimeout(() => {
@@ -872,7 +841,7 @@
         }
     }
 
-    // Add random floating coins periodically
+    // Floating coins animation
     setInterval(() => {
         if (Math.random() < 0.2) {
             const container = document.querySelector('.floating-coins');
@@ -884,9 +853,7 @@
             coin.style.animationDuration = (15 + Math.random() * 10) + 's';
             container.appendChild(coin);
             
-            setTimeout(() => {
-                coin.remove();
-            }, 25000);
+            setTimeout(() => coin.remove(), 25000);
         }
     }, 3000);
 
@@ -911,6 +878,7 @@
         e.preventDefault();
         alert('Privacy Policy would be displayed here');
     });
+
+}); // End DOMContentLoaded
 </script>
-</body>
-</html>
+{% endblock %}

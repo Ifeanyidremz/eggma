@@ -84,6 +84,8 @@
             flex-direction: column;
             gap: 4px;
             cursor: pointer;
+            padding: 10px;
+            z-index: 1001;
         }
 
         .dot {
@@ -255,12 +257,15 @@
 <body>
     <!-- Header -->
     <header class="header">
-        <a href="{% url 'landing-page' %}" class="logo">E</a>
+        <a href="{% url 'landing-page' %}" class="logo">
+            <img src="/static/evgchain-logo.png" alt="EVGxchain">
+        </a>
         
         <!-- Desktop Navigation -->
         <nav class="nav-menu">
             <a href="{% url 'landing-page' %}" class="nav-link {% if request.resolver_match.url_name == 'landing-page' %}active{% endif %}">Home</a>
-            <a href="#" class="nav-link">Markets</a>
+            <a href="{% url 'live-crypto' %}" class="nav-link {% if request.resolver_match.url_name == 'live-crypto' %}active{% endif %}">Live Crypto</a>
+            <a href="{% url 'market-list' %}" class="nav-link {% if request.resolver_match.url_name == 'market-list' %}active{% endif %}">Markets</a>
             <a href="#" class="nav-link">About</a>
             <a href="#" class="nav-link">Contact</a>
             
@@ -274,7 +279,7 @@
         </nav>
 
         <!-- Mobile Menu Toggle -->
-        <div class="menu-dots" onclick="toggleMobileMenu()">
+        <div class="menu-dots" id="menuToggle">
             <div class="dot"></div>
             <div class="dot"></div>
             <div class="dot"></div>
@@ -284,7 +289,8 @@
     <!-- Mobile Menu -->
     <div class="mobile-menu" id="mobileMenu">
         <a href="{% url 'landing-page' %}" class="nav-link">Home</a>
-        <a href="#" class="nav-link">Markets</a>
+        <a href="{% url 'live-crypto' %}" class="nav-link">Live Crypto</a>
+        <a href="{% url 'market-list' %}" class="nav-link">Markets</a>
         <a href="#" class="nav-link">About</a>
         <a href="#" class="nav-link">Contact</a>
         
@@ -319,32 +325,43 @@
         </div>
     </footer>
 
-    <!-- Base JavaScript -->
+    <!-- Base JavaScript - ALWAYS RUNS -->
     <script>
-        // Mobile menu toggle
-        function toggleMobileMenu() {
+        // Wait for DOM to be ready
+        document.addEventListener('DOMContentLoaded', function() {
             const mobileMenu = document.getElementById('mobileMenu');
-            mobileMenu.classList.toggle('active');
-        }
+            const menuToggle = document.getElementById('menuToggle');
 
-        // Close mobile menu when clicking outside
-        document.addEventListener('click', function(event) {
-            const mobileMenu = document.getElementById('mobileMenu');
-            const menuDots = document.querySelector('.menu-dots');
-            
-            if (!mobileMenu.contains(event.target) && !menuDots.contains(event.target)) {
-                mobileMenu.classList.remove('active');
+            // Mobile menu toggle
+            function toggleMobileMenu(event) {
+                event.stopPropagation();
+                mobileMenu.classList.toggle('active');
             }
-        });
 
-        // Close mobile menu when window is resized to desktop
-        window.addEventListener('resize', function() {
-            if (window.innerWidth > 768) {
-                document.getElementById('mobileMenu').classList.remove('active');
+            // Attach click event to menu toggle
+            if (menuToggle) {
+                menuToggle.addEventListener('click', toggleMobileMenu);
             }
-        });
 
-        {% block extra_js %}{% endblock %}
+            // Close mobile menu when clicking outside
+            document.addEventListener('click', function(event) {
+                if (mobileMenu && menuToggle) {
+                    if (!mobileMenu.contains(event.target) && !menuToggle.contains(event.target)) {
+                        mobileMenu.classList.remove('active');
+                    }
+                }
+            });
+
+            // Close mobile menu when window is resized to desktop
+            window.addEventListener('resize', function() {
+                if (window.innerWidth > 768 && mobileMenu) {
+                    mobileMenu.classList.remove('active');
+                }
+            });
+        });
     </script>
+
+    <!-- Page-specific JavaScript -->
+    {% block extra_js %}{% endblock %}
 </body>
 </html>

@@ -1,17 +1,8 @@
-{% load math_filters %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ market.title|default:"Event Trading" }} - EVGxchain</title>
-    {% load static %}
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+{% extends 'base.html' %}
+{% block title %}{{ market.title|default:"Event Trading" }} - EVGxchain{% endblock %}
+{% block extra_css %}
+<style>
+
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -1124,15 +1115,14 @@
                 font-size: 22px;
             }
         }
+</style>
+{% endblock %}
 
-    </style>
-</head>
-<body>
-    <nav class="navbar">
+
+{% block content %}
+<nav class="navbar">
         <div class="nav-container">
-            <a href="{% url 'landing-page' %}" class="logo">
-               <img src="/static/evgchain-logo.png" alt="EVGxchain">
-            </a>
+            
             <div class="hamburger" onclick="toggleMobileMenu()">
                 <span></span>
                 <span></span>
@@ -2402,5 +2392,911 @@
         }
 
     </script>
-</body>
-</html>
+{% endblock %}
+
+
+{% block extra_js %}
+<script>
+let selectedOption = null;
+        let currentTimeframe = '15m';
+        let timeRemaining = {{ round_info.time_remaining|default:'20' }};
+        const marketId = "{{ market.id|default:'demo' }}";
+        const csrfToken = "{{ csrf_token }}";
+
+        // Chart variables
+        let chartInstance = null;
+        let priceData = [];
+        let animationId = null;
+
+        // Predict to Earn variables
+        let predictSelectedOption = null;
+        let predictTimeframe = '1m';
+        let predictTimeRemaining = 65; // Start with 65 seconds so first 5 seconds show timer lock
+        let isPredictLocked = true; // Start locked
+
+        // Wait for DOM to load
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Initializing market detail page...');
+            initializeChart();
+            updateBetButton();
+            updateQuickBetButton();
+            updatePredictLockStatus();
+            
+            // Start update intervals
+            setInterval(updateTimer, 1000);
+            setInterval(updatePredictTimer, 1000);
+            setInterval(updateChartData, 2000); // Update chart every 2 seconds
+            setInterval(updateMarketData, 10000); // Update market data every 10 seconds
+            
+            // Auto-hide messages
+            const messages = document.querySelectorAll('.alert');
+            messages.forEach(message => {
+                setTimeout(() => {
+                    message.style.opacity = '0';
+                    message.style.transform = 'translateY(-10px)';
+                    setTimeout(() => {
+                        message.remove();
+                    }, 300);
+                }, 5000);
+            });
+        });
+
+        function updatePredictLockStatus() {
+            const lockOverlay = document.getElementById('timerLockOverlay');
+            const predictOptions = document.getElementById('predictOptions');
+            const quickBetBtn = document.getElementById('quickBetBtn');
+            
+            if (isPredictLocked) {
+                lockOverlay.classList.add('active');
+                predictOptions.classList.add('locked');
+                quickBetBtn.classList.add('locked');
+                quickBetBtn.disabled = true;
+                quickBetBtn.textContent = 'Betting Locked - Wait for next round';
+            } else {
+                lockOverlay.classList.remove('active');
+                predictOptions.classList.remove('locked');
+                quickBetBtn.classList.remove('locked');
+                quickBetBtn.disabled = false;
+                updateQuickBetButton();
+            }
+        }
+
+        function updatePredictTimer() {
+            const timerEl = document.getElementById('predictTimer');
+            const circleEl = document.getElementById('predictTimer');
+            
+            if (predictTimeRemaining <= 0) {
+                // Reset timer based on timeframe
+                if (predictTimeframe === '1m') predictTimeRemaining = 60;
+                else if (predictTimeframe === '2m') predictTimeRemaining = 120;
+                else if (predictTimeframe === '3m') predictTimeRemaining = 180;
+            }
+            
+            // Check if we're in the lock period (last 20 seconds)
+            const wasLocked = isPredictLocked;
+            isPredictLocked = predictTimeRemaining <= 20;
+            
+            // Update lock status if it changed
+            if (wasLocked !== isPredictLocked) {
+                updatePredictLockStatus();
+                
+                if (!isPredictLocked) {
+                    // Just unlocked - show success message
+                    showMessage('Predict to Earn: Betting is now open!', 'success');
+                } else if (isPredictLocked && !wasLocked) {
+                    // Just locked - show warning message  
+                    showMessage('Predict to Earn: Betting locked - preparing for round close', 'error');
+                }
+            }
+            
+            const displayTime = predictTimeRemaining < 60 ? 
+                `${predictTimeRemaining}s` : 
+                `${Math.floor(predictTimeRemaining / 60)}m ${predictTimeRemaining % 60}s`;
+            
+            timerEl.textContent = displayTime;
+            
+            // Update circle progress and color
+            const maxTime = predictTimeframe === '1m' ? 60 : 
+                           predictTimeframe === '2m' ? 120 : 180;
+            const percentage = (predictTimeRemaining / maxTime) * 360;
+            
+            // Color changes based on lock status
+            let color;
+            if (isPredictLocked) {
+                color = '#ef4444'; // Red when locked
+            } else if (predictTimeRemaining < 30) {
+                color = '#f97316'; // Orange when approaching lock
+            } else {
+                color = '#8b5cf6'; // Purple when safe to bet
+            }
+            
+            circleEl.style.background = 
+                `conic-gradient(${color} 0deg, ${color} ${percentage}deg, rgba(255,255,255,0.1) ${percentage}deg)`;
+            
+            predictTimeRemaining--;
+        }
+
+        function selectPredictTimeframe(tf) {
+            if (isPredictLocked) {
+                showMessage('Cannot change timeframe during betting lock period', 'error');
+                return;
+            }
+            
+            predictTimeframe = tf;
+            document.querySelectorAll('.predict-tf-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`[data-predict-tf="${tf}"]`).classList.add('active');
+            
+            // Reset timer based on timeframe
+            if (tf === '1m') predictTimeRemaining = 60;
+            else if (tf === '2m') predictTimeRemaining = 120;
+            else if (tf === '3m') predictTimeRemaining = 180;
+            
+            isPredictLocked = predictTimeRemaining <= 20;
+            updatePredictLockStatus();
+        }
+
+        function selectPredictOption(option) {
+            if (isPredictLocked) {
+                showMessage('Betting is locked - wait for next round', 'error');
+                return;
+            }
+            
+            predictSelectedOption = option;
+            
+            document.querySelectorAll('.predict-option').forEach(btn => btn.classList.remove('selected'));
+            document.getElementById('predict' + option.charAt(0) + option.slice(1).toLowerCase() + 'Option').classList.add('selected');
+            
+            updateQuickBetButton();
+        }
+
+        function updateQuickBetButton() {
+            const btn = document.getElementById('quickBetBtn');
+            
+            if (isPredictLocked) {
+                btn.textContent = 'Betting Locked - Wait for next round';
+                btn.disabled = true;
+                btn.classList.add('locked');
+                return;
+            }
+            
+            {% if user.is_authenticated %}
+            if (predictSelectedOption) {
+                btn.textContent = `Quick Bet $1 - ${predictSelectedOption}`;
+                btn.disabled = false;
+                btn.classList.remove('locked');
+                
+                // Change button color based on selection
+                if (predictSelectedOption === 'UP') {
+                    btn.style.background = 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)';
+                } else if (predictSelectedOption === 'FLAT') {
+                    btn.style.background = 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)';
+                } else if (predictSelectedOption === 'DOWN') {
+                    btn.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
+                }
+            } else {
+                btn.textContent = 'Quick Bet - $1';
+                btn.disabled = false;
+                btn.classList.remove('locked');
+                btn.style.background = 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)';
+            }
+            {% else %}
+            btn.textContent = 'Login to Quick Bet';
+            btn.disabled = true;
+            btn.onclick = function() { window.location.href = "{% url 'login' %}"; };
+            {% endif %}
+        }
+
+        async function placeQuickBet() {
+            if (isPredictLocked) {
+                showMessage('Betting is locked - please wait for next round', 'error');
+                return;
+            }
+            
+            {% if user.is_authenticated %}
+            if (!predictSelectedOption) {
+                showMessage('Please select UP, FLAT, or DOWN first', 'error');
+                return;
+            }
+            
+            const btn = document.getElementById('quickBetBtn');
+            const originalText = btn.textContent;
+            btn.textContent = 'Placing...';
+            btn.disabled = true;
+            
+            try {
+                const response = await fetch('{% url "place-bet" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken,
+                    },
+                    body: JSON.stringify({
+                        market_id: marketId,
+                        outcome: predictSelectedOption,
+                        amount: 1,
+                        bet_type: 'quick_predict',
+                        timeframe: predictTimeframe
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showMessage(`Quick bet placed: ${predictSelectedOption} $1`, 'success');
+                    
+                    // Update balance display
+                    const balanceElement = document.querySelector('.balance-amount');
+                    if (balanceElement) {
+                        balanceElement.textContent = `${data.new_balance.toFixed(2)}`;
+                    }
+                    
+                    // Reset selection after successful bet
+                    predictSelectedOption = null;
+                    document.querySelectorAll('.predict-option').forEach(btn => btn.classList.remove('selected'));
+                } else {
+                    showMessage(data.error || 'Failed to place quick bet', 'error');
+                }
+            } catch (error) {
+                showMessage('Error placing quick bet. Please try again.', 'error');
+                console.error('Quick bet error:', error);
+            }
+            
+            btn.textContent = originalText;
+            updateQuickBetButton();
+            {% else %}
+            window.location.href = "{% url 'login' %}";
+            {% endif %}
+        }
+
+        function initializeChart() {
+            const canvas = document.getElementById('marketChart');
+            if (!canvas) return;
+            
+            const symbol = canvas.dataset.symbol || 'BTC';
+            
+            try {
+                // Initialize price data
+                generateInitialPriceData(symbol);
+                
+                // Draw initial chart
+                drawCandlestickChart(canvas, symbol);
+                
+                // Hide loading indicator
+                const loadingEl = canvas.parentElement.querySelector('.chart-loading');
+                if (loadingEl) {
+                    loadingEl.style.display = 'none';
+                }
+                
+                console.log(`Chart initialized for ${symbol}`);
+                
+            } catch (error) {
+                console.error('Error initializing chart:', error);
+                showChartError(canvas, 'Chart initialization failed');
+            }
+        }
+
+        function generateInitialPriceData(symbol) {
+            const basePrice = symbol === 'BTC' ? 67432 : symbol === 'ETH' ? 3421 : 67432;
+            const points = 100;
+            priceData = [];
+            
+            let currentPrice = basePrice;
+            
+            for (let i = 0; i < points; i++) {
+                // Generate realistic OHLC data
+                const variation = (Math.random() - 0.5) * 0.02; // ±1% max variation
+                const open = currentPrice;
+                const volatility = basePrice * 0.001; // 0.1% volatility
+                
+                const high = open + Math.random() * volatility;
+                const low = open - Math.random() * volatility;
+                const close = open + (variation * basePrice * 0.5);
+                
+                priceData.push({
+                    timestamp: Date.now() - ((points - i) * 60000), // 1 minute intervals
+                    open: Math.max(low, open),
+                    high: Math.max(high, Math.max(open, close)),
+                    low: Math.min(low, Math.min(open, close)),
+                    close: close,
+                    volume: Math.random() * 1000000
+                });
+                
+                currentPrice = close;
+            }
+        }
+
+        function drawCandlestickChart(canvas, symbol) {
+            if (!canvas || !priceData.length) return;
+            
+            const ctx = canvas.getContext('2d');
+            const rect = canvas.getBoundingClientRect();
+            
+            // Set canvas size
+            canvas.width = rect.width * window.devicePixelRatio;
+            canvas.height = rect.height * window.devicePixelRatio;
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+            
+            const width = rect.width;
+            const height = rect.height;
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, width, height);
+            
+            // Calculate price range
+            const prices = priceData.map(d => [d.high, d.low]).flat();
+            const minPrice = Math.min(...prices);
+            const maxPrice = Math.max(...prices);
+            const priceRange = maxPrice - minPrice;
+            
+            const padding = 40;
+            const chartWidth = width - 2 * padding;
+            const chartHeight = height - 2 * padding;
+            
+            // Draw grid lines
+            drawGrid(ctx, padding, chartWidth, chartHeight, minPrice, maxPrice);
+            
+            // Draw candlesticks
+            const candleWidth = Math.max(2, chartWidth / priceData.length * 0.8);
+            const candleSpacing = chartWidth / priceData.length;
+            
+            priceData.forEach((candle, index) => {
+                const x = padding + (index * candleSpacing) + (candleSpacing / 2);
+                
+                const openY = padding + ((maxPrice - candle.open) / priceRange) * chartHeight;
+                const closeY = padding + ((maxPrice - candle.close) / priceRange) * chartHeight;
+                const highY = padding + ((maxPrice - candle.high) / priceRange) * chartHeight;
+                const lowY = padding + ((maxPrice - candle.low) / priceRange) * chartHeight;
+                
+                const isGreen = candle.close > candle.open;
+                const color = isGreen ? '#22c55e' : '#ef4444';
+                
+                // Draw wick
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(x, highY);
+                ctx.lineTo(x, lowY);
+                ctx.stroke();
+                
+                // Draw body
+                ctx.fillStyle = color;
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 1;
+                
+                const bodyHeight = Math.abs(closeY - openY);
+                const bodyY = Math.min(openY, closeY);
+                
+                if (bodyHeight < 1) {
+                    // Doji - draw line
+                    ctx.beginPath();
+                    ctx.moveTo(x - candleWidth/2, openY);
+                    ctx.lineTo(x + candleWidth/2, openY);
+                    ctx.stroke();
+                } else {
+                    if (isGreen) {
+                        ctx.fillRect(x - candleWidth/2, bodyY, candleWidth, bodyHeight);
+                    } else {
+                        ctx.strokeRect(x - candleWidth/2, bodyY, candleWidth, bodyHeight);
+                    }
+                }
+            });
+            
+            // Draw current price line
+            if (priceData.length > 0) {
+                const currentPrice = priceData[priceData.length - 1].close;
+                const priceY = padding + ((maxPrice - currentPrice) / priceRange) * chartHeight;
+                
+                ctx.strokeStyle = symbol === 'BTC' ? '#f7931a' : '#627eea';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 5]);
+                
+                ctx.beginPath();
+                ctx.moveTo(padding, priceY);
+                ctx.lineTo(width - padding, priceY);
+                ctx.stroke();
+                
+                ctx.setLineDash([]);
+                
+                // Price label
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+                ctx.fillRect(width - padding - 80, priceY - 10, 75, 20);
+                
+                ctx.fillStyle = 'white';
+                ctx.font = '12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                ctx.textAlign = 'right';
+                ctx.fillText(`${currentPrice.toLocaleString(undefined, {maximumFractionDigits: 0})}`, width - padding - 5, priceY + 4);
+            }
+        }
+
+        function drawGrid(ctx, padding, chartWidth, chartHeight, minPrice, maxPrice) {
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.lineWidth = 1;
+            
+            // Horizontal grid lines (price levels)
+            const gridLines = 5;
+            for (let i = 0; i <= gridLines; i++) {
+                const y = padding + (i / gridLines) * chartHeight;
+                const price = maxPrice - (i / gridLines) * (maxPrice - minPrice);
+                
+                ctx.beginPath();
+                ctx.moveTo(padding, y);
+                ctx.lineTo(padding + chartWidth, y);
+                ctx.stroke();
+                
+                // Price labels
+                ctx.fillStyle = '#666';
+                ctx.font = '10px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                ctx.textAlign = 'left';
+                ctx.fillText(`${price.toLocaleString(undefined, {maximumFractionDigits: 0})}`, padding + 5, y - 2);
+            }
+            
+            // Vertical grid lines (time)
+            const timeLines = 6;
+            for (let i = 0; i <= timeLines; i++) {
+                const x = padding + (i / timeLines) * chartWidth;
+                
+                ctx.beginPath();
+                ctx.moveTo(x, padding);
+                ctx.lineTo(x, padding + chartHeight);
+                ctx.stroke();
+            }
+        }
+
+        function updateChartData() {
+            if (!priceData.length) return;
+            
+            // Add new candle data
+            const lastCandle = priceData[priceData.length - 1];
+            const variation = (Math.random() - 0.5) * 0.01; // ±0.5% variation
+            const basePrice = lastCandle.close;
+            const volatility = basePrice * 0.002;
+            
+            const newCandle = {
+                timestamp: Date.now(),
+                open: lastCandle.close,
+                high: lastCandle.close + Math.random() * volatility,
+                low: lastCandle.close - Math.random() * volatility,
+                close: lastCandle.close + (variation * basePrice),
+                volume: Math.random() * 1000000
+            };
+            
+            // Ensure OHLC consistency
+            newCandle.high = Math.max(newCandle.high, Math.max(newCandle.open, newCandle.close));
+            newCandle.low = Math.min(newCandle.low, Math.min(newCandle.open, newCandle.close));
+            
+            priceData.push(newCandle);
+            
+            // Keep only last 100 candles
+            if (priceData.length > 100) {
+                priceData.shift();
+            }
+            
+            // Redraw chart
+            const canvas = document.getElementById('marketChart');
+            if (canvas) {
+                const symbol = canvas.dataset.symbol || 'BTC';
+                drawCandlestickChart(canvas, symbol);
+            }
+        }
+
+        function showChartError(canvas, message) {
+            if (!canvas) return;
+            
+            const chartArea = canvas.parentElement;
+            let errorEl = chartArea.querySelector('.chart-error');
+            
+            if (!errorEl) {
+                errorEl = document.createElement('div');
+                errorEl.className = 'chart-error';
+                chartArea.appendChild(errorEl);
+            }
+            
+            errorEl.textContent = message;
+            
+            // Hide loading indicator
+            const loadingEl = chartArea.querySelector('.chart-loading');
+            if (loadingEl) {
+                loadingEl.style.display = 'none';
+            }
+        }
+
+        // Profile dropdown functionality
+        function toggleProfileMenu() {
+            const dropdown = document.getElementById('profileDropdown');
+            dropdown.classList.toggle('show');
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const profile = document.querySelector('.user-profile');
+            const dropdown = document.getElementById('profileDropdown');
+            
+            if (!profile.contains(event.target)) {
+                dropdown.classList.remove('show');
+            }
+        });
+
+        function selectTimeframe(tf) {
+            currentTimeframe = tf;
+            document.querySelectorAll('.tf-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`[data-timeframe="${tf}"]`).classList.add('active');
+            
+            // Update event pair display
+            document.querySelector('.event-pair').textContent = tf;
+            
+            // Reset timer based on timeframe
+            if (tf === '1m') timeRemaining = 60;
+            else if (tf === '3m') timeRemaining = 180;
+            else if (tf === '5m') timeRemaining = 300;
+            else if (tf === '15m') timeRemaining = 900;
+            
+            // Regenerate chart data for new timeframe
+            const canvas = document.getElementById('marketChart');
+            if (canvas) {
+                const symbol = canvas.dataset.symbol || 'BTC';
+                generateInitialPriceData(symbol);
+                drawCandlestickChart(canvas, symbol);
+            }
+        }
+
+        function selectOption(option) {
+            selectedOption = option;
+            
+            document.querySelectorAll('.option-btn').forEach(btn => btn.classList.remove('selected'));
+            document.getElementById(option.toLowerCase() + 'Option').classList.add('selected');
+            
+            updateBetButton();
+        }
+
+        function setBetAmount(amount) {
+            document.getElementById('betAmount').value = amount;
+            
+            document.querySelectorAll('.preset-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            updateBetButton();
+        }
+
+        function updateBetButton() {
+            const btn = document.getElementById('placeBetBtn');
+            const amount = parseFloat(document.getElementById('betAmount').value) || 0;
+            
+            {% if user.is_authenticated %}
+            if (selectedOption && amount > 0) {
+                btn.textContent = `Bet ${amount} - ${selectedOption}`;
+                btn.disabled = false;
+                btn.style.background = selectedOption === 'UP' ? 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)' :
+                                    selectedOption === 'FLAT' ? 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)' :
+                                    'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
+            } else {
+                btn.textContent = 'Select Option to Bet';
+                btn.disabled = true;
+                btn.style.background = 'rgba(60, 60, 60, 0.5)';
+            }
+            {% else %}
+            btn.textContent = 'Login to Place Bet';
+            btn.disabled = true;
+            btn.onclick = function() { window.location.href = "{% url 'login' %}"; };
+            {% endif %}
+        }
+
+        async function placeBet() {
+            {% if user.is_authenticated %}
+            if (!selectedOption) {
+                showMessage('Please select an option first', 'error');
+                return;
+            }
+            
+            const amount = parseFloat(document.getElementById('betAmount').value);
+            if (!amount || amount < 1) {
+                showMessage('Please enter a valid bet amount', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('placeBetBtn');
+            const originalText = btn.textContent;
+            btn.textContent = 'Placing Bet...';
+            btn.disabled = true;
+            
+            try {
+                const response = await fetch('{% url "place-bet" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken,
+                    },
+                    body: JSON.stringify({
+                        market_id: marketId,
+                        outcome: selectedOption,
+                        amount: amount,
+                        bet_type: 'regular'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showMessage(data.message, 'success');
+                    
+                    // Update balance display
+                    const balanceElement = document.querySelector('.balance-amount');
+                    if (balanceElement) {
+                        balanceElement.textContent = `${data.new_balance.toFixed(2)}`;
+                    }
+                    
+                    // Reset selection
+                    selectedOption = null;
+                    document.querySelectorAll('.option-btn').forEach(btn => btn.classList.remove('selected'));
+                    updateBetButton();
+                    
+                    // Refresh market data
+                    await updateMarketData();
+                } else {
+                    showMessage(data.error, 'error');
+                }
+            } catch (error) {
+                showMessage('Error placing bet. Please try again.', 'error');
+                console.error('Bet error:', error);
+            }
+            
+            btn.textContent = originalText;
+            btn.disabled = false;
+            {% else %}
+            window.location.href = "{% url 'login' %}";
+            {% endif %}
+        }
+
+        function showMessage(message, type) {
+            const container = document.getElementById('messages-container');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `alert alert-${type}`;
+            messageDiv.textContent = message;
+            
+            // Clear existing messages
+            container.innerHTML = '';
+            container.appendChild(messageDiv);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                messageDiv.style.opacity = '0';
+                messageDiv.style.transform = 'translateY(-10px)';
+                setTimeout(() => {
+                    messageDiv.remove();
+                }, 300);
+            }, 5000);
+        }
+
+        async function updateMarketData() {
+            try {
+                const response = await fetch(`/api/market/${marketId}/`);
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    // Update pool volumes and odds
+                    updatePoolStats(data);
+                    
+                    // Update participant count
+                    const participantElements = document.querySelectorAll('.info-value');
+                    if (participantElements[1]) {
+                        participantElements[1].textContent = data.participants;
+                    }
+                }
+            } catch (error) {
+                console.log('Could not fetch market data:', error);
+            }
+        }
+
+        function updatePoolStats(data) {
+            const options = document.querySelectorAll('.option-btn');
+            
+            // Update UP option
+            const upShare = (data.up_volume / data.total_volume * 100).toFixed(1);
+            options[0].querySelector('.pool-share').innerHTML = `Pool share<br>${upShare}%`;
+            options[0].querySelector('.payout').innerHTML = `Payout<br>${data.up_odds.toFixed(2)}x`;
+            
+            // Update FLAT option
+            const flatShare = (data.flat_volume / data.total_volume * 100).toFixed(1);
+            options[1].querySelector('.pool-share').innerHTML = `Pool share<br>${flatShare}%`;
+            options[1].querySelector('.payout').innerHTML = `Payout<br>${data.flat_odds.toFixed(2)}x`;
+            
+            // Update DOWN option
+            const downShare = (data.down_volume / data.total_volume * 100).toFixed(1);
+            options[2].querySelector('.pool-share').innerHTML = `Pool share<br>${downShare}%`;
+            options[2].querySelector('.payout').innerHTML = `Payout<br>${data.down_odds.toFixed(2)}x`;
+            
+            // Update total pool
+            document.querySelector('.stat-value').textContent = `${data.total_volume.toLocaleString()}`;
+            const infoValues = document.querySelectorAll('.info-value');
+            if (infoValues[0]) {
+                infoValues[0].textContent = `${data.total_volume.toLocaleString()}`;
+            }
+        }
+
+        function updateTimer() {
+            timeRemaining--;
+            
+            if (timeRemaining <= 0) {
+                // Reset timer based on timeframe
+                if (currentTimeframe === '1m') timeRemaining = 60;
+                else if (currentTimeframe === '3m') timeRemaining = 180;
+                else if (currentTimeframe === '5m') timeRemaining = 300;
+                else if (currentTimeframe === '15m') timeRemaining = 900;
+            }
+            
+            const minutes = Math.floor(timeRemaining / 60);
+            const seconds = timeRemaining % 60;
+            const display = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
+            
+            document.getElementById('roundTimer').textContent = display;
+            document.getElementById('timerCircle').textContent = display;
+            
+            // Update timer circle gradient
+            const maxTime = currentTimeframe === '1m' ? 60 : 
+                           currentTimeframe === '3m' ? 180 : 
+                           currentTimeframe === '5m' ? 300 : 900;
+            const percentage = (timeRemaining / maxTime) * 360;
+            const color = timeRemaining < 60 ? '#ef4444' : '#22c55e';
+            document.getElementById('timerCircle').style.background = 
+                `conic-gradient(${color} 0deg, ${color} ${percentage}deg, rgba(255,255,255,0.1) ${percentage}deg)`;
+        }
+
+        // Add input listener for bet amount
+        document.getElementById('betAmount').addEventListener('input', function() {
+            updateBetButton();
+            // Clear preset selection
+            document.querySelectorAll('.preset-btn').forEach(btn => btn.classList.remove('active'));
+        });
+
+        // Add some visual effects for price changes
+        setInterval(() => {
+            if (Math.random() < 0.3) {
+                const priceChange = (Math.random() - 0.5) * 0.1;
+                const changeElements = document.querySelectorAll('.option-change');
+                changeElements.forEach((el, index) => {
+                    const currentChange = parseFloat(el.textContent.replace(/[%+\-±]/g, ''));
+                    const newChange = (currentChange + priceChange).toFixed(2);
+                    
+                    if (index === 0) { // Up option
+                        el.textContent = `+${Math.abs(newChange)}%`;
+                    } else if (index === 1) { // Flat option  
+                        el.textContent = `±${Math.abs(newChange)}%`;
+                    } else { // Down option
+                        el.textContent = `-${Math.abs(newChange)}%`;
+                    }
+                });
+            }
+        }, 2000);
+
+        // Update multipliers periodically for predict to earn
+        setInterval(() => {
+            if (Math.random() < 0.4) {
+                const multipliers = document.querySelectorAll('.predict-multiplier');
+                multipliers.forEach((el, index) => {
+                    const currentMult = parseFloat(el.textContent.replace('x', ''));
+                    const variation = (Math.random() - 0.5) * 0.1;
+                    const newMult = Math.max(1.1, currentMult + variation);
+                    el.textContent = `${newMult.toFixed(2)}x`;
+                });
+            }
+        }, 3000);
+
+        // YES/NO Price Target Variables
+        let selectedTargetPrediction = null;
+
+        function selectTargetPrediction(prediction) {
+            selectedTargetPrediction = prediction;
+            
+            // Update UI
+            document.querySelectorAll('.yes-no-bet-option').forEach(opt => opt.classList.remove('selected'));
+            if (prediction === 'YES') {
+                document.getElementById('yesOption').classList.add('selected');
+            } else {
+                document.getElementById('noOption').classList.add('selected');
+            }
+            
+            updateTargetBetButton();
+        }
+
+        function setTargetBetAmount(amount) {
+            document.getElementById('targetBetAmount').value = amount;
+            
+            document.querySelectorAll('.preset-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            updateTargetBetButton();
+        }
+
+        function updateTargetBetButton() {
+            const btn = document.getElementById('placeTargetBetBtn');
+            const amount = parseFloat(document.getElementById('targetBetAmount').value) || 0;
+            
+            {% if user.is_authenticated %}
+            if (selectedTargetPrediction && amount > 0) {
+                btn.textContent = `Bet $${amount} - ${selectedTargetPrediction}`;
+                btn.disabled = false;
+                btn.style.background = selectedTargetPrediction === 'YES' ? 
+                    'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)' :
+                    'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
+            } else {
+                btn.textContent = 'Select YES or NO to Bet';
+                btn.disabled = true;
+                btn.style.background = 'rgba(60, 60, 60, 0.5)';
+            }
+            {% else %}
+            btn.textContent = 'Login to Place Bet';
+            btn.disabled = true;
+            btn.onclick = function() { window.location.href = "{% url 'login' %}"; };
+            {% endif %}
+        }
+
+        async function placeTargetBet() {
+            {% if user.is_authenticated %}
+            if (!selectedTargetPrediction) {
+                showMessage('Please select YES or NO first', 'error');
+                return;
+            }
+            
+            const amount = parseFloat(document.getElementById('targetBetAmount').value);
+            if (!amount || amount < 1) {
+                showMessage('Please enter a valid bet amount', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('placeTargetBetBtn');
+            const originalText = btn.textContent;
+            btn.textContent = 'Placing Bet...';
+            btn.disabled = true;
+            
+            try {
+                const response = await fetch('{% url "place-target-bet" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken,
+                    },
+                    body: JSON.stringify({
+                        market_id: marketId,
+                        prediction: selectedTargetPrediction,
+                        amount: amount
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showMessage(data.message, 'success');
+                    
+                    // Update balance
+                    const balanceElement = document.querySelector('.balance-amount');
+                    if (balanceElement) {
+                        balanceElement.textContent = `$${data.new_balance.toFixed(2)}`;
+                    }
+                    
+                    // Reset selection
+                    selectedTargetPrediction = null;
+                    document.querySelectorAll('.yes-no-bet-option').forEach(opt => opt.classList.remove('selected'));
+                    updateTargetBetButton();
+                } else {
+                    showMessage(data.error, 'error');
+                }
+            } catch (error) {
+                showMessage('Error placing bet. Please try again.', 'error');
+                console.error('Target bet error:', error);
+            }
+            
+            btn.textContent = originalText;
+            btn.disabled = false;
+            {% else %}
+            window.location.href = "{% url 'login' %}";
+            {% endif %}
+        }
+
+        // Add input listener for target bet amount
+        if (document.getElementById('targetBetAmount')) {
+            document.getElementById('targetBetAmount').addEventListener('input', function() {
+                updateTargetBetButton();
+                document.querySelectorAll('.preset-btn').forEach(btn => btn.classList.remove('active'));
+            });
+        }
+</script>
+{% endblock %}

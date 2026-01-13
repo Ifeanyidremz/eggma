@@ -1,16 +1,12 @@
-{% load math_filters %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crypto Event Predictions - EVGxchain</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+{% extends 'base.html' %}
+
+
+{% block title %}Crypto Event Predictions - EVGxchain{% endblock %}
+
+
+{% block extra_css %}
+<style>
+
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -853,15 +849,14 @@
                 grid-template-columns: 1fr;
             }
         }
+</style>
+{% endblock %}
 
-    </style>
-</head>
-<body>
-    <nav class="navbar">
+
+{% block content %}
+<nav class="navbar">
         <div class="nav-container">
-            <a href="{% url 'landing-page' %}" class="logo">
-               <img src="/static/evgchain-logo.png" alt="EVGxchain">
-            </a>
+            
             <div class="hamburger" onclick="toggleMobileMenu()">
                 <span></span>
                 <span></span>
@@ -1474,5 +1469,315 @@
             }
         });
     </script>
-</body>
-</html>
+{% endblock %}
+
+
+{% block extra_js %}
+<script>
+// Simple chart implementation without external dependencies
+        const chartInstances = {};
+        let priceDataCache = {};
+
+        // Wait for DOM to load
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Initializing trading dashboard...');
+            
+            // Initialize fallback charts
+            initializeSimpleCharts();
+            
+            // Start update intervals
+            setInterval(updateTimers, 1000);
+            setInterval(updateMarketData, 5000);
+            setInterval(updateCryptoPrices, 30000);
+            
+            // Initial price update
+            updateCryptoPrices();
+        });
+
+        function initializeSimpleCharts() {
+            const charts = document.querySelectorAll('.crypto-chart');
+            
+            charts.forEach((canvas, index) => {
+                const symbol = canvas.dataset.symbol;
+                const marketId = canvas.dataset.marketId;
+                const chartId = canvas.id;
+                
+                try {
+                    const ctx = canvas.getContext('2d');
+                    
+                    // Create simple line chart
+                    drawSimpleChart(ctx, symbol, canvas);
+                    
+                    // Hide loading indicator
+                    const loadingEl = canvas.parentElement.querySelector('.chart-loading');
+                    if (loadingEl) {
+                        loadingEl.style.display = 'none';
+                    }
+                    
+                } catch (error) {
+                    console.error(`Error initializing chart ${chartId}:`, error);
+                    showChartError(canvas, 'Chart unavailable');
+                }
+            });
+        }
+
+        function drawSimpleChart(ctx, symbol, canvas) {
+            const width = canvas.offsetWidth;
+            const height = canvas.offsetHeight;
+            canvas.width = width;
+            canvas.height = height;
+            
+            // Generate sample price data
+            const basePrice = symbol === 'BTC' ? 67432 : 3421;
+            const points = 50;
+            const data = [];
+            
+            for (let i = 0; i < points; i++) {
+                const variation = (Math.random() - 0.5) * 0.02; // ±1% variation
+                const price = basePrice * (1 + variation * (i / points));
+                data.push(price);
+            }
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, width, height);
+            
+            // Set up drawing
+            ctx.strokeStyle = symbol === 'BTC' ? '#f7931a' : '#627eea';
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            
+            // Calculate dimensions
+            const padding = 20;
+            const chartWidth = width - 2 * padding;
+            const chartHeight = height - 2 * padding;
+            
+            const minPrice = Math.min(...data);
+            const maxPrice = Math.max(...data);
+            const priceRange = maxPrice - minPrice;
+            
+            // Draw price line
+            ctx.beginPath();
+            for (let i = 0; i < data.length; i++) {
+                const x = padding + (i / (data.length - 1)) * chartWidth;
+                const y = padding + ((maxPrice - data[i]) / priceRange) * chartHeight;
+                
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+            ctx.stroke();
+            
+            // Add gradient fill
+            const gradient = ctx.createLinearGradient(0, padding, 0, height - padding);
+            gradient.addColorStop(0, symbol === 'BTC' ? 'rgba(247, 147, 26, 0.3)' : 'rgba(98, 126, 234, 0.3)');
+            gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.moveTo(padding, height - padding);
+            for (let i = 0; i < data.length; i++) {
+                const x = padding + (i / (data.length - 1)) * chartWidth;
+                const y = padding + ((maxPrice - data[i]) / priceRange) * chartHeight;
+                ctx.lineTo(x, y);
+            }
+            ctx.lineTo(width - padding, height - padding);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Draw current price
+            const currentPrice = data[data.length - 1];
+            const currentY = padding + ((maxPrice - currentPrice) / priceRange) * chartHeight;
+            
+            ctx.fillStyle = symbol === 'BTC' ? '#f7931a' : '#627eea';
+            ctx.beginPath();
+            ctx.arc(width - padding, currentY, 4, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // Draw price label
+            ctx.fillStyle = 'white';
+            ctx.font = '12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+            ctx.textAlign = 'right';
+            const priceText = `${currentPrice.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
+            ctx.fillText(priceText, width - padding - 10, currentY - 8);
+        }
+
+        function showChartError(canvas, message) {
+            if (!canvas) return;
+            
+            const chartArea = canvas.parentElement;
+            let errorEl = chartArea.querySelector('.chart-error');
+            
+            if (!errorEl) {
+                errorEl = document.createElement('div');
+                errorEl.className = 'chart-error';
+                chartArea.appendChild(errorEl);
+            }
+            
+            errorEl.textContent = message;
+            
+            // Hide loading indicator
+            const loadingEl = chartArea.querySelector('.chart-loading');
+            if (loadingEl) {
+                loadingEl.style.display = 'none';
+            }
+        }
+
+        // Simulate crypto price updates
+        async function updateCryptoPrices() {
+            try {
+                // Simulate API response
+                const btcChange = (Math.random() - 0.5) * 0.1; // ±5% change
+                const ethChange = (Math.random() - 0.5) * 0.08; // ±4% change
+                
+                const btcPrice = 67432 * (1 + btcChange);
+                const ethPrice = 3421 * (1 + ethChange);
+                
+                // Update summary prices
+                const btcEl = document.getElementById('btc-price');
+                const ethEl = document.getElementById('eth-price');
+                
+                if (btcEl) {
+                    btcEl.textContent = `${Math.round(btcPrice).toLocaleString()}`;
+                }
+                if (ethEl) {
+                    ethEl.textContent = `${Math.round(ethPrice).toLocaleString()}`;
+                }
+                
+                // Update charts
+                const charts = document.querySelectorAll('.crypto-chart');
+                charts.forEach((canvas) => {
+                    const symbol = canvas.dataset.symbol;
+                    const ctx = canvas.getContext('2d');
+                    drawSimpleChart(ctx, symbol, canvas);
+                });
+                
+            } catch (error) {
+                console.log('Price update simulated');
+            }
+        }
+
+        // Update market data (simulate live updates)
+        async function updateMarketData() {
+            const cards = document.querySelectorAll('.trading-card');
+            
+            cards.forEach((card) => {
+                // Simulate slight changes in pool shares and payouts
+                const options = card.querySelectorAll('.prediction-option');
+                
+                options.forEach((option, index) => {
+                    const poolShareEl = option.querySelectorAll('.pool-share')[1];
+                    const payoutEl = option.querySelectorAll('.payout')[0];
+                    
+                    if (poolShareEl && payoutEl) {
+                        // Generate realistic variations
+                        const currentShare = parseFloat(poolShareEl.textContent);
+                        const variation = (Math.random() - 0.5) * 2; // ±1% variation
+                        const newShare = Math.max(15, Math.min(60, currentShare + variation));
+                        
+                        poolShareEl.textContent = `${newShare.toFixed(1)}%`;
+                        
+                        // Calculate corresponding payout
+                        const payout = (100 / newShare).toFixed(2);
+                        payoutEl.textContent = `${payout}x`;
+                    }
+                });
+            });
+        }
+
+        // Update countdown timers
+        function updateTimers() {
+            const timers = document.querySelectorAll('.timer-circle');
+            timers.forEach((timer) => {
+                let timeRemaining = parseInt(timer.getAttribute('data-time-remaining') || '300');
+                timeRemaining--;
+                
+                if (timeRemaining <= 0) {
+                    timeRemaining = 900; // Reset to 15 minutes
+                }
+                
+                timer.setAttribute('data-time-remaining', timeRemaining);
+                
+                if (timeRemaining >= 60) {
+                    const minutes = Math.floor(timeRemaining / 60);
+                    const seconds = timeRemaining % 60;
+                    timer.textContent = `${minutes}m ${seconds}s`;
+                } else {
+                    timer.textContent = `${timeRemaining}s`;
+                }
+                
+                // Update progress circle
+                const percentage = (timeRemaining / 900) * 360;
+                const color = timeRemaining < 60 ? '#ef4444' : '#22c55e';
+                timer.style.background = `conic-gradient(${color} 0deg, ${color} ${percentage}deg, rgba(255,255,255,0.1) ${percentage}deg)`;
+            });
+        }
+
+        // Profile dropdown functionality
+        function toggleProfileMenu() {
+            const dropdown = document.getElementById('profileDropdown');
+            if (dropdown) {
+                dropdown.classList.toggle('show');
+            }
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const profile = document.querySelector('.user-profile');
+            const dropdown = document.getElementById('profileDropdown');
+            
+            if (profile && dropdown && !profile.contains(event.target)) {
+                dropdown.classList.remove('show');
+            }
+        });
+
+        // Add some interactive hover effects
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add click handlers for prediction options
+            const predictionOptions = document.querySelectorAll('.prediction-option');
+            predictionOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    // Remove active class from siblings
+                    this.parentElement.querySelectorAll('.prediction-option').forEach(opt => {
+                        opt.style.transform = '';
+                    });
+                    
+                    // Add active state
+                    this.style.transform = 'scale(1.05)';
+                    
+                    setTimeout(() => {
+                        this.style.transform = '';
+                    }, 200);
+                });
+            });
+        });
+
+        // Mobile menu toggle
+        function toggleMobileMenu() {
+            const mobileNav = document.getElementById('mobileNavLinks');
+            if (mobileNav) {
+                mobileNav.classList.toggle('show');
+            }
+            
+            const hamburger = document.querySelector('.hamburger');
+            if (hamburger) {
+                hamburger.classList.toggle('active');
+            }
+        }
+
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const hamburger = document.querySelector('.hamburger');
+            const mobileNav = document.getElementById('mobileNavLinks');
+            
+            if (hamburger && mobileNav && 
+                !hamburger.contains(event.target) && 
+                !mobileNav.contains(event.target)) {
+                mobileNav.classList.remove('show');
+                hamburger.classList.remove('active');
+            }
+        });
+</script>
+{% endblock %}

@@ -1,16 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Referral Program - EVGxchain</title>
-    {% load static %}
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+{% extends 'base.html' %}
+{% block title %}Referral Program - EVGxchain{% endblock %}
+{% block extra_css %}
+<style>
+
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -636,10 +628,12 @@
                 padding: 12px;
             }
         }
-    </style>
-</head>
-<body>
-    <div class="floating-coins">
+</style>
+{% endblock %}
+
+
+{% block content %}
+<div class="floating-coins">
         <div class="floating-coin" style="left: 10%; animation-delay: 0s;">₿</div>
         <div class="floating-coin" style="left: 30%; animation-delay: 5s;">₿</div>
         <div class="floating-coin" style="left: 50%; animation-delay: 10s;">₿</div>
@@ -659,9 +653,7 @@
 
     <nav class="navbar">
         <div class="nav-container">
-            <a href="{% url 'landing-page' %}" class="logo">
-               <img src="/static/evgchain-logo.png" alt="EVGxchain">
-            </a>
+            
             <button class="menu-toggle" onclick="toggleMenu()">☰</button>
             <div class="nav-links" id="navLinks">
                 <!-- Mobile Profile Section (only shows on mobile) -->
@@ -908,5 +900,105 @@
             }
         }, 4000);
     </script>
-</body>
-</html>
+{% endblock %}
+
+
+{% block extra_js %}
+<script>
+function toggleMenu() {
+            const navLinks = document.getElementById('navLinks');
+            navLinks.classList.toggle('show');
+        }
+
+        function toggleProfileMenu() {
+            const dropdown = document.getElementById('profileDropdown');
+            dropdown.classList.toggle('show');
+        }
+
+        document.addEventListener('click', function(event) {
+            const profile = document.querySelector('.user-profile');
+            const dropdown = document.getElementById('profileDropdown');
+            const menuToggle = document.querySelector('.menu-toggle');
+            const navLinks = document.getElementById('navLinks');
+            
+            if (profile && !profile.contains(event.target)) {
+                dropdown.classList.remove('show');
+            }
+
+            if (!menuToggle.contains(event.target) && !navLinks.contains(event.target)) {
+                navLinks.classList.remove('show');
+            }
+        });
+
+        function copyReferralLink() {
+            const linkInput = document.getElementById('referralLink');
+            linkInput.select();
+            linkInput.setSelectionRange(0, 99999);
+            
+            try {
+                document.execCommand('copy');
+                showNotification('✅ Referral link copied to clipboard!');
+            } catch (err) {
+                navigator.clipboard.writeText(linkInput.value).then(function() {
+                    showNotification('✅ Referral link copied to clipboard!');
+                }, function() {
+                    showNotification('❌ Failed to copy link');
+                });
+            }
+        }
+
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.className = 'message success';
+            notification.textContent = message;
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 3000;
+                max-width: 400px;
+                animation: slideIn 0.3s ease-out;
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                notification.style.transform = 'translateY(-10px)';
+                setTimeout(() => {
+                    notification.remove();
+                }, 300);
+            }, 3000);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const messages = document.querySelectorAll('.message');
+            messages.forEach(message => {
+                setTimeout(() => {
+                    message.style.opacity = '0';
+                    message.style.transform = 'translateY(-10px)';
+                    setTimeout(() => {
+                        message.remove();
+                    }, 300);
+                }, 5000);
+            });
+        });
+
+        setInterval(() => {
+            if (Math.random() < 0.3) {
+                const container = document.querySelector('.floating-coins');
+                const coin = document.createElement('div');
+                coin.className = 'floating-coin';
+                coin.textContent = '₿';
+                coin.style.left = Math.random() * 100 + '%';
+                coin.style.animationDelay = '0s';
+                coin.style.animationDuration = (20 + Math.random() * 10) + 's';
+                container.appendChild(coin);
+                
+                setTimeout(() => {
+                    coin.remove();
+                }, 30000);
+            }
+        }, 4000);
+</script>
+{% endblock %}

@@ -19,6 +19,7 @@ urlpatterns = [
     path('api/market/<uuid:market_id>/', views.api_market_data, name='api-market-data'),
     path('api/crypto-prices/', views.api_crypto_prices, name='api-crypto-prices'),
     path('api/user-stats/', views.api_user_stats, name='api-user-stats'),
+    path('live-crypto/', views.live_crypto, name='live-crypto'),
     
     # Wallet management
     path('wallet/deposit/', views.wallet_deposit, name='wallet-deposit'),

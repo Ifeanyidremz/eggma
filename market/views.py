@@ -726,6 +726,62 @@ def place_bet(request):
         return JsonResponse({'success': False, 'error': str(e)})
 
 
+
+def live_crypto(request):
+    crypto_prices = CryptoPriceService.get_crypto_prices()
+    
+    # Calculate market statistics
+    total_market_cap = sum([data.get('market_cap', 0) for data in crypto_prices.values()])
+    total_volume = sum([data.get('volume_24h', 0) for data in crypto_prices.values()])
+    
+    # Get trending cryptocurrencies (by 24h volume)
+    trending_cryptos = sorted(
+        crypto_prices.items(),
+        key=lambda x: x[1].get('volume_24h', 0),
+        reverse=True
+    )[:5]
+    
+    # Get top gainers (by 24h change percentage)
+    top_gainers = sorted(
+        crypto_prices.items(),
+        key=lambda x: x[1].get('change_24h', 0),
+        reverse=True
+    )[:3]
+    
+    # Get top losers (by 24h change percentage)
+    top_losers = sorted(
+        crypto_prices.items(),
+        key=lambda x: x[1].get('change_24h', 0)
+    )[:3]
+    
+    # Get BTC dominance (if available)
+    btc_market_cap = crypto_prices.get('BTC', {}).get('market_cap', 0)
+    btc_dominance = (btc_market_cap / total_market_cap * 100) if total_market_cap > 0 else 0
+    
+    # Get recent news (if available)
+    recent_news = NewsArticle.objects.filter(
+        is_active=True,
+        published_at__gte=timezone.now() - timedelta(hours=24)
+    ).order_by('-published_at')[:5]
+    
+    # Get active markets count
+    active_markets_count = Market.objects.filter(status='active').count()
+    
+    context = {
+        'crypto_prices': crypto_prices,
+        'total_market_cap': total_market_cap,
+        'total_volume': total_volume,
+        'btc_dominance': round(btc_dominance, 2),
+        'trending_cryptos': trending_cryptos,
+        'top_gainers': top_gainers,
+        'top_losers': top_losers,
+        'recent_news': recent_news,
+        'active_markets': active_markets_count,
+    }
+    
+    return render(request, 'live_crypto.html', context)
+
+
 @login_required
 @csrf_protect
 def wallet_deposit(request):
