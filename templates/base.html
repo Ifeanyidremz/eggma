@@ -265,7 +265,7 @@
         <nav class="nav-menu">
             <a href="{% url 'landing-page' %}" class="nav-link {% if request.resolver_match.url_name == 'landing-page' %}active{% endif %}">Home</a>
             <a href="{% url 'live-crypto' %}" class="nav-link {% if request.resolver_match.url_name == 'live-crypto' %}active{% endif %}">Live Crypto</a>
-            <a href="{% url 'market-list' %}" class="nav-link {% if request.resolver_match.url_name == 'market-list' %}active{% endif %}">Markets</a>
+            <a href="{% url 'market-data' %}" class="nav-link {% if request.resolver_match.url_name == 'market-data' %}active{% endif %}">Markets</a>
             <a href="#" class="nav-link">About</a>
             <a href="#" class="nav-link">Contact</a>
             
