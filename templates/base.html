@@ -273,7 +273,7 @@
                 <a href="{% url 'dashboard' %}" class="btn btn-secondary">Dashboard</a>
                 <a href="{% url 'logout' %}" class="nav-link">Logout</a>
             {% else %}
-                <a href="{% url 'login' %}" class="nav-link">Login</a>
+                <a href="{% url 'login-page' %}" class="nav-link">Login</a>
                 <a href="{% url 'register-page' %}" class="btn">Get Started</a>
             {% endif %}
         </nav>
@@ -298,7 +298,7 @@
             <a href="{% url 'dashboard' %}" class="btn btn-secondary">Dashboard</a>
             <a href="{% url 'logout' %}" class="nav-link">Logout</a>
         {% else %}
-            <a href="{% url 'login' %}" class="nav-link">Login</a>
+            <a href="{% url 'login-page' %}" class="nav-link">Login</a>
             <a href="{% url 'register-page' %}" class="btn">Get Started</a>
         {% endif %}
     </div>
