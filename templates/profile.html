@@ -6,7 +6,30 @@
 
 {% block extra_css %}
 <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
 
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+        }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -1438,41 +1461,6 @@
         {% endfor %}
     </div>
     {% endif %}
-
-    {% comment %} <nav class="navbar">
-        <div class="nav-container">
-            
-            <div class="nav-links">
-                <a href="{% url 'dashboard' %}" class="active">Dashboard</a>
-                <a href="{% url 'market-data' %}">Markets</a>
-                <a href="{% url 'referral-dashboard' %}">Referrals</a>
-            </div>
-            <button class="mobile-menu-btn" id="mobileMenuBtn" onclick="toggleMobileNav()">☰</button>
-            <div class="user-profile" onclick="toggleProfileMenu()">
-                <div class="user-avatar">
-                    {% if user.full_name %}
-                        {{ user.full_name|slice:":2"|upper }}
-                    {% else %}
-                        {{ user.username|slice:":2"|upper }}
-                    {% endif %}
-                </div>
-                <div>
-                    <div style="font-size: 14px; font-weight: 600;">
-                        {% if user.full_name %}
-                            {{ user.full_name }}
-                        {% else %}
-                            {{ user.username }}
-                        {% endif %}
-                    </div>
-                    <div style="font-size: 12px; color: #999;">{{ user.get_level_title|default:"Level 1 - Rookie Predictor" }}</div>
-                </div>
-                <div class="profile-dropdown" id="profileDropdown">
-                    <div class="dropdown-divider"></div>
-                    <a href="{% url 'logout' %}" class="dropdown-item">🚪 Logout</a>
-                </div>
-            </div>
-        </div>
-    </nav> {% endcomment %}
 
     <div class="container">
         <div class="welcome-section">
