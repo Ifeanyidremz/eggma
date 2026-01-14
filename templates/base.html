@@ -39,24 +39,21 @@
         .logo {
             width: 40px;
             height: 40px;
-            background: linear-gradient(45deg, #f7931a, #ffb84d);
             border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: bold;
-            color: white;
-            font-size: 22px;
-            box-shadow: 0 8px 25px rgba(247, 147, 26, 0.3);
             text-decoration: none;
             transition: transform 0.3s ease;
-            overflow: hidden; /* Prevents image overflow */
+            overflow: hidden;
+            background: transparent; /* Changed from gradient */
         }
 
         .logo img {
             width: 100%;
             height: 100%;
-            object-fit: contain; /* Ensures image fits within container */
+            object-fit: contain;
+            display: block; /* Add this */
         }
 
         .logo:hover {

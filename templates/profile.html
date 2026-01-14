@@ -46,15 +46,18 @@
             position: sticky;
             top: 0;
             z-index: 100;
+            width: 100%; 
         }
 
         .nav-container {
             max-width: 1200px;
-            margin: 0 auto;
+            margin: 0 auto !important;
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 0 20px;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .logo {
@@ -1039,6 +1042,10 @@
 
     .nav-container {
         padding: 0 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%; 
     }
 
     .logo img {
@@ -1322,12 +1329,14 @@
         display: block;
         margin-left: auto;  
         order: 3;  
+        flex: 0 0 auto;
     }
 
     .user-profile {
         padding: 5px 10px;
         gap: 10px;
         order: 2; 
+        flex: 0 0 auto;
     }
 }
   
