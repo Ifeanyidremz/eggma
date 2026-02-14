@@ -1,884 +1,918 @@
-{% extends 'base.html' %}
-{% block title %}Create Your Wallet - Endless Freedom{% endblock %}
-{% block extra_css %}
-<style>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>EvgxChain — Create Account</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #050505;
+      --surface: #0d0d0d;
+      --surface2: #141414;
+      --border: #1f1f1f;
+      --border2: #2a2a2a;
+      --accent: #22c55e;
+      --accent-bright: #4ade80;
+      --accent-dark: #16a34a;
+      --text: #ffffff;
+      --text2: #e5e5e5;
+      --muted: #6b6b6b;
+      --muted2: #3d3d3d;
+      --no: #f87171;
+      --font-display: 'Syne', sans-serif;
+      --font-mono: 'DM Mono', monospace;
+    }
+
     body {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        overflow-x: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-display);
+      min-height: 100vh;
+      overflow-x: hidden;
+      background-image:
+        radial-gradient(ellipse 70% 50% at 50% -5%, rgba(34,197,94,0.1) 0%, transparent 65%),
+        radial-gradient(ellipse 40% 30% at 85% 80%, rgba(34,197,94,0.04) 0%, transparent 60%);
     }
 
-    .main-content {
-        padding-top: 0;
-        min-height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0.6;
     }
 
-    body {
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-        color: white;
-        min-height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        position: relative;
-        overflow-x: hidden;
-        padding: 10px;
-    }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
 
-    .background-glow {
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        width: clamp(400px, 80vw, 800px);
-        height: clamp(400px, 80vh, 800px);
-        background: radial-gradient(circle, rgba(247, 147, 26, 0.08) 0%, transparent 70%);
-        transform: translate(-50%, -50%);
-        z-index: 0;
-        animation: pulse 8s ease-in-out infinite;
-    }
-
-    @keyframes pulse {
-        0%, 100% { opacity: 0.3; transform: translate(-50%, -50%) scale(1); }
-        50% { opacity: 0.6; transform: translate(-50%, -50%) scale(1.3); }
-    }
-
-    .floating-coins {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        pointer-events: none;
-        overflow: hidden;
-        z-index: 1;
-    }
-
-    .floating-coin {
-        position: absolute;
-        width: clamp(20px, 4vw, 30px);
-        height: clamp(20px, 4vw, 30px);
-        background: linear-gradient(135deg, #f7931a 0%, #ffb84d 100%);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: clamp(10px, 2.5vw, 14px);
-        font-weight: bold;
-        color: white;
-        opacity: 0.4;
-        animation: floatAround 20s linear infinite;
-    }
-
-    @keyframes floatAround {
-        0% { transform: translateY(100vh) translateX(0) rotate(0deg); opacity: 0; }
-        10% { opacity: 0.4; }
-        90% { opacity: 0.4; }
-        100% { transform: translateY(-100px) translateX(100px) rotate(360deg); opacity: 0; }
+    /* NAV */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(5,5,5,0.92);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 28px;
+      height: 60px;
     }
 
     .logo {
-        position: fixed;
-        top: clamp(15px, 3vh, 30px);
-        left: clamp(15px, 3vw, 30px);
-        text-decoration: none;
-        display: flex;
-        align-items: center;
-        z-index: 10;
-    }
-    
-    .logo img {
-        height: clamp(60px, 10vw, 100px);
-        width: auto;
-        transition: transform 0.3s ease;
-    }
-    
-    .logo:hover img {
-        transform: scale(1.05);
-        filter: brightness(1.1);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.25rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      cursor: pointer;
     }
 
-    .register-container {
-        background: rgba(45, 45, 45, 0.9);
-        border-radius: clamp(16px, 4vw, 24px);
-        padding: clamp(30px, 6vw, 60px);
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-        backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        width: 100%;
-        max-width: min(500px, 90vw);
-        position: relative;
-        z-index: 5;
-        margin: clamp(80px, 15vh, 120px) auto 20px;
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-bright));
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
     }
 
-    .register-header {
-        text-align: center;
-        margin-bottom: clamp(24px, 5vw, 40px);
+    .logo span { color: var(--accent); }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.83rem;
+      color: var(--muted);
     }
 
-    .register-title {
-        font-size: clamp(24px, 6vw, 36px);
-        font-weight: 700;
-        margin-bottom: clamp(8px, 2vw, 12px);
-        background: linear-gradient(135deg, #fff 0%, #f0f0f0 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
+    .nav-right a {
+      color: var(--accent);
+      font-weight: 700;
+      text-decoration: none;
+      padding: 7px 16px;
+      border: 1px solid rgba(34,197,94,0.3);
+      border-radius: 8px;
+      transition: all 0.2s;
     }
 
-    .register-subtitle {
-        color: #999;
-        font-size: clamp(14px, 3vw, 16px);
-        line-height: 1.5;
-        padding: 0 10px;
+    .nav-right a:hover {
+      background: rgba(34,197,94,0.08);
+      border-color: rgba(34,197,94,0.5);
+    }
+
+    /* PAGE LAYOUT */
+    .page {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      min-height: calc(100vh - 60px);
+    }
+
+    /* LEFT PANEL */
+    .left-panel {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 60px 70px;
+      border-right: 1px solid var(--border);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .left-panel::after {
+      content: '';
+      position: absolute;
+      bottom: -80px;
+      left: -80px;
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, rgba(34,197,94,0.07) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .panel-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--accent);
+      font-weight: 700;
+      margin-bottom: 24px;
+      padding: 5px 10px;
+      background: rgba(34,197,94,0.08);
+      border: 1px solid rgba(34,197,94,0.2);
+      border-radius: 6px;
+      width: fit-content;
+    }
+
+    .panel-tag .dot {
+      width: 5px;
+      height: 5px;
+      background: var(--accent);
+      border-radius: 50%;
+      animation: pulse 1.4s infinite;
+    }
+
+    @keyframes pulse {
+      0%,100% { opacity:1; transform:scale(1); }
+      50% { opacity:0.4; transform:scale(0.7); }
+    }
+
+    .left-panel h2 {
+      font-size: 2.6rem;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      line-height: 1.1;
+      margin-bottom: 16px;
+    }
+
+    .left-panel h2 em {
+      font-style: normal;
+      background: linear-gradient(90deg, var(--accent), var(--accent-bright), #ffffff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .left-panel p {
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.65;
+      max-width: 360px;
+      margin-bottom: 40px;
+    }
+
+    .features-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .feature-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .feature-icon {
+      width: 32px;
+      height: 32px;
+      background: rgba(34,197,94,0.1);
+      border: 1px solid rgba(34,197,94,0.2);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      flex-shrink: 0;
+    }
+
+    .feature-text strong {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 700;
+      margin-bottom: 2px;
+    }
+
+    .feature-text span {
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    /* STATS ROW */
+    .stats-row {
+      display: flex;
+      gap: 28px;
+      margin-top: 40px;
+      padding-top: 32px;
+      border-top: 1px solid var(--border);
+    }
+
+    .mini-stat-val {
+      font-family: var(--font-mono);
+      font-size: 1.3rem;
+      font-weight: 500;
+      color: var(--accent);
+      letter-spacing: -0.03em;
+    }
+
+    .mini-stat-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    /* RIGHT PANEL — FORM */
+    .right-panel {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 60px 70px;
+    }
+
+    .form-header {
+      margin-bottom: 32px;
+    }
+
+    .form-header h3 {
+      font-size: 1.6rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin-bottom: 6px;
+    }
+
+    .form-header p {
+      font-size: 0.83rem;
+      color: var(--muted);
+    }
+
+    .form-header p a {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    /* SOCIAL BTNS */
+    .social-btns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .social-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 16px;
+      border-radius: 10px;
+      border: 1px solid var(--border2);
+      background: var(--surface);
+      color: var(--text2);
+      font-family: var(--font-display);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .social-btn:hover {
+      border-color: rgba(34,197,94,0.3);
+      background: var(--surface2);
+      color: var(--text);
+    }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+      color: var(--muted2);
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* FORM */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
     }
 
     .form-group {
-        margin-bottom: clamp(16px, 4vw, 24px);
-        position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
     }
 
-    .form-label {
-        display: block;
-        margin-bottom: clamp(4px, 1.5vw, 8px);
-        color: #ccc;
-        font-size: clamp(12px, 3vw, 14px);
-        font-weight: 500;
+    .form-group.full { grid-column: 1 / -1; }
+
+    label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text2);
     }
 
-    .form-input {
-        width: 100%;
-        padding: clamp(12px, 3vw, 16px) clamp(14px, 3.5vw, 20px);
-        background: rgba(26, 26, 26, 0.8);
-        border: 2px solid rgba(255, 255, 255, 0.1);
-        border-radius: clamp(8px, 2vw, 12px);
-        color: white;
-        font-size: clamp(14px, 3.5vw, 16px);
-        transition: all 0.3s ease;
-        backdrop-filter: blur(10px);
+    .input-wrap {
+      position: relative;
     }
 
-    .form-input:focus {
-        outline: none;
-        border-color: #f7931a;
-        box-shadow: 0 0 20px rgba(247, 147, 26, 0.2);
-        transform: translateY(-2px);
+    .input-wrap .icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.85rem;
+      pointer-events: none;
     }
 
-    .form-input::placeholder {
-        color: #666;
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="tel"],
+    select {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 10px;
+      padding: 11px 14px 11px 38px;
+      color: var(--text);
+      font-family: var(--font-display);
+      font-size: 0.85rem;
+      outline: none;
+      transition: all 0.2s;
+      appearance: none;
     }
 
-    .form-input.error {
-        border-color: #ef4444;
-        box-shadow: 0 0 20px rgba(239, 68, 68, 0.2);
+    input:focus, select:focus {
+      border-color: rgba(34,197,94,0.45);
+      box-shadow: 0 0 0 3px rgba(34,197,94,0.07);
+      background: var(--surface2);
     }
 
-    .error-message {
-        color: #ef4444;
-        font-size: clamp(10px, 2.5vw, 12px);
-        margin-top: 4px;
-    }
+    input::placeholder { color: var(--muted); }
 
-    .password-strength {
-        margin-top: clamp(4px, 1.5vw, 8px);
-        display: flex;
-        gap: clamp(2px, 0.5vw, 4px);
-    }
-
+    /* PASSWORD STRENGTH */
     .strength-bar {
-        height: clamp(3px, 0.8vw, 4px);
-        flex: 1;
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 2px;
-        transition: all 0.3s ease;
+      display: flex;
+      gap: 4px;
+      margin-top: 6px;
     }
 
-    .strength-bar.active {
-        background: #f7931a;
-        box-shadow: 0 0 10px rgba(247, 147, 26, 0.5);
+    .strength-seg {
+      flex: 1;
+      height: 3px;
+      border-radius: 2px;
+      background: var(--border2);
+      transition: background 0.3s;
     }
 
-    .checkbox-group {
-        display: flex;
-        align-items: flex-start;
-        gap: clamp(8px, 2vw, 12px);
-        margin-bottom: clamp(20px, 5vw, 32px);
+    .strength-seg.active { background: var(--accent); }
+    .strength-seg.medium { background: #facc15; }
+    .strength-seg.weak { background: var(--no); }
+
+    .strength-label {
+      font-size: 0.65rem;
+      color: var(--muted);
+      margin-top: 4px;
     }
 
-    .custom-checkbox {
-        width: clamp(16px, 4vw, 20px);
-        height: clamp(16px, 4vw, 20px);
-        background: rgba(26, 26, 26, 0.8);
-        border: 2px solid rgba(255, 255, 255, 0.2);
-        border-radius: 4px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        flex-shrink: 0;
-        margin-top: 2px;
+    /* CHECKBOX */
+    .check-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-top: 6px;
     }
 
-    .custom-checkbox.checked {
-        background: linear-gradient(45deg, #f7931a, #ffb84d);
-        border-color: #f7931a;
+    .check-row input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--accent);
+      margin-top: 2px;
+      padding: 0;
+      flex-shrink: 0;
     }
 
-    .custom-checkbox::after {
-        content: '✓';
-        color: white;
-        font-size: clamp(8px, 2vw, 12px);
-        font-weight: bold;
-        opacity: 0;
-        transition: opacity 0.3s ease;
+    .check-row label {
+      font-size: 0.75rem;
+      text-transform: none;
+      letter-spacing: 0;
+      color: var(--muted);
+      font-weight: 400;
+      cursor: pointer;
     }
 
-    .custom-checkbox.checked::after {
-        opacity: 1;
+    .check-row label a { color: var(--accent); text-decoration: none; font-weight: 600; }
+
+    /* SUBMIT BTN */
+    .btn-submit {
+      width: 100%;
+      padding: 13px;
+      border-radius: 10px;
+      background: var(--accent);
+      color: #000;
+      font-family: var(--font-display);
+      font-size: 0.92rem;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 20px;
+      position: relative;
+      overflow: hidden;
     }
 
-    .checkbox-label {
-        color: #ccc;
-        font-size: clamp(12px, 3vw, 14px);
-        line-height: 1.4;
-        cursor: pointer;
-        flex: 1;
+    .btn-submit::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.1) 50%, transparent 100%);
+      transform: translateX(-100%);
+      transition: transform 0.5s;
     }
 
-    .checkbox-label a {
-        color: #f7931a;
-        text-decoration: none;
-        transition: color 0.3s ease;
-        cursor: pointer;
+    .btn-submit:hover { background: var(--accent-bright); transform: translateY(-1px); box-shadow: 0 6px 24px rgba(34,197,94,0.25); }
+    .btn-submit:hover::after { transform: translateX(100%); }
+
+    /* FORM ANIMATION */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
 
-    .checkbox-label a:hover {
-        color: #ffb84d;
-        text-decoration: underline;
+    .form-group { animation: fadeUp 0.4s ease both; }
+    .form-group:nth-child(1) { animation-delay: 0.05s; }
+    .form-group:nth-child(2) { animation-delay: 0.1s; }
+    .form-group:nth-child(3) { animation-delay: 0.15s; }
+    .form-group:nth-child(4) { animation-delay: 0.2s; }
+    .form-group:nth-child(5) { animation-delay: 0.25s; }
+    .form-group:nth-child(6) { animation-delay: 0.3s; }
+
+    @media (max-width: 800px) {
+      .page { grid-template-columns: 1fr; }
+      .left-panel { display: none; }
+      .right-panel { padding: 40px 24px; }
     }
 
-    .register-btn {
-        width: 100%;
-        background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
-        color: #1a1a1a;
-        border: none;
-        padding: clamp(14px, 3.5vw, 18px);
-        border-radius: clamp(8px, 2vw, 12px);
-        font-size: clamp(16px, 3.5vw, 18px);
-        font-weight: 600;
-        cursor: pointer;
-        box-shadow: 0 10px 30px rgba(255, 215, 0, 0.3);
-        transition: all 0.3s ease;
-        position: relative;
-        overflow: hidden;
-        margin-bottom: clamp(16px, 4vw, 24px);
+    /* ===== SITE FOOTER ===== */
+    .site-footer {
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      margin-top: 60px;
+      font-family: var(--font-display);
     }
 
-    .register-btn:hover:not(:disabled) {
-        transform: translateY(-3px);
-        box-shadow: 0 15px 40px rgba(255, 215, 0, 0.4);
+    .footer-inner {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 52px 40px 28px;
     }
 
-    .register-btn:active {
-        transform: translateY(-1px);
+    .footer-top {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 60px;
+      margin-bottom: 40px;
     }
 
-    .register-btn::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-        transition: left 0.5s;
+    /* BRAND */
+    .footer-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.2rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin-bottom: 14px;
     }
 
-    .register-btn:hover::before {
-        left: 100%;
+    .footer-logo span { color: var(--accent); }
+
+    .footer-logo-icon {
+      width: 30px;
+      height: 30px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-bright, #4ade80));
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
     }
 
-    .register-btn:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-        transform: none;
+    .footer-tagline {
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.65;
+      margin-bottom: 20px;
     }
 
-    .register-btn:disabled:hover {
-        transform: none;
-        box-shadow: 0 10px 30px rgba(255, 215, 0, 0.3);
+    .footer-socials {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
     }
 
-    .login-link {
-        text-align: center;
-        color: #999;
-        font-size: clamp(12px, 3vw, 14px);
+    .social-icon {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 12px;
+      border-radius: 7px;
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      color: var(--muted);
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s;
+      font-family: var(--font-display);
     }
 
-    .login-link a {
-        color: #f7931a;
-        text-decoration: none;
-        font-weight: 600;
-        transition: color 0.3s ease;
+    .social-icon:hover {
+      color: var(--text);
+      border-color: rgba(34,197,94,0.35);
+      background: rgba(34,197,94,0.07);
     }
 
-    .login-link a:hover {
-        color: #ffb84d;
+    /* LINKS GRID */
+    .footer-links-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 24px;
     }
 
-    .security-features {
-        display: flex;
-        justify-content: space-around;
-        margin-top: clamp(20px, 5vw, 32px);
-        padding-top: clamp(16px, 4vw, 24px);
-        border-top: 1px solid rgba(255, 255, 255, 0.1);
-        flex-wrap: wrap;
-        gap: clamp(10px, 2vw, 0);
+    .footer-col { display: flex; flex-direction: column; gap: 10px; }
+
+    .footer-col-title {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--text);
+      font-weight: 800;
+      margin-bottom: 4px;
     }
 
-    .security-feature {
-        text-align: center;
-        color: #666;
-        font-size: clamp(10px, 2.5vw, 12px);
-        flex: 1;
-        min-width: 70px;
+    .footer-col a {
+      font-size: 0.8rem;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.15s;
+      font-weight: 500;
     }
 
-    .security-icon {
-        width: clamp(24px, 6vw, 32px);
-        height: clamp(24px, 6vw, 32px);
-        background: rgba(247, 147, 26, 0.2);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0 auto clamp(4px, 2vw, 8px);
-        font-size: clamp(10px, 3vw, 14px);
+    .footer-col a:hover { color: var(--accent); }
+
+    /* DIVIDER */
+    .footer-divider {
+      height: 1px;
+      background: var(--border);
+      margin-bottom: 22px;
     }
 
-    .alert {
-        padding: clamp(8px, 2vw, 12px) clamp(12px, 3vw, 16px);
-        border-radius: clamp(6px, 1.5vw, 8px);
-        margin-bottom: clamp(16px, 4vw, 20px);
-        font-size: clamp(12px, 3vw, 14px);
+    /* BOTTOM */
+    .footer-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 14px;
     }
 
-    .alert-success {
-        background: rgba(34, 197, 94, 0.1);
-        border: 1px solid rgba(34, 197, 94, 0.3);
-        color: #22c55e;
+    .footer-bottom-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.75rem;
+      color: var(--muted);
+      flex-wrap: wrap;
     }
 
-    .alert-error {
-        background: rgba(239, 68, 68, 0.1);
-        border: 1px solid rgba(239, 68, 68, 0.3);
-        color: #ef4444;
+    .footer-dot { color: var(--muted2); }
+
+    .footer-bottom-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
 
-    .loading {
-        opacity: 0.7;
-        pointer-events: none;
+    .footer-chain-badge {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-radius: 6px;
+      font-size: 0.68rem;
+      color: var(--muted);
+      font-weight: 600;
+      font-family: var(--font-mono, monospace);
     }
 
-    .loading .register-btn {
-        background: linear-gradient(135deg, #ccc 0%, #999 100%);
+    @media (max-width: 900px) {
+      .footer-top { grid-template-columns: 1fr; gap: 32px; }
+      .footer-links-grid { grid-template-columns: repeat(2, 1fr); }
     }
 
-    @media (max-width: 768px) {
-        body {
-            padding: 5px;
-        }
-        
-        .register-container {
-            margin: 70px auto 10px;
-        }
-        
-        .checkbox-group {
-            flex-direction: column;
-            gap: 8px;
-        }
-        
-        .custom-checkbox {
-            align-self: flex-start;
-            margin-top: 0;
-        }
-        
-        .security-features {
-            gap: 15px;
-        }
-        
-        .security-feature {
-            min-width: 60px;
-        }
+    @media (max-width: 500px) {
+      .footer-links-grid { grid-template-columns: 1fr 1fr; }
+      .footer-bottom { flex-direction: column; align-items: flex-start; }
+      .footer-inner { padding: 40px 20px 24px; }
     }
+  </style>
+</head>
+<body>
 
-    @media (max-width: 480px) {
-        .security-features {
-            flex-direction: column;
-            gap: 15px;
-        }
-        
-        .security-feature {
-            flex: none;
-        }
-        
-        .floating-coin {
-            display: none;
-        }
-    }
+<nav>
+  <div class="logo">
+    <div class="logo-icon">◈</div>
+    Evg<span>X</span>chain
+  </div>
+  <div class="nav-right">
+    Already have an account?
+    <a href="login.html">Log In</a>
+  </div>
+</nav>
 
-    @media (min-width: 1200px) {
-        .register-container {
-            max-width: 500px;
-        }
-    }
+<div class="page">
+  <!-- LEFT PANEL -->
+  <div class="left-panel">
+    <div class="panel-tag"><div class="dot"></div> Live Markets</div>
+    <h2>Trade the future<br>with <em>confidence.</em></h2>
+    <p>Join 248,000+ traders predicting outcomes on politics, crypto, sports, and global events. Put your knowledge to work — earn real money.</p>
 
-    @media (max-height: 600px) and (orientation: landscape) {
-        body {
-            align-items: flex-start;
-            padding-top: 20px;
-        }
-        
-        .register-container {
-            margin: 20px auto;
-        }
-        
-        .logo {
-            position: relative;
-            top: auto;
-            left: auto;
-            margin-bottom: 20px;
-        }
-        
-        .background-glow {
-            display: none;
-        }
-    }
-
-    @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-        .form-input, .register-btn {
-            border-width: 1px;
-        }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-        .background-glow, .floating-coin {
-            animation: none;
-        }
-        
-        .form-input:focus, .register-btn:hover {
-            transform: none;
-        }
-    }
-
-    @media (prefers-color-scheme: dark) {
-        .register-container {
-            background: rgba(30, 30, 30, 0.95);
-        }
-    }
-</style>
-{% endblock %}
-
-
-{% block content %}
-<div class="background-glow"></div>
-    
-<div class="floating-coins">
-    <div class="floating-coin" style="left: 5%; animation-delay: 0s;">₿</div>
-    <div class="floating-coin" style="left: 15%; animation-delay: 4s;">₿</div>
-    <div class="floating-coin" style="left: 35%; animation-delay: 8s;">₿</div>
-    <div class="floating-coin" style="left: 55%; animation-delay: 12s;">₿</div>
-    <div class="floating-coin" style="left: 75%; animation-delay: 16s;">₿</div>
-    <div class="floating-coin" style="left: 85%; animation-delay: 2s;">₿</div>
-</div>
-
-<div class="register-container">
-    <div class="register-header">
-        <h1 class="register-title">Create Your Wallet</h1>
-        <p class="register-subtitle">Join thousands of users experiencing limitless digital freedom</p>
+    <div class="features-list">
+      <div class="feature-item">
+        <div class="feature-icon">⚡</div>
+        <div class="feature-text">
+          <strong>Instant Deposits</strong>
+          <span>Fund with USDC on Polygon. Zero gas surprises.</span>
+        </div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">🔒</div>
+        <div class="feature-text">
+          <strong>Non-Custodial</strong>
+          <span>Your wallet, your funds. Smart contracts only.</span>
+        </div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">📊</div>
+        <div class="feature-text">
+          <strong>4,200+ Markets</strong>
+          <span>Active predictions across every major category.</span>
+        </div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">🏆</div>
+        <div class="feature-text">
+          <strong>Leaderboard Rewards</strong>
+          <span>Top traders earn weekly bonuses and recognition.</span>
+        </div>
+      </div>
     </div>
 
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">
-                {{ message }}
-            </div>
-        {% endfor %}
-    {% endif %}
+    <div class="stats-row">
+      <div>
+        <div class="mini-stat-val">$1.4B</div>
+        <div class="mini-stat-label">Total Volume</div>
+      </div>
+      <div>
+        <div class="mini-stat-val">248K</div>
+        <div class="mini-stat-label">Traders</div>
+      </div>
+      <div>
+        <div class="mini-stat-val">4.2K</div>
+        <div class="mini-stat-label">Markets</div>
+      </div>
+    </div>
+  </div>
 
-    <div id="error-container"></div>
+  <!-- RIGHT PANEL — FORM -->
+  <div class="right-panel">
+    <div class="form-header">
+      <h3>Create your account</h3>
+      <p>Already have one? <a href="{% url 'login-page' %}">Sign in instead →</a></p>
+    </div>
 
-    <form id="registerForm">
-        {% csrf_token %}
+    <div class="divider">or register with email</div>
+
+    <form onsubmit="handleSubmit(event)">
+      <div class="form-grid">
         <div class="form-group">
-            <label class="form-label" for="fullName">Full Name</label>
-            <input type="text" id="fullName" name="full_name" class="form-input" placeholder="Enter your full name" required>
-            <div class="error-message" id="fullName-error"></div>
+          <label>First Name</label>
+          <div class="input-wrap">
+            <span class="icon">👤</span>
+            <input type="text" placeholder="John" required/>
+          </div>
         </div>
-
         <div class="form-group">
-            <label class="form-label" for="email">Email Address</label>
-            <input type="email" id="email" name="email" class="form-input" placeholder="Enter your email address" required>
-            <div class="error-message" id="email-error"></div>
+          <label>Last Name</label>
+          <div class="input-wrap">
+            <span class="icon">👤</span>
+            <input type="text" placeholder="Doe" required/>
+          </div>
         </div>
-
-        <div class="form-group" id="referralGroup" style="display: none;">
-            <label class="form-label" for="referralCode">Referral Code (Optional)</label>
-            <input type="text" id="referralCode" name="referral_code" class="form-input" placeholder="Enter referral code if you have one">
-            <div class="error-message" id="referralCode-error"></div>
-        </div>
-
         <div class="form-group">
-            <label class="form-label" for="password">Password</label>
-            <input type="password" id="password" name="password1" class="form-input" placeholder="Create a strong password" required>
-            <div class="password-strength">
-                <div class="strength-bar"></div>
-                <div class="strength-bar"></div>
-                <div class="strength-bar"></div>
-                <div class="strength-bar"></div>
-            </div>
-            <div class="error-message" id="password-error"></div>
+          <label>Username</label>
+          <div class="input-wrap">
+            <span class="icon">@</span>
+            <input type="text" placeholder="whale_42" required/>
+          </div>
         </div>
-
-        <div class="form-group">
-            <label class="form-label" for="confirmPassword">Confirm Password</label>
-            <input type="password" id="confirmPassword" name="password2" class="form-input" placeholder="Confirm your password" required>
-            <div class="error-message" id="confirmPassword-error"></div>
+        <!-- <div class="form-group">
+          <label>Country</label>
+          <div class="input-wrap">
+            <span class="icon">🌍</span>
+            <select>
+              <option value="">Select country</option>
+              <option>United States</option>
+              <option>Nigeria</option>
+              <option>United Kingdom</option>
+              <option>Canada</option>
+              <option>Germany</option>
+              <option>Australia</option>
+              <option>Other</option>
+            </select>
+          </div>
+        </div> -->
+        <div class="form-group full">
+          <label>Email Address</label>
+          <div class="input-wrap">
+            <span class="icon">✉️</span>
+            <input type="email" placeholder="john@example.com" required/>
+          </div>
         </div>
-
-        <div class="checkbox-group">
-            <div class="custom-checkbox" id="termsCheckbox"></div>
-            <label class="checkbox-label" for="termsCheckbox">
-                I agree to the <a href="#" id="termsLink">Terms of Service</a> and <a href="#" id="privacyLink">Privacy Policy</a>
-            </label>
-            <div class="error-message" id="terms-error"></div>
+        <div class="form-group full">
+          <label>Password</label>
+          <div class="input-wrap">
+            <span class="icon">🔑</span>
+            <input type="password" id="pwdInput" placeholder="Min. 8 characters" required oninput="checkStrength(this.value)"/>
+          </div>
+          <div class="strength-bar">
+            <div class="strength-seg" id="s1"></div>
+            <div class="strength-seg" id="s2"></div>
+            <div class="strength-seg" id="s3"></div>
+            <div class="strength-seg" id="s4"></div>
+          </div>
+          <div class="strength-label" id="strengthLabel">Enter a password</div>
         </div>
+      </div>
 
-        <button type="submit" class="register-btn" id="registerButton" disabled>
-            Register
-        </button>
+      <div class="check-row" style="margin-top:16px">
+        <input type="checkbox" id="terms" required/>
+        <label for="terms">I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a></label>
+      </div>
+      <div class="check-row" style="margin-top:10px">
+        <input type="checkbox" id="updates"/>
+        <label for="updates">Send me market alerts and trading insights</label>
+      </div>
+
+      <button class="btn-submit" type="submit">Create Account →</button>
     </form>
-
-    <div class="login-link">
-        Already have an account? <a href="{% url 'login-page' %}">Sign In</a>
-    </div>
-
-    <div class="security-features">
-        <div class="security-feature">
-            <div class="security-icon">🔒</div>
-            <div>Bank-Level Security</div>
-        </div>
-        <div class="security-feature">
-            <div class="security-icon">⚡</div>
-            <div>Instant Setup</div>
-        </div>
-        <div class="security-feature">
-            <div class="security-icon">🌍</div>
-            <div>Global Access</div>
-        </div>
-    </div>
+  </div>
 </div>
-{% endblock %}
 
-
-{% block extra_js %}
 <script>
-// ✅ SINGLE SCRIPT BLOCK - All JavaScript here only
-document.addEventListener('DOMContentLoaded', function() {
-    // Get CSRF token
-    function getCSRFToken() {
-        return document.querySelector('[name=csrfmiddlewaretoken]').value;
-    }
+  function checkStrength(val) {
+    const segs = [document.getElementById('s1'), document.getElementById('s2'), document.getElementById('s3'), document.getElementById('s4')];
+    const label = document.getElementById('strengthLabel');
+    let score = 0;
+    if (val.length >= 8) score++;
+    if (/[A-Z]/.test(val)) score++;
+    if (/[0-9]/.test(val)) score++;
+    if (/[^A-Za-z0-9]/.test(val)) score++;
 
-    // Get DOM elements
-    const form = document.getElementById('registerForm');
-    const termsCheckbox = document.getElementById('termsCheckbox');
-    const registerButton = document.getElementById('registerButton');
-    const passwordInput = document.getElementById('password');
-    const confirmPasswordInput = document.getElementById('confirmPassword');
-    const strengthBars = document.querySelectorAll('.strength-bar');
-    const errorContainer = document.getElementById('error-container');
+    const colors = { 0: '', 1: 'weak', 2: 'weak', 3: 'medium', 4: 'active' };
+    const labels = { 0: 'Enter a password', 1: 'Weak', 2: 'Fair', 3: 'Good', 4: 'Strong ✓' };
 
-    let termsAccepted = false;
-
-    // Check for referral code in URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const refCode = urlParams.get('ref');
-    
-    if (refCode) {
-        const referralGroup = document.getElementById('referralGroup');
-        const referralInput = document.getElementById('referralCode');
-        
-        referralGroup.style.display = 'block';
-        referralInput.value = refCode;
-        referralGroup.style.background = 'rgba(34, 197, 94, 0.05)';
-        referralGroup.style.border = '1px solid rgba(34, 197, 94, 0.2)';
-        referralGroup.style.padding = '15px';
-        referralGroup.style.borderRadius = '10px';
-        referralInput.style.borderColor = '#22c55e';
-        
-        const referralLabel = referralGroup.querySelector('.form-label');
-        referralLabel.innerHTML = `
-            🎁 Referral Code Applied! 
-            <span style="color: #22c55e; font-size: 12px; margin-left: 8px;">
-                You'll get $5 bonus on signup
-            </span>
-        `;
-    }
-
-    // Clear error messages
-    function clearErrors() {
-        const errorMessages = document.querySelectorAll('.error-message');
-        const inputs = document.querySelectorAll('.form-input');
-        
-        errorMessages.forEach(error => error.textContent = '');
-        inputs.forEach(input => input.classList.remove('error'));
-        errorContainer.innerHTML = '';
-    }
-
-    // Display error message
-    function showError(fieldId, message) {
-        const errorElement = document.getElementById(fieldId + '-error');
-        const inputElement = document.getElementById(fieldId);
-        
-        if (errorElement) errorElement.textContent = message;
-        if (inputElement) inputElement.classList.add('error');
-    }
-
-    // Display general error
-    function showGeneralError(message) {
-        errorContainer.innerHTML = `<div class="alert alert-error">${message}</div>`;
-        errorContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
-
-    // Display success message
-    function showSuccess(message) {
-        errorContainer.innerHTML = `<div class="alert alert-success">${message}</div>`;
-    }
-
-    // Terms checkbox toggle
-    termsCheckbox.addEventListener('click', function() {
-        termsAccepted = !termsAccepted;
-        this.classList.toggle('checked', termsAccepted);
-        updateRegisterButton();
+    segs.forEach((s, i) => {
+      s.className = 'strength-seg';
+      if (i < score) s.classList.add(colors[score]);
     });
+    label.textContent = labels[score];
+    label.style.color = score === 4 ? 'var(--accent)' : score === 3 ? '#facc15' : score > 0 ? 'var(--no)' : 'var(--muted)';
+  }
 
-    // Password strength indicator
-    function calculatePasswordStrength(password) {
-        let strength = 0;
-        if (password.length >= 8) strength++;
-        if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
-        if (/\d/.test(password)) strength++;
-        if (/[^a-zA-Z0-9]/.test(password)) strength++;
-        return strength;
-    }
-
-    function updateStrengthBars(strength) {
-        strengthBars.forEach((bar, index) => {
-            bar.classList.toggle('active', index < strength);
-        });
-    }
-
-    function updateRegisterButton() {
-        const fullName = document.getElementById('fullName').value.trim();
-        const email = document.getElementById('email').value.trim();
-        const password = passwordInput.value;
-        const confirmPassword = confirmPasswordInput.value;
-        const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-        const passwordStrength = calculatePasswordStrength(password);
-        const passwordsMatch = password === confirmPassword && password.length > 0;
-
-        const isValid = fullName.length > 0 && 
-                       emailValid && 
-                       passwordStrength >= 2 && 
-                       passwordsMatch && 
-                       termsAccepted;
-
-        registerButton.disabled = !isValid;
-    }
-
-    // Event listeners
-    passwordInput.addEventListener('input', function() {
-        const strength = calculatePasswordStrength(this.value);
-        updateStrengthBars(strength);
-        updateRegisterButton();
-    });
-
-    confirmPasswordInput.addEventListener('input', updateRegisterButton);
-    document.getElementById('email').addEventListener('input', updateRegisterButton);
-    document.getElementById('fullName').addEventListener('input', updateRegisterButton);
-
-    // Form submission
-    form.addEventListener('submit', function(e) {
-        e.preventDefault();
-        handleRegistration();
-    });
-
-    function handleRegistration() {
-        clearErrors();
-        
-        const formData = {
-            fullName: document.getElementById('fullName').value.trim(),
-            email: document.getElementById('email').value.trim(),
-            password: document.getElementById('password').value,
-            confirmPassword: document.getElementById('confirmPassword').value,
-            referralCode: document.getElementById('referralCode').value.trim(),
-            termsAccepted: termsAccepted
-        };
-
-        if (!formData.termsAccepted) {
-            showGeneralError('Please accept the terms and conditions');
-            return;
-        }
-
-        if (formData.password !== formData.confirmPassword) {
-            showError('confirmPassword', 'Passwords do not match');
-            return;
-        }
-
-        const container = document.querySelector('.register-container');
-        const button = registerButton;
-        const originalText = button.textContent;
-        
-        container.classList.add('loading');
-        button.textContent = 'Creating Account...';
-        button.disabled = true;
-
-        fetch('{% url "ajax-register" %}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCSRFToken()
-            },
-            body: JSON.stringify(formData)
-        })
-        .then(response => response.json())
-        .then(data => {
-            container.classList.remove('loading');
-            
-            if (data.success) {
-                button.textContent = 'Welcome! 🎉';
-                button.style.background = 'linear-gradient(135deg, #4ade80 0%, #22c55e 100%)';
-                showSuccess(data.message);
-                createSuccessAnimation();
-                
-                setTimeout(() => {
-                    window.location.href = data.redirect_url || '/email-verification-sent/';
-                }, 2000);
-            } else {
-                button.textContent = originalText;
-                button.disabled = false;
-                showGeneralError(data.message || 'Registration failed. Please try again.');
-            }
-        })
-        .catch(error => {
-            container.classList.remove('loading');
-            button.textContent = originalText;
-            button.disabled = false;
-            showGeneralError('Network error. Please check your connection and try again.');
-            console.error('Registration error:', error);
-        });
-    }
-
-    function createSuccessAnimation() {
-        const container = document.querySelector('.register-container');
-        for (let i = 0; i < 12; i++) {
-            const coin = document.createElement('div');
-            coin.style.cssText = `
-                position: absolute;
-                width: 30px;
-                height: 30px;
-                background: linear-gradient(135deg, #f7931a 0%, #ffb84d 100%);
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                color: white;
-                font-weight: bold;
-                font-size: 14px;
-                left: 50%;
-                top: 50%;
-                transform: translate(-50%, -50%);
-                z-index: 1000;
-                pointer-events: none;
-            `;
-            coin.textContent = '₿';
-            
-            const angle = (i / 12) * 360;
-            const distance = 100 + Math.random() * 50;
-            coin.style.animation = `successBurst${i} 1.5s ease-out forwards`;
-            
-            const style = document.createElement('style');
-            style.textContent = `
-                @keyframes successBurst${i} {
-                    0% { 
-                        transform: translate(-50%, -50%) scale(1) rotate(0deg); 
-                        opacity: 1; 
-                    }
-                    100% { 
-                        transform: translate(-50%, -50%) 
-                                  translateX(${Math.cos(angle * Math.PI / 180) * distance}px)
-                                  translateY(${Math.sin(angle * Math.PI / 180) * distance}px)
-                                  scale(0.3) rotate(720deg); 
-                        opacity: 0; 
-                    }
-                }
-            `;
-            document.head.appendChild(style);
-            container.appendChild(coin);
-            
-            setTimeout(() => {
-                coin.remove();
-                style.remove();
-            }, 1500);
-        }
-    }
-
-    // Floating coins animation
-    setInterval(() => {
-        if (Math.random() < 0.2) {
-            const container = document.querySelector('.floating-coins');
-            const coin = document.createElement('div');
-            coin.className = 'floating-coin';
-            coin.textContent = '₿';
-            coin.style.left = Math.random() * 100 + '%';
-            coin.style.animationDelay = '0s';
-            coin.style.animationDuration = (15 + Math.random() * 10) + 's';
-            container.appendChild(coin);
-            
-            setTimeout(() => coin.remove(), 25000);
-        }
-    }, 3000);
-
-    // Input focus animations
-    document.querySelectorAll('.form-input').forEach(input => {
-        input.addEventListener('focus', function() {
-            this.parentElement.style.transform = 'translateY(-2px)';
-        });
-        
-        input.addEventListener('blur', function() {
-            this.parentElement.style.transform = 'translateY(0)';
-        });
-    });
-
-    // Terms and Privacy links
-    document.getElementById('termsLink').addEventListener('click', function(e) {
-        e.preventDefault();
-        alert('Terms of Service would be displayed here');
-    });
-
-    document.getElementById('privacyLink').addEventListener('click', function(e) {
-        e.preventDefault();
-        alert('Privacy Policy would be displayed here');
-    });
-
-}); // End DOMContentLoaded
+  function handleSubmit(e) {
+    e.preventDefault();
+    const btn = e.target.querySelector('.btn-submit');
+    btn.textContent = 'Creating account…';
+    btn.style.opacity = '0.7';
+    setTimeout(() => {
+      btn.textContent = '✓ Account Created!';
+      btn.style.background = 'var(--accent)';
+      btn.style.opacity = '1';
+    }, 1400);
+  }
 </script>
-{% endblock %}
+
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <div class="footer-logo">
+            <div class="footer-logo-icon">◈</div>
+            Evg<span>X</span>chain
+          </div>
+          <p class="footer-tagline">The world's largest prediction market.<br/>Trade on what matters. Win on what you know.</p>
+          <div class="footer-socials">
+            <a class="social-icon" href="#">𝕏</a>
+            <a class="social-icon" href="#">Discord</a>
+            <a class="social-icon" href="#">Telegram</a>
+            <a class="social-icon" href="#">GitHub</a>
+          </div>
+        </div>
+        <div class="footer-links-grid">
+          <div class="footer-col">
+            <div class="footer-col-title">Markets</div>
+            <a href="#">All Markets</a>
+            <a href="#">Politics</a>
+            <a href="#">Crypto</a>
+            <a href="#">Sports</a>
+            <a href="#">Science</a>
+            <a href="#">Finance</a>
+          </div>
+          <div class="footer-col">
+            <div class="footer-col-title">Company</div>
+            <a href="#">About Us</a>
+            <a href="#">Blog</a>
+            <a href="#">Careers</a>
+            <a href="#">Press Kit</a>
+            <a href="#">Contact</a>
+          </div>
+          <div class="footer-col">
+            <div class="footer-col-title">Legal</div>
+            <a href="#">Terms of Service</a>
+            <a href="#">Privacy Policy</a>
+            <a href="#">Cookie Policy</a>
+            <a href="#">Risk Disclaimer</a>
+            <a href="#">Compliance</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-divider"></div>
+      <div class="footer-bottom">
+        <div class="footer-bottom-left">
+          <span>© 2026 EvgXchain. All rights reserved.</span>
+          <span class="footer-dot">·</span>
+          <span>Built on <strong style="color:var(--accent)">Polygon</strong></span>
+          <span class="footer-dot">·</span>
+          <span>Settled in <strong style="color:var(--accent)">USDC</strong></span>
+        </div>
+        <div class="footer-bottom-right">
+          <div class="footer-chain-badge"><span>⛓</span> Mainnet</div>
+          <div class="footer-chain-badge"><span style="color:var(--accent)">●</span> All Systems Operational</div>
+        </div>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

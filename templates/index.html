@@ -1,514 +1,466 @@
 {% extends 'base.html' %}
 
-{% block title %}EVGxchain - Endless Freedom{% endblock %}
 
-{% block extra_css %}
-<style>
-    /* Landing Page Specific Styles */
-    .main-content {
-        padding-top: 0;
-    }
-
-    .landing-container {
-        width: 100vw;
-        min-height: 100vh;
-        background: linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 100%);
-        position: relative;
-        display: flex;
-        padding-top: 130px;
-    }
-
-    .left-section {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: flex-start;
-        padding: 80px;
-        max-width: 50%;
-    }
-
-    .right-section {
-        flex: 1;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        position: relative;
-        max-width: 50%;
-    }
-
-    .content {
-        text-align: left;
-        max-width: 600px;
-    }
-
-    .title {
-        font-size: 64px;
-        font-weight: 700;
-        margin-bottom: 30px;
-        background: linear-gradient(135deg, #fff 0%, #f0f0f0 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        line-height: 1.1;
-    }
-
-    .subtitle {
-        font-size: 20px;
-        color: #999;
-        line-height: 1.6;
-        margin-bottom: 50px;
-        max-width: 500px;
-    }
-
-    .get-started-btn {
-        background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
-        color: #1a1a1a;
-        border: none;
-        padding: 20px 50px;
-        border-radius: 30px;
-        font-size: 18px;
-        font-weight: 600;
-        cursor: pointer;
-        box-shadow: 0 10px 30px rgba(255, 215, 0, 0.3);
-        transition: all 0.3s ease;
-        position: relative;
-        overflow: hidden;
-        min-width: 200px;
-        text-decoration: none;
-        display: inline-block;
-        text-align: center;
-    }
-
-    .get-started-btn:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 15px 40px rgba(255, 215, 0, 0.4);
-    }
-
-    .get-started-btn:active {
-        transform: translateY(-1px);
-    }
-
-    .get-started-btn::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-        transition: left 0.5s;
-    }
-
-    .get-started-btn:hover::before {
-        left: 100%;
-    }
-
-    .shopping-cart-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        width: 100%;
-        height: 100%;
-        position: relative;
-    }
-
-    .cart {
-        position: relative;
-        z-index: 2;
-        animation: cartFloat 4s ease-in-out infinite;
-    }
-
-    .cart-body {
-        width: 200px;
-        height: 120px;
-        background: linear-gradient(135deg, #4a4a4a 0%, #666 100%);
-        border-radius: 15px;
-        position: relative;
-        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
-    }
-
-    .cart-handle {
-        position: absolute;
-        right: -20px;
-        top: 10px;
-        width: 25px;
-        height: 80px;
-        background: linear-gradient(135deg, #5a5a5a 0%, #777 100%);
-        border-radius: 15px;
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-    }
-
-    .cart-handle::before {
-        content: '';
-        position: absolute;
-        top: -5px;
-        left: 5px;
-        width: 15px;
-        height: 15px;
-        background: linear-gradient(135deg, #5a5a5a 0%, #777 100%);
-        border-radius: 50%;
-    }
-
-    .cart-wheels {
-        position: absolute;
-        bottom: -15px;
-        left: 20px;
-        right: 20px;
-        display: flex;
-        justify-content: space-between;
-    }
-
-    .wheel {
-        width: 30px;
-        height: 30px;
-        background: linear-gradient(135deg, #333 0%, #555 100%);
-        border-radius: 50%;
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-        animation: wheelSpin 2s linear infinite;
-    }
-
-    .coin {
-        width: 80px;
-        height: 80px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        position: absolute;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
-        transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .coin-main {
-        background: linear-gradient(135deg, #f7931a 0%, #ffb84d 100%);
-        width: 100px;
-        height: 100px;
-        top: -80px;
-        left: 50px;
-        z-index: 3;
-        animation: coinBounce 3s ease-in-out infinite;
-    }
-
-    .coin-secondary {
-        background: linear-gradient(135deg, #f7931a 0%, #ffb84d 100%);
-        width: 70px;
-        height: 70px;
-        top: -50px;
-        left: 20px;
-        z-index: 2;
-        animation: coinBounce 3s ease-in-out infinite 0.5s;
-    }
-
-    .coin-tertiary {
-        background: linear-gradient(135deg, #f7931a 0%, #ffb84d 100%);
-        width: 60px;
-        height: 60px;
-        top: -40px;
-        right: 30px;
-        z-index: 1;
-        animation: coinBounce 3s ease-in-out infinite 1s;
-    }
-
-    .coin-symbol {
-        font-weight: bold;
-        color: white;
-        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
-    }
-
-    .coin-main .coin-symbol {
-        font-size: 40px;
-    }
-
-    .coin-secondary .coin-symbol {
-        font-size: 28px;
-    }
-
-    .coin-tertiary .coin-symbol {
-        font-size: 24px;
-    }
-
-    @keyframes cartFloat {
-        0%, 100% { transform: translateY(0px) rotate(0deg); }
-        50% { transform: translateY(-10px) rotate(1deg); }
-    }
-
-    @keyframes wheelSpin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
-
-    @keyframes coinBounce {
-        0%, 100% { 
-            transform: translateY(0px) scale(1) rotate(0deg); 
-        }
-        25% { 
-            transform: translateY(-8px) scale(1.05) rotate(5deg); 
-        }
-        50% { 
-            transform: translateY(-5px) scale(1.02) rotate(-2deg); 
-        }
-        75% { 
-            transform: translateY(-12px) scale(1.08) rotate(3deg); 
-        }
-    }
-
-    .background-glow {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        width: 600px;
-        height: 600px;
-        background: radial-gradient(circle, rgba(247, 147, 26, 0.1) 0%, transparent 70%);
-        transform: translate(-50%, -50%);
-        z-index: 0;
-        animation: pulse 6s ease-in-out infinite;
-    }
-
-    @keyframes pulse {
-        0%, 100% { opacity: 0.3; transform: translate(-50%, -50%) scale(1); }
-        50% { opacity: 0.6; transform: translate(-50%, -50%) scale(1.2); }
-    }
-
-    .features {
-        margin-top: 60px;
-        display: flex;
-        gap: 40px;
-        position: relative;
-        z-index: 10;
-    }
-
-    .feature {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        color: #ccc;
-        font-size: 16px;
-    }
-
-    .feature-icon {
-        width: 24px;
-        height: 24px;
-        background: linear-gradient(45deg, #f7931a, #ffb84d);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 12px;
-        font-weight: bold;
-    }
-
-    .floating-coins {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        pointer-events: none;
-        overflow: hidden;
-        z-index: 1;
-    }
-
-    .floating-coin {
-        position: absolute;
-        width: 40px;
-        height: 40px;
-        background: linear-gradient(135deg, #f7931a 0%, #ffb84d 100%);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 16px;
-        font-weight: bold;
-        color: white;
-        opacity: 0.6;
-        animation: floatAround 15s linear infinite;
-    }
-
-    @keyframes floatAround {
-        0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
-        10% { opacity: 0.6; }
-        90% { opacity: 0.6; }
-        100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
-    }
-
-    @media (max-width: 1200px) {
-        .left-section {
-            padding: 60px;
-        }
-        
-        .title {
-            font-size: 48px;
-        }
-        
-        .cart-body {
-            width: 160px;
-            height: 100px;
-        }
-        
-        .coin-main {
-            width: 80px;
-            height: 80px;
-        }
-    }
-
-    @media (max-width: 768px) {
-        .landing-container {
-            flex-direction: column;
-            padding-top: 100px;
-        }
-        
-        .left-section, .right-section {
-            max-width: 100%;
-            flex: none;
-            position: relative;
-            z-index: 10;
-        }
-        
-        .left-section {
-            padding: 40px;
-            text-align: center;
-            background: rgba(30, 30, 30, 0.95);
-            backdrop-filter: blur(10px);
-        }
-        
-        .right-section {
-            height: 300px;
-            min-height: 300px;
-        }
-        
-        .content {
-            text-align: center;
-        }
-        
-        .title {
-            font-size: 36px;
-        }
-        
-        .features {
-            justify-content: center;
-            flex-wrap: wrap;
-            position: relative;
-            z-index: 15;
-            background: rgba(30, 30, 30, 0.8);
-            padding: 20px;
-            border-radius: 15px;
-            backdrop-filter: blur(5px);
-        }
-
-        .floating-coins {
-            z-index: 1;
-        }
-
-        .floating-coin {
-            opacity: 0.3;
-        }
-    }
-</style>
-{% endblock %}
-
-{% block content %}
-<div class="landing-container">
-    <div class="left-section">
-        <div class="content">
-            <h1 class="title">EVGxchain<br>Endless Freedom</h1>
-            <p class="subtitle">Secure online and offline wallets with our advance technology. Experience limitless possibilities with digital currency.</p>
-            <a href="{% url 'register-page' %}" class="get-started-btn">Get Started</a>
-            
-            <div class="features">
-                <div class="feature">
-                    <div class="feature-icon">💰</div>
-                    <span>Earn Rewards</span>
-                </div>
-                <div class="feature">
-                    <div class="feature-icon">🔄</div>
-                    <span>Instant Exchange</span>
-                </div>
-            </div>
-        </div>
+{% block container %}
+<div class="hero">
+  <div class="hero-left">
+    <h1>Bet on <em>what matters.</em><br>Trade the future.</h1>
+    <p>Real-money prediction markets on politics, crypto, sports, and world events. Put your knowledge to work.</p>
+  </div>
+  <div class="hero-stats">
+    <div class="stat">
+      <div class="stat-val">$1.4B</div>
+      <div class="stat-label">Total Volume</div>
     </div>
-
-    <div class="right-section">
-        <div class="background-glow"></div>
-        <div class="floating-coins">
-            <div class="floating-coin" style="left: 10%; animation-delay: 0s;">₿</div>
-            <div class="floating-coin" style="left: 30%; animation-delay: 3s;">₿</div>
-            <div class="floating-coin" style="left: 50%; animation-delay: 6s;">₿</div>
-            <div class="floating-coin" style="left: 70%; animation-delay: 9s;">₿</div>
-            <div class="floating-coin" style="left: 90%; animation-delay: 12s;">₿</div>
-        </div>
-        
-        <div class="shopping-cart-container">
-            <div class="cart">
-                <div class="cart-body">
-                    <div class="coin coin-main">
-                        <div class="coin-symbol">₿</div>
-                    </div>
-                    <div class="coin coin-secondary">
-                        <div class="coin-symbol">₿</div>
-                    </div>
-                    <div class="coin coin-tertiary">
-                        <div class="coin-symbol">₿</div>
-                    </div>
-                </div>
-                <div class="cart-handle"></div>
-                <div class="cart-wheels">
-                    <div class="wheel"></div>
-                    <div class="wheel"></div>
-                </div>
-            </div>
-        </div>
+    <div class="stat">
+      <div class="stat-val">248K</div>
+      <div class="stat-label">Active Traders</div>
     </div>
+    <div class="stat">
+      <div class="stat-val">4,210</div>
+      <div class="stat-label">Live Markets</div>
+    </div>
+  </div>
 </div>
-{% endblock %}
 
-{% block extra_js %}
-<script>
-    // Enhanced mouse interaction for desktop
-    document.addEventListener('mousemove', (e) => {
-        if (window.innerWidth > 768) {
-            const cart = document.querySelector('.cart');
-            const rightSection = document.querySelector('.right-section');
-            if (cart && rightSection) {
-                const rect = rightSection.getBoundingClientRect();
-                const centerX = rect.left + rect.width / 2;
-                const centerY = rect.top + rect.height / 2;
-                
-                const deltaX = (e.clientX - centerX) / 100;
-                const deltaY = (e.clientY - centerY) / 100;
-                
-                cart.style.transform = `translate(${deltaX * 2}px, ${deltaY * 2}px)`;
-            }
-        }
-    });
+<!-- MAIN -->
+<div class="main">
 
-    // Reset cart position periodically
-    setInterval(() => {
-        if (window.innerWidth > 768) {
-            const cart = document.querySelector('.cart');
-            if (cart && !cart.style.transform.includes('scale')) {
-                cart.style.transform = 'translate(0px, 0px)';
-            }
-        }
-    }, 3000);
+  <!-- LEFT SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Browse</div>
+      <div class="sidebar-item active">
+        <span class="icon">⬡</span> All Markets
+        <span class="count">4.2k</span>
+      </div>
+      <div class="sidebar-item">
+        <span class="icon">🗳</span> Politics
+        <span class="count">812</span>
+      </div>
+      <div class="sidebar-item">
+        <span class="icon">₿</span> Crypto
+        <span class="count">637</span>
+      </div>
+      <div class="sidebar-item">
+        <span class="icon">⚽</span> Sports
+        <span class="count">1.1k</span>
+      </div>
+      <div class="sidebar-item">
+        <span class="icon">🌍</span> World
+        <span class="count">590</span>
+      </div>
+      <div class="sidebar-item">
+        <span class="icon">🧬</span> Science
+        <span class="count">204</span>
+      </div>
+      <div class="sidebar-item">
+        <span class="icon">🎬</span> Culture
+        <span class="count">309</span>
+      </div>
+      <div class="sidebar-item">
+        <span class="icon">💹</span> Finance
+        <span class="count">448</span>
+      </div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Sort By</div>
+      <div class="sidebar-item active">
+        <span class="icon">🔥</span> Trending
+      </div>
+      <div class="sidebar-item">
+        <span class="icon">📈</span> Volume
+      </div>
+      <div class="sidebar-item">
+        <span class="icon">🆕</span> Newest
+      </div>
+      <div class="sidebar-item">
+        <span class="icon">⏰</span> Ending Soon
+      </div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Your Markets</div>
+      <div class="sidebar-item">
+        <span class="icon">★</span> Watchlist
+        <span class="count">7</span>
+      </div>
+      <div class="sidebar-item">
+        <span class="icon">◉</span> Positions
+        <span class="count">3</span>
+      </div>
+    </div>
+  </aside>
 
-    // Add random floating coins periodically (only on desktop)
-    setInterval(() => {
-        if (window.innerWidth > 768 && Math.random() < 0.3) {
-            const container = document.querySelector('.floating-coins');
-            if (container) {
-                const coin = document.createElement('div');
-                coin.className = 'floating-coin';
-                coin.textContent = '₿';
-                coin.style.left = Math.random() * 100 + '%';
-                coin.style.animationDelay = '0s';
-                container.appendChild(coin);
-                
-                setTimeout(() => {
-                    coin.remove();
-                }, 15000);
-            }
-        }
-    }, 2000);
-</script>
+  <!-- CONTENT -->
+  <main class="content">
+    <div class="content-header">
+      <div class="content-title">Trending Markets</div>
+      <div class="filters">
+        <button class="filter-btn active">All</button>
+        <button class="filter-btn">24h</button>
+        <button class="filter-btn">7d</button>
+        <button class="filter-btn">New</button>
+        <button class="filter-btn">Closing</button>
+      </div>
+    </div>
+
+    <div class="markets-grid">
+
+      <!-- CARD 1 -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon">🏛️</div>
+          <div class="card-meta">
+            <div class="card-category">POLITICS · <span class="live-badge"><span class="live-dot"></span>LIVE</span></div>
+            <div class="card-title">Will there be a US government shutdown before July 2026?</div>
+          </div>
+        </div>
+        <div class="prob-section">
+          <div class="prob-row">
+            <div class="prob-labels">
+              <div class="prob-label yes"><div class="dot"></div> YES <span class="prob-pct">34%</span></div>
+              <div class="prob-label no"><div class="dot"></div> NO <span class="prob-pct">66%</span></div>
+            </div>
+          </div>
+          <div class="prob-bar"><div class="prob-fill" style="width:34%"></div></div>
+        </div>
+        <div class="card-footer">
+          <div class="card-stat">
+            <div class="card-stat-val">$8.4M</div>
+            <div class="card-stat-label">Volume</div>
+          </div>
+          <div class="card-stat">
+            <div class="card-stat-val">2,847</div>
+            <div class="card-stat-label">Traders</div>
+          </div>
+          <div class="trade-btns">
+            <button class="trade-btn btn-yes">Yes 34¢</button>
+            <button class="trade-btn btn-no">No 66¢</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CARD 2 -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon">₿</div>
+          <div class="card-meta">
+            <div class="card-category">CRYPTO</div>
+            <div class="card-title">Will Bitcoin reach $150k before June 2026?</div>
+          </div>
+        </div>
+        <div class="prob-section">
+          <div class="prob-row">
+            <div class="prob-labels">
+              <div class="prob-label yes"><div class="dot"></div> YES <span class="prob-pct">58%</span></div>
+              <div class="prob-label no"><div class="dot"></div> NO <span class="prob-pct">42%</span></div>
+            </div>
+          </div>
+          <div class="prob-bar"><div class="prob-fill" style="width:58%"></div></div>
+        </div>
+        <div class="card-footer">
+          <div class="card-stat">
+            <div class="card-stat-val">$22.1M</div>
+            <div class="card-stat-label">Volume</div>
+          </div>
+          <div class="card-stat">
+            <div class="card-stat-val">6,391</div>
+            <div class="card-stat-label">Traders</div>
+          </div>
+          <div class="trade-btns">
+            <button class="trade-btn btn-yes">Yes 58¢</button>
+            <button class="trade-btn btn-no">No 42¢</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CARD 3 -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon">⚽</div>
+          <div class="card-meta">
+            <div class="card-category">SPORTS · <span class="live-badge"><span class="live-dot"></span>LIVE</span></div>
+            <div class="card-title">Will Real Madrid win the Champions League 2025–26?</div>
+          </div>
+        </div>
+        <div class="prob-section">
+          <div class="prob-row">
+            <div class="prob-labels">
+              <div class="prob-label yes"><div class="dot"></div> YES <span class="prob-pct">27%</span></div>
+              <div class="prob-label no"><div class="dot"></div> NO <span class="prob-pct">73%</span></div>
+            </div>
+          </div>
+          <div class="prob-bar"><div class="prob-fill" style="width:27%"></div></div>
+        </div>
+        <div class="card-footer">
+          <div class="card-stat">
+            <div class="card-stat-val">$5.7M</div>
+            <div class="card-stat-label">Volume</div>
+          </div>
+          <div class="card-stat">
+            <div class="card-stat-val">1,884</div>
+            <div class="card-stat-label">Traders</div>
+          </div>
+          <div class="trade-btns">
+            <button class="trade-btn btn-yes">Yes 27¢</button>
+            <button class="trade-btn btn-no">No 73¢</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CARD 4 -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon">🧬</div>
+          <div class="card-meta">
+            <div class="card-category">SCIENCE</div>
+            <div class="card-title">Will OpenAI release GPT-5 by Q3 2026?</div>
+          </div>
+        </div>
+        <div class="prob-section">
+          <div class="prob-row">
+            <div class="prob-labels">
+              <div class="prob-label yes"><div class="dot"></div> YES <span class="prob-pct">71%</span></div>
+              <div class="prob-label no"><div class="dot"></div> NO <span class="prob-pct">29%</span></div>
+            </div>
+          </div>
+          <div class="prob-bar"><div class="prob-fill" style="width:71%"></div></div>
+        </div>
+        <div class="card-footer">
+          <div class="card-stat">
+            <div class="card-stat-val">$3.2M</div>
+            <div class="card-stat-label">Volume</div>
+          </div>
+          <div class="card-stat">
+            <div class="card-stat-val">971</div>
+            <div class="card-stat-label">Traders</div>
+          </div>
+          <div class="trade-btns">
+            <button class="trade-btn btn-yes">Yes 71¢</button>
+            <button class="trade-btn btn-no">No 29¢</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CARD 5 -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon">💹</div>
+          <div class="card-meta">
+            <div class="card-category">FINANCE</div>
+            <div class="card-title">Will the Fed cut rates at least twice in 2026?</div>
+          </div>
+        </div>
+        <div class="prob-section">
+          <div class="prob-row">
+            <div class="prob-labels">
+              <div class="prob-label yes"><div class="dot"></div> YES <span class="prob-pct">45%</span></div>
+              <div class="prob-label no"><div class="dot"></div> NO <span class="prob-pct">55%</span></div>
+            </div>
+          </div>
+          <div class="prob-bar"><div class="prob-fill" style="width:45%"></div></div>
+        </div>
+        <div class="card-footer">
+          <div class="card-stat">
+            <div class="card-stat-val">$11.8M</div>
+            <div class="card-stat-label">Volume</div>
+          </div>
+          <div class="card-stat">
+            <div class="card-stat-val">3,204</div>
+            <div class="card-stat-label">Traders</div>
+          </div>
+          <div class="trade-btns">
+            <button class="trade-btn btn-yes">Yes 45¢</button>
+            <button class="trade-btn btn-no">No 55¢</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CARD 6 -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon">🌍</div>
+          <div class="card-meta">
+            <div class="card-category">WORLD</div>
+            <div class="card-title">Will there be a ceasefire in Gaza by March 2026?</div>
+          </div>
+        </div>
+        <div class="prob-section">
+          <div class="prob-row">
+            <div class="prob-labels">
+              <div class="prob-label yes"><div class="dot"></div> YES <span class="prob-pct">52%</span></div>
+              <div class="prob-label no"><div class="dot"></div> NO <span class="prob-pct">48%</span></div>
+            </div>
+          </div>
+          <div class="prob-bar"><div class="prob-fill" style="width:52%"></div></div>
+        </div>
+        <div class="card-footer">
+          <div class="card-stat">
+            <div class="card-stat-val">$17.3M</div>
+            <div class="card-stat-label">Volume</div>
+          </div>
+          <div class="card-stat">
+            <div class="card-stat-val">4,110</div>
+            <div class="card-stat-label">Traders</div>
+          </div>
+          <div class="trade-btns">
+            <button class="trade-btn btn-yes">Yes 52¢</button>
+            <button class="trade-btn btn-no">No 48¢</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- RIGHT PANEL -->
+  <aside class="right-panel">
+
+    <!-- FEATURED -->
+    <div class="featured-card">
+      <div class="featured-tag">⭐ Featured Market</div>
+      <div class="featured-title">Will Ethereum surpass $6,000 in 2026?</div>
+      <div class="featured-prob">62%</div>
+      <div class="featured-sub">Chance of YES · $31.4M volume</div>
+      <div style="margin-top:12px; display:flex; gap:6px;">
+        <button class="trade-btn btn-yes" style="flex:1">Yes 62¢</button>
+        <button class="trade-btn btn-no" style="flex:1">No 38¢</button>
+      </div>
+    </div>
+
+    <!-- TRENDING TAGS -->
+    <div class="trending-section">
+      <div class="panel-title">Trending Tags</div>
+      <div class="tags">
+        <div class="tag">#Bitcoin</div>
+        <div class="tag">#Fed</div>
+        <div class="tag">#2026Election</div>
+        <div class="tag">#AI</div>
+        <div class="tag">#Ukraine</div>
+        <div class="tag">#Nvidia</div>
+        <div class="tag">#NBA</div>
+        <div class="tag">#SpaceX</div>
+        <div class="tag">#Iran</div>
+        <div class="tag">#IPO</div>
+      </div>
+    </div>
+
+    <!-- LIVE ACTIVITY -->
+    <div class="activity-feed">
+      <div class="panel-title">Live Activity</div>
+
+      <div class="activity-item">
+        <div class="activity-top">
+          <div class="activity-user">
+            <div class="avatar" style="background:rgba(34,197,94,0.18);color:var(--accent)">W</div>
+            whale_42
+          </div>
+          <div class="activity-amount" style="color:var(--yes)">+$4,200</div>
+        </div>
+        <div class="activity-market">
+          Bought <span class="activity-badge badge-yes">YES</span> · Bitcoin $150k
+        </div>
+      </div>
+
+      <div class="activity-item">
+        <div class="activity-top">
+          <div class="activity-user">
+            <div class="avatar" style="background:rgba(255,255,255,0.08);color:#ffffff">P</div>
+            poly_king
+          </div>
+          <div class="activity-amount" style="color:var(--no)">+$890</div>
+        </div>
+        <div class="activity-market">
+          Bought <span class="activity-badge badge-no">NO</span> · Govt Shutdown
+        </div>
+      </div>
+
+      <div class="activity-item">
+        <div class="activity-top">
+          <div class="activity-user">
+            <div class="avatar" style="background:rgba(34,197,94,0.14);color:var(--accent-bright)">S</div>
+            sigma_99
+          </div>
+          <div class="activity-amount" style="color:var(--yes)">+$1,500</div>
+        </div>
+        <div class="activity-market">
+          Bought <span class="activity-badge badge-yes">YES</span> · GPT-5 Q3 2026
+        </div>
+      </div>
+
+      <div class="activity-item">
+        <div class="activity-top">
+          <div class="activity-user">
+            <div class="avatar" style="background:rgba(34,197,94,0.14);color:var(--accent)">C</div>
+            cryptoqueen
+          </div>
+          <div class="activity-amount" style="color:var(--yes)">+$7,800</div>
+        </div>
+        <div class="activity-market">
+          Bought <span class="activity-badge badge-yes">YES</span> · ETH $6k
+        </div>
+      </div>
+
+      <div class="activity-item">
+        <div class="activity-top">
+          <div class="activity-user">
+            <div class="avatar" style="background:rgba(255,255,255,0.07);color:#ffffff">M</div>
+            mkt_maker
+          </div>
+          <div class="activity-amount" style="color:var(--no)">+$3,100</div>
+        </div>
+        <div class="activity-market">
+          Bought <span class="activity-badge badge-no">NO</span> · Fed Rate Cuts
+        </div>
+      </div>
+    </div>
+
+    <!-- TOP TRADERS -->
+    <div>
+      <div class="panel-title">Top Traders · 7d</div>
+      <div class="trader-item">
+        <div class="trader-rank">1</div>
+        <div class="avatar" style="background:rgba(255,215,0,0.15);color:gold;width:26px;height:26px;font-size:0.7rem">🥇</div>
+        <div class="trader-info">
+          <div class="trader-name">whale_42</div>
+        </div>
+        <div class="trader-pnl">+$84,200</div>
+      </div>
+      <div class="trader-item">
+        <div class="trader-rank">2</div>
+        <div class="avatar" style="background:rgba(192,192,192,0.15);color:silver;width:26px;height:26px;font-size:0.7rem">🥈</div>
+        <div class="trader-info">
+          <div class="trader-name">cryptoqueen</div>
+        </div>
+        <div class="trader-pnl">+$61,500</div>
+      </div>
+      <div class="trader-item">
+        <div class="trader-rank">3</div>
+        <div class="avatar" style="background:rgba(205,127,50,0.15);color:#cd7f32;width:26px;height:26px;font-size:0.7rem">🥉</div>
+        <div class="trader-info">
+          <div class="trader-name">sigma_99</div>
+        </div>
+        <div class="trader-pnl">+$42,100</div>
+      </div>
+      <div class="trader-item">
+        <div class="trader-rank">4</div>
+        <div class="avatar" style="background:rgba(34,197,94,0.12);color:var(--accent);width:26px;height:26px;font-size:0.7rem">E</div>
+        <div class="trader-info">
+          <div class="trader-name">edge_lord</div>
+        </div>
+        <div class="trader-pnl">+$28,750</div>
+      </div>
+      <div class="trader-item" style="border:none">
+        <div class="trader-rank">5</div>
+        <div class="avatar" style="background:rgba(255,255,255,0.08);color:#ffffff;width:26px;height:26px;font-size:0.7rem">P</div>
+        <div class="trader-info">
+          <div class="trader-name">poly_king</div>
+        </div>
+        <div class="trader-pnl">+$19,320</div>
+      </div>
+    </div>
+
+  </aside>
+</div>
+
 {% endblock %}
